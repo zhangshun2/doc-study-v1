@@ -9,6 +9,8 @@
 | `学习文库/算法学习/` | 唯一正式算法库，使用 schema v3、单题五层、概念层和跨题对照层 | 日常学习与维护入口 |
 | `整理工作区/` | 旧库盘点、路径映射、迁移评估、执行记录和可重复脚本 | 管理与审计入口 |
 | `doc-study-v1/` | Gitee 旧仓库的只读来源快照 | 只查来源，不直接作为学习入口 |
+| `site/` | 学习站构建器与前端，把正式库渲染成可浏览、可搜索的网站 | 只改站点代码，正文仍写在学习文库 |
+| `scripts/` | 发布与预览脚本、多仓库同步规则 | `scripts/publish.sh` 一条命令发两个仓库 |
 
 正式库入口是 [算法学习总索引](学习文库/算法学习/README.md)。旧快照来自 `doc-study-v1` 的 `master` 提交 `777cf6ba4cf8c5b81e46df8aeeff4b2007021fac`，保留它是为了追溯题目来源、错因和旧推导。
 
@@ -30,6 +32,15 @@
 
 完整判断依据见 [doc-study-v1 与当前算法库融合评估](整理工作区/doc-study-v1-迁移评估.md)，逐题执行情况见 [首批融合执行记录](整理工作区/doc-study-v1-首批融合执行记录.md)。
 
+## 发布与同步
+
+- 远端：`origin` = Gitee（`master`），`github` = GitHub（`main`，默认分支）。
+- 发布：`scripts/publish.sh`，会做构建自检后同时推送两个仓库，并确认 GitHub 已触发构建。
+- 兜底：`pre-push` 钩子会在 `git push` 时自动镜像 `master`，新克隆仓库先跑 `scripts/install-hooks.sh`。
+- 站点：GitHub Actions 自动发布到 <https://zhangshun2.github.io/doc-study-v1/>。
+
+完整规则见 [发布脚本与规则](scripts/README.md)，站点说明见 [学习站说明](site/README.md)。
+
 ## 校验
 
 ```bash
@@ -43,4 +54,3 @@ cd 学习文库/算法学习
 cd 整理工作区
 ruby tools/build-doc-study-v1-inventory.rb
 ```
-

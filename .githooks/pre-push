@@ -1,0 +1,38 @@
+#!/usr/bin/env sh
+# 推送 master 时把同一次提交镜像到另一个仓库，避免两边内容漂移。
+#
+# 规则：
+#   origin (Gitee)  <-> github (GitHub)
+#   Gitee 的分支名是 master，GitHub 的默认分支是 main。
+#
+# 钩子失败不会阻断你原本的 push，只提示用 scripts/publish.sh 补发。
+
+[ "${DOCSTUDY_SYNC:-0}" = "1" ] && exit 0
+
+remote="$1"
+root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+cd "$root" || exit 0
+
+case "$remote" in
+  origin) other="github"; other_ref="refs/heads/main" ;;
+  github) other="origin"; other_ref="refs/heads/master" ;;
+  *) exit 0 ;;
+esac
+
+mirror=0
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$local_ref" = "refs/heads/master" ] || continue
+  [ "$local_sha" = "0000000000000000000000000000000000000000" ] && continue
+  mirror=1
+done
+
+[ "$mirror" = "1" ] || exit 0
+
+printf '\033[36m[sync]\033[0m 镜像 master 到 %s (%s)\n' "$other" "${other_ref#refs/heads/}"
+if DOCSTUDY_SYNC=1 git push "$other" "master:$other_ref"; then
+  printf '\033[36m[sync]\033[0m %s 已同步\n' "$other"
+else
+  printf '\033[33m[sync]\033[0m %s 同步失败，请手动执行 scripts/publish.sh\n' "$other" >&2
+fi
+
+exit 0
