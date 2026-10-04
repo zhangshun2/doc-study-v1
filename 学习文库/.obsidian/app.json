@@ -1,0 +1,17 @@
+{
+  "showLineNumber": false,
+  "readableLineLength": true,
+  "strictLineBreaks": false,
+  "showIndentGuide": false,
+  "foldHeading": true,
+  "foldIndent": true,
+  "defaultViewMode": "live",
+  "livePreview": true,
+  "spellcheck": false,
+  "tabSize": 2,
+  "useTab": false,
+  "alwaysUpdateLinks": true,
+  "newFileLocation": "root",
+  "attachmentFolderPath": "./assets",
+  "promptDelete": false
+}

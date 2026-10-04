@@ -1,0 +1,9 @@
+
+public void hs(int[] nums,List<List<Integer>> result , List<Integer> path , int index){
+    result.add(new ArrayList(path));
+    for(int i = index;i<nums.length;i++){
+        path.add(nums[i]);
+        hs(nums,result,path,i+1);
+        path.remove(path.size() - 1);
+    }
+}

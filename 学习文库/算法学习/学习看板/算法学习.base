@@ -1,0 +1,208 @@
+filters:
+  or:
+    - file.inFolder("题目")
+    - file.inFolder("核心模型")
+    - file.inFolder("建模专题/T0")
+    - file.inFolder("Java速查")
+    - file.inFolder("02-概念专题")
+    - file.inFolder("04-跨题对照")
+
+properties:
+  file.name:
+    displayName: 笔记
+  leetcodeId:
+    displayName: 题号
+  titleCn:
+    displayName: 中文题名
+  primaryPattern:
+    displayName: 主题型
+  difficulty:
+    displayName: 难度
+  priority:
+    displayName: 优先级
+  mastery:
+    displayName: 掌握阶段
+  reviewStatus:
+    displayName: 复习状态
+  nextReview:
+    displayName: 下次复习
+  lastReviewed:
+    displayName: 上次复习
+  independentAttempts:
+    displayName: 独立尝试
+  relatedProblems:
+    displayName: 对照题目
+  errorTags:
+    displayName: 错因
+  topics:
+    displayName: 标签
+
+views:
+  - type: table
+    name: 今日复习
+    filters:
+      and:
+        - 'reviewStatus == "待复习"'
+        - 'nextReview != null'
+        - 'date(nextReview) <= today()'
+    order:
+      - leetcodeId
+      - titleCn
+      - mastery
+      - nextReview
+      - primaryPattern
+      - errorTags
+    sort:
+      - property: nextReview
+        direction: ASC
+
+  - type: table
+    name: 尚未独立实现
+    filters:
+      and:
+        - 'type == "problem"'
+        - 'mastery != "可独立实现"'
+        - 'mastery != "可迁移"'
+    order:
+      - leetcodeId
+      - titleCn
+      - primaryPattern
+      - priority
+      - mastery
+      - reviewStatus
+      - independentAttempts
+    sort:
+      - property: priority
+        direction: ASC
+      - property: leetcodeId
+        direction: ASC
+
+  - type: table
+    name: 可独立实现
+    filters:
+      and:
+        - 'type == "problem"'
+        - 'mastery == "可独立实现"'
+    order:
+      - leetcodeId
+      - titleCn
+      - primaryPattern
+      - reviewStatus
+      - nextReview
+      - independentAttempts
+    sort:
+      - property: nextReview
+        direction: ASC
+
+  - type: table
+    name: 可迁移
+    filters:
+      and:
+        - 'type == "problem"'
+        - 'mastery == "可迁移"'
+    order:
+      - leetcodeId
+      - titleCn
+      - primaryPattern
+      - reviewStatus
+      - nextReview
+      - errorTags
+
+  - type: table
+    name: 错因分布
+    filters:
+      and:
+        - '(type == "problem" || type == "concept" || type == "comparison-topic")'
+        - '!errorTags.isEmpty()'
+    order:
+      - leetcodeId
+      - titleCn
+      - primaryPattern
+      - mastery
+      - errorTags
+      - lastReviewed
+    groupBy:
+      property: errorTags
+      direction: ASC
+
+  - type: table
+    name: 专题覆盖
+    filters:
+      and:
+        - 'type == "problem"'
+    order:
+      - primaryPattern
+      - leetcodeId
+      - titleCn
+      - difficulty
+      - priority
+      - mastery
+    groupBy:
+      property: primaryPattern
+      direction: ASC
+
+  - type: table
+    name: 核心卡速查
+    filters:
+      and:
+        - 'type == "core-model"'
+    order:
+      - leetcodeId
+      - titleCn
+      - primaryPattern
+      - mastery
+      - reviewStatus
+      - nextReview
+      - topics
+    sort:
+      - property: primaryPattern
+        direction: ASC
+      - property: leetcodeId
+        direction: ASC
+
+  - type: table
+    name: 概念卡速查
+    filters:
+      and:
+        - 'type == "concept"'
+    order:
+      - file.name
+      - titleCn
+      - topics
+      - mastery
+      - reviewStatus
+      - nextReview
+    sort:
+      - property: file.name
+        direction: ASC
+
+  - type: table
+    name: 跨题对照速查
+    filters:
+      and:
+        - 'type == "comparison-topic"'
+    order:
+      - file.name
+      - titleCn
+      - relatedProblems
+      - topics
+      - mastery
+      - reviewStatus
+      - nextReview
+    sort:
+      - property: file.name
+        direction: ASC
+
+  - type: table
+    name: Java API 索引
+    filters:
+      and:
+        - 'type == "java-api"'
+    order:
+      - file.name
+      - titleCn
+      - topics
+      - sourceCheckedAt
+    sort:
+      - property: file.name
+        direction: ASC

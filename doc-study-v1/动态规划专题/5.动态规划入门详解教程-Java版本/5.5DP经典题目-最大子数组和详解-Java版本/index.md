@@ -1,0 +1,213 @@
+# 5.5 DP经典题目-最大子数组和详解-Java版本
+
+# 5.5 DP经典题目-最大子数组和详解-Java版本
+## 📋 题目描述
+**LeetCode 53. 最大子数组和 (Maximum Subarray)**
+
+给你一个整数数组 `nums`，请你找出一个具有最大和的连续子数组（子数组最少包含一个元素），返回其最大和。
+
+**子数组** 是数组中的一个连续部分。
+
+### 示例
+```plain
+示例 1：
+输入：nums = [-2,1,-3,4,-1,2,1,-5,4]
+输出：6
+解释：连续子数组 [4,-1,2,1] 的和最大，为 6 。
+
+示例 2：
+输入：nums = [1]
+输出：1
+
+示例 3：
+输入：nums = [5,4,-1,7,8]
+输出：23
+```
+
+### 约束条件
++ `1 <= nums.length <= 10^5`
++ `-10^4 <= nums[i] <= 10^4`
+
+## 🎯 DP解法分析
+### 核心思想
+这是一道**一维动态规划**的经典题目，也被称为**Kadane算法**。核心思想是：
+
++ 对于每个位置，我们需要决定是**继续之前的子数组**还是**重新开始**
++ 如果之前的累积和为负数，那么重新开始更有利
++ 如果之前的累积和为正数，那么继续累积更有利
+
+### DP五要素分析
+#### 1. 状态定义
+```java
+dp[i] = 以nums[i]结尾的最大子数组和
+```
+
+#### 2. 状态转移方程
+```java
+dp[i] = Math.max(nums[i], dp[i-1] + nums[i])
+```
+
+**解释：**
+
++ `nums[i]`：重新开始，只包含当前元素
++ `dp[i-1] + nums[i]`：继续之前的子数组，加上当前元素
+
+#### 3. 边界条件
+```java
+dp[0] = nums[0]  // 第一个元素
+```
+
+#### 4. 计算顺序
+从左到右，`i` 从 1 到 `n-1`
+
+#### 5. 结果提取
+```java
+return Math.max(dp[0], dp[1], ..., dp[n-1])
+```
+
+## 💻 代码实现
+### 方法一：标准DP数组
+```java
+public class Solution {
+    public int maxSubArray(int[] nums) {
+        int n = nums.length;
+        int[] dp = new int[n];
+        
+        // 边界条件
+        dp[0] = nums[0];
+        int maxSum = dp[0];
+        
+        // 状态转移
+        for (int i = 1; i < n; i++) {
+            dp[i] = Math.max(nums[i], dp[i-1] + nums[i]);
+            maxSum = Math.max(maxSum, dp[i]);
+        }
+        
+        return maxSum;
+    }
+}
+```
+
+### 方法二：空间优化版本
+```java
+public class Solution {
+    public int maxSubArray(int[] nums) {
+        int currentSum = nums[0];  // 当前子数组和
+        int maxSum = nums[0];      // 全局最大和
+        
+        for (int i = 1; i < nums.length; i++) {
+            // 决定是继续还是重新开始
+            currentSum = Math.max(nums[i], currentSum + nums[i]);
+            // 更新全局最大值
+            maxSum = Math.max(maxSum, currentSum);
+        }
+        
+        return maxSum;
+    }
+}
+```
+
+## 🔍 执行过程详解
+以 `nums = [-2,1,-3,4,-1,2,1,-5,4]` 为例：
+
+| i | nums[i] | currentSum计算 | currentSum | maxSum |
+| --- | --- | --- | --- | --- |
+| 0 | -2 | 初始化 | -2 | -2 |
+| 1 | 1 | max(1, -2+1=-1) | 1 | 1 |
+| 2 | -3 | max(-3, 1-3=-2) | -3 | 1 |
+| 3 | 4 | max(4, -3+4=1) | 4 | 4 |
+| 4 | -1 | max(-1, 4-1=3) | 3 | 4 |
+| 5 | 2 | max(2, 3+2=5) | 5 | 5 |
+| 6 | 1 | max(1, 5+1=6) | 6 | 6 |
+| 7 | -5 | max(-5, 6-5=1) | 1 | 6 |
+| 8 | 4 | max(4, 1+4=5) | 5 | 6 |
+
+
+**最终结果：6**（对应子数组 `[4,-1,2,1]`）
+
+## 📊 复杂度分析
++ **时间复杂度：** O(n) - 只需要遍历一次数组
++ **空间复杂度：** 
+    - 标准DP：O(n) - 需要dp数组
+    - 优化版：O(1) - 只需要两个变量
+
+## 🎨 算法变体
+### 1. 返回最大子数组的起始和结束位置
+```java
+public int[] maxSubArrayWithIndex(int[] nums) {
+    int currentSum = nums[0];
+    int maxSum = nums[0];
+    int start = 0, end = 0, tempStart = 0;
+    
+    for (int i = 1; i < nums.length; i++) {
+        if (currentSum < 0) {
+            currentSum = nums[i];
+            tempStart = i;  // 重新开始的位置
+        } else {
+            currentSum += nums[i];
+        }
+        
+        if (currentSum > maxSum) {
+            maxSum = currentSum;
+            start = tempStart;
+            end = i;
+        }
+    }
+    
+    return new int[]{maxSum, start, end};
+}
+```
+
+### 2. 最大子数组乘积（变体题目）
+```java
+// LeetCode 152. 乘积最大子数组
+public int maxProduct(int[] nums) {
+    int maxProd = nums[0];
+    int minProd = nums[0];  // 需要维护最小值（负数可能变最大）
+    int result = nums[0];
+    
+    for (int i = 1; i < nums.length; i++) {
+        if (nums[i] < 0) {
+            // 交换最大最小值
+            int temp = maxProd;
+            maxProd = minProd;
+            minProd = temp;
+        }
+        
+        maxProd = Math.max(nums[i], maxProd * nums[i]);
+        minProd = Math.min(nums[i], minProd * nums[i]);
+        result = Math.max(result, maxProd);
+    }
+    
+    return result;
+}
+```
+
+## 🧠 解题技巧总结
+### 核心思路
+1. **贪心选择**：每一步都做最优决策
+2. **状态压缩**：只需要记住前一个状态
+3. **边界处理**：第一个元素作为初始状态
+
+### 常见错误
+1. **忘记更新全局最大值**：只返回最后的currentSum
+2. **边界条件处理**：空数组或单元素数组
+3. **状态转移理解**：混淆"以i结尾"和"前i个元素"
+
+### 扩展思考
+1. 如果要求子数组长度至少为k怎么办？
+2. 如果要求返回所有最大和的子数组怎么办？
+3. 二维数组的最大子矩阵和问题如何解决？
+
+## 🎯 学习建议
+1. **理解核心**：掌握"继续vs重新开始"的决策逻辑
+2. **空间优化**：从数组优化到变量的思维过程
+3. **举一反三**：尝试解决相关的子数组问题
+4. **代码实现**：熟练掌握两种实现方式
+
+这道题是DP入门的经典题目，掌握了它的思路对理解其他DP问题很有帮助！
+
+
+
+> 更新: 2025-08-25 19:01:11  
+> 原文: <https://www.yuque.com/zhangshun-xxqvr/vg2bou/dd246ace8c166d82c63d253ecf52dac4>

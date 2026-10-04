@@ -1,0 +1,660 @@
+/*
+ * Typora-inspired polish for the Minimal theme.
+ *
+ * The selectors intentionally stay on Obsidian's public class names so the
+ * snippet can be disabled independently of the theme. The visual direction
+ * borrows from the open-source Minimal, Obsidian-Typora-Vue-Theme and Border
+ * projects while keeping the vault's existing Minimal layout intact.
+ */
+
+/* @settings
+
+name: Typora 风格
+id: typora-polish
+settings:
+  - id: typora-layout-heading
+    title: 布局
+    type: heading
+    level: 2
+  - id: typora-content-width
+    title: 正文宽度
+    description: 调整普通段落的最大宽度。
+    type: variable-number-slider
+    default: 44
+    min: 34
+    max: 64
+    step: 1
+    format: rem
+  - id: typora-wide-width
+    title: 宽内容宽度
+    description: 调整表格、图片等宽内容的最大宽度。
+    type: variable-number-slider
+    default: 60
+    min: 44
+    max: 80
+    step: 1
+    format: rem
+  - id: typora-radius
+    title: 内容圆角
+    type: variable-number-slider
+    default: 9
+    min: 0
+    max: 16
+    step: 1
+    format: px
+  - id: typora-glass-heading
+    title: 透明与动效
+    type: heading
+    level: 2
+  - id: typora-paper-opacity
+    title: 编辑区不透明度
+    type: variable-number-slider
+    default: 0.84
+    min: 0.55
+    max: 1
+    step: 0.01
+  - id: typora-sidebar-opacity
+    title: 侧栏不透明度
+    type: variable-number-slider
+    default: 0.7
+    min: 0.4
+    max: 1
+    step: 0.01
+  - id: typora-transition-speed
+    title: 交互动效速度
+    type: variable-number-slider
+    default: 160
+    min: 0
+    max: 320
+    step: 20
+    format: ms
+
+*/
+
+/* -------------------------------------------------------------------------- */
+/* Design tokens                                                             */
+/* -------------------------------------------------------------------------- */
+
+body {
+  --typora-accent: #378a70;
+  --typora-accent-rgb: 55, 138, 112;
+  --typora-content-width: 44rem;
+  --typora-wide-width: 60rem;
+  --typora-content-max-width: 92%;
+  --typora-radius: 9px;
+  --typora-small-radius: 6px;
+  --typora-paper-opacity: 0.84;
+  --typora-sidebar-opacity: 0.7;
+  --typora-transition-speed: 160ms;
+  --typora-transition: var(--typora-transition-speed) ease;
+
+  --accent-h: 156;
+  --accent-s: 43%;
+  --accent-l: 38%;
+  --font-text-override: "Avenir Next", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --font-editor-override: "Avenir Next", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --font-monospace-override: "SFMono-Regular", "Cascadia Code", "JetBrains Mono", "Noto Sans Mono", monospace;
+
+  /* Important is needed because Minimal Theme Settings writes these inline. */
+  --line-width: var(--typora-content-width) !important;
+  --line-width-wide: var(--typora-wide-width) !important;
+  --max-width: var(--typora-content-max-width);
+  --line-height: 1.72;
+  --p-spacing: 1.12rem;
+  --heading-spacing: 2.3em;
+  --h1-size: 2em;
+  --h2-size: 1.52em;
+  --h3-size: 1.2em;
+  --h4-size: 1.05em;
+  --h5-size: 0.95em;
+  --h6-size: 0.9em;
+  --h1-weight: 720;
+  --h2-weight: 650;
+  --h3-weight: 620;
+  --h4-weight: 600;
+  --blockquote-border-thickness: 3px;
+  --image-radius: 8px;
+  --input-height: 34px;
+}
+
+.theme-light {
+  --accent-l: 38%;
+  --typora-paper: rgba(255, 255, 255, var(--typora-paper-opacity));
+  --typora-surface: rgba(250, 251, 249, 0.86);
+  --typora-sidebar: rgba(244, 246, 243, var(--typora-sidebar-opacity));
+  --typora-code-bg: rgba(239, 243, 240, 0.86);
+  --typora-border: rgba(42, 67, 57, 0.14);
+  --typora-border-strong: rgba(42, 67, 57, 0.22);
+  --typora-shadow: 0 14px 35px rgba(36, 56, 47, 0.08);
+  --typora-shadow-soft: 0 4px 18px rgba(36, 56, 47, 0.06);
+}
+
+.theme-dark {
+  --accent-l: 58%;
+  --typora-paper: rgba(27, 32, 31, var(--typora-paper-opacity));
+  --typora-surface: rgba(35, 41, 39, 0.9);
+  --typora-sidebar: rgba(22, 27, 26, var(--typora-sidebar-opacity));
+  --typora-code-bg: rgba(18, 23, 22, 0.9);
+  --typora-border: rgba(208, 228, 218, 0.12);
+  --typora-border-strong: rgba(208, 228, 218, 0.2);
+  --typora-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
+  --typora-shadow-soft: 0 5px 20px rgba(0, 0, 0, 0.22);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Workspace: quiet glass layers                                             */
+/* -------------------------------------------------------------------------- */
+
+.workspace,
+.workspace-split.mod-root,
+.workspace-split.mod-root > .workspace-leaf,
+.workspace-leaf-content,
+.workspace-tab-header-container,
+.workspace-tab-header-container-inner,
+.workspace-ribbon,
+.side-dock-ribbon {
+  background: transparent;
+}
+
+.workspace-split.mod-root > .workspace-leaf,
+.workspace-leaf-content[data-type="markdown"] {
+  background: var(--typora-paper);
+}
+
+.workspace-split.mod-left-split > .workspace-tabs,
+.workspace-split.mod-right-split > .workspace-tabs {
+  background: var(--typora-sidebar);
+  border-color: var(--typora-border);
+  -webkit-backdrop-filter: blur(18px) saturate(130%);
+  backdrop-filter: blur(18px) saturate(130%);
+}
+
+.workspace-tab-header-container,
+.view-header {
+  border-color: var(--typora-border);
+  transition: background var(--typora-transition), border-color var(--typora-transition);
+}
+
+.workspace-tab-header {
+  border-radius: var(--typora-small-radius) var(--typora-small-radius) 0 0;
+  transition: color var(--typora-transition), background var(--typora-transition), box-shadow var(--typora-transition);
+}
+
+.workspace-tab-header:hover {
+  background: rgba(var(--typora-accent-rgb), 0.07);
+}
+
+.workspace-tab-header.is-active {
+  color: var(--text-normal);
+  background: rgba(var(--typora-accent-rgb), 0.1);
+  box-shadow: inset 0 -2px 0 var(--text-accent);
+}
+
+.workspace-leaf.mod-active .view-header-title {
+  display: none;
+}
+
+.view-header {
+  min-height: 36px;
+  background: transparent;
+}
+
+.view-actions {
+  opacity: 0.55;
+  transition: opacity var(--typora-transition);
+}
+
+.view-header:hover .view-actions,
+.view-actions:focus-within {
+  opacity: 1;
+}
+
+.workspace-ribbon,
+.side-dock-ribbon {
+  border: 0;
+}
+
+.side-dock-ribbon-action,
+.clickable-icon {
+  border-radius: var(--typora-small-radius);
+  transition: color var(--typora-transition), background var(--typora-transition), transform var(--typora-transition);
+}
+
+.side-dock-ribbon-action:hover,
+.clickable-icon:hover {
+  color: var(--text-accent);
+  background: rgba(var(--typora-accent-rgb), 0.09);
+}
+
+.side-dock-ribbon-action:active,
+.clickable-icon:active {
+  transform: scale(0.94);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Reading and editing surface                                               */
+/* -------------------------------------------------------------------------- */
+
+.view-content > .markdown-source-view.mod-cm6 > .cm-scroller,
+.markdown-preview-view {
+  padding-top: 1.35rem;
+  padding-bottom: 30vh;
+  scrollbar-gutter: stable;
+}
+
+.markdown-source-view.mod-cm6 .cm-editor {
+  padding-bottom: 0;
+}
+
+.markdown-source-view.mod-cm6 .cm-gutters {
+  background: transparent;
+  border: 0;
+}
+
+.markdown-source-view.mod-cm6 .cm-content {
+  padding-bottom: 20vh;
+}
+
+.inline-title,
+.markdown-rendered h1,
+.markdown-source-view.mod-cm6 .HyperMD-header-1 {
+  letter-spacing: 0;
+  color: var(--text-normal);
+}
+
+.inline-title {
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid var(--typora-border-strong);
+}
+
+.markdown-rendered h1,
+.markdown-source-view.mod-cm6 .HyperMD-header-1 {
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--typora-border);
+}
+
+.markdown-rendered h2,
+.markdown-source-view.mod-cm6 .HyperMD-header-2 {
+  padding-bottom: 0.24rem;
+  border-bottom: 1px solid var(--typora-border);
+}
+
+.markdown-rendered h3,
+.markdown-source-view.mod-cm6 .HyperMD-header-3 {
+  padding-left: 0.72rem;
+  border-left: 3px solid rgba(var(--typora-accent-rgb), 0.58);
+}
+
+.markdown-rendered h4,
+.markdown-rendered h5,
+.markdown-rendered h6 {
+  color: var(--text-muted);
+}
+
+.markdown-source-view.mod-cm6 .cm-active.cm-line {
+  background: rgba(var(--typora-accent-rgb), 0.055) !important;
+  border-radius: 5px;
+}
+
+::selection,
+.cm-s-obsidian .cm-selectionBackground,
+.markdown-rendered ::selection {
+  background: rgba(var(--typora-accent-rgb), 0.2) !important;
+}
+
+.markdown-rendered a,
+.cm-s-obsidian .cm-link,
+.cm-s-obsidian .cm-url {
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  transition: color var(--typora-transition), text-decoration-color var(--typora-transition);
+}
+
+.markdown-rendered a:hover,
+.cm-s-obsidian .cm-link:hover,
+.cm-s-obsidian .cm-url:hover {
+  color: var(--text-accent-hover);
+  text-decoration-thickness: 2px;
+}
+
+.markdown-rendered hr {
+  margin: 2.25rem 0;
+  border: 0;
+  border-top: 1px solid var(--typora-border-strong);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Content blocks                                                             */
+/* -------------------------------------------------------------------------- */
+
+.markdown-rendered blockquote,
+.markdown-source-view.mod-cm6 .HyperMD-quote {
+  margin-inline: 0;
+  padding: 0.72rem 1rem;
+  color: var(--text-muted);
+  background: rgba(var(--typora-accent-rgb), 0.065);
+  border-left: 3px solid var(--text-accent);
+  border-radius: 0 var(--typora-radius) var(--typora-radius) 0;
+}
+
+.markdown-rendered .callout,
+.markdown-source-view.mod-cm6 .callout {
+  --callout-border-width: 1px;
+  --callout-border-opacity: 0.45;
+  border-radius: var(--typora-radius);
+  box-shadow: var(--typora-shadow-soft);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.markdown-rendered .callout-title {
+  font-weight: 650;
+}
+
+.markdown-rendered pre,
+.markdown-source-view.mod-cm6 .HyperMD-codeblock {
+  background: var(--typora-code-bg);
+}
+
+.markdown-rendered pre {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--typora-border);
+  border-radius: var(--typora-radius);
+  box-shadow: var(--typora-shadow-soft);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-codeblock {
+  padding-inline: 0.9rem;
+  border-right: 1px solid var(--typora-border);
+  border-left: 1px solid var(--typora-border);
+}
+
+.markdown-source-view.mod-cm6 :is(.HyperMD-codeblock-begin, .HyperMD-codeblock-begin-bg) {
+  border-top: 1px solid var(--typora-border);
+  border-radius: var(--typora-radius) var(--typora-radius) 0 0;
+}
+
+.markdown-source-view.mod-cm6 :is(.HyperMD-codeblock-end, .HyperMD-codeblock-end-bg) {
+  border-bottom: 1px solid var(--typora-border);
+  border-radius: 0 0 var(--typora-radius) var(--typora-radius);
+}
+
+.markdown-rendered pre code,
+.markdown-source-view.mod-cm6 .cm-hmd-codeblock {
+  font-family: var(--font-monospace);
+  font-size: 0.9em;
+  line-height: 1.65;
+}
+
+.markdown-rendered :not(pre) > code,
+.cm-s-obsidian span.cm-inline-code {
+  color: var(--text-code);
+  background: rgba(var(--typora-accent-rgb), 0.1);
+  border: 1px solid rgba(var(--typora-accent-rgb), 0.12);
+  border-radius: 4px;
+  padding: 0.13em 0.34em;
+}
+
+.markdown-rendered .copy-code-button {
+  opacity: 0.45;
+  transition: opacity var(--typora-transition), color var(--typora-transition), background var(--typora-transition);
+}
+
+.markdown-rendered pre:hover .copy-code-button,
+.markdown-rendered .copy-code-button:focus-visible {
+  opacity: 1;
+}
+
+.markdown-rendered table,
+.markdown-source-view.mod-cm6 .cm-table-widget table {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--typora-border-strong);
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: var(--typora-radius);
+  box-shadow: var(--typora-shadow-soft);
+}
+
+.markdown-rendered th,
+.markdown-source-view.mod-cm6 .cm-table-widget th {
+  color: var(--text-normal);
+  font-weight: 650;
+  background: rgba(var(--typora-accent-rgb), 0.09);
+}
+
+.markdown-rendered td,
+.markdown-rendered th,
+.markdown-source-view.mod-cm6 .cm-table-widget td,
+.markdown-source-view.mod-cm6 .cm-table-widget th {
+  padding: 0.58rem 0.75rem;
+  border-right: 1px solid var(--typora-border);
+  border-bottom: 1px solid var(--typora-border);
+}
+
+.markdown-rendered tr:last-child td,
+.markdown-source-view.mod-cm6 .cm-table-widget tr:last-child td {
+  border-bottom: 0;
+}
+
+.markdown-rendered td:last-child,
+.markdown-rendered th:last-child,
+.markdown-source-view.mod-cm6 .cm-table-widget td:last-child,
+.markdown-source-view.mod-cm6 .cm-table-widget th:last-child {
+  border-right: 0;
+}
+
+.markdown-rendered tbody tr,
+.markdown-source-view.mod-cm6 .cm-table-widget tbody tr {
+  transition: background var(--typora-transition);
+}
+
+.markdown-rendered tbody tr:hover,
+.markdown-source-view.mod-cm6 .cm-table-widget tbody tr:hover {
+  background: rgba(var(--typora-accent-rgb), 0.055);
+}
+
+.markdown-rendered img {
+  display: block;
+  margin: 1.15rem auto;
+  border-radius: var(--image-radius);
+  box-shadow: var(--typora-shadow-soft);
+  transition: transform var(--typora-transition), box-shadow var(--typora-transition);
+}
+
+.markdown-rendered img:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--typora-shadow);
+}
+
+.metadata-container {
+  margin-bottom: 1.5rem;
+  padding: 0.35rem 0.7rem;
+  background: rgba(var(--typora-accent-rgb), 0.04);
+  border: 1px solid var(--typora-border);
+  border-radius: var(--typora-radius);
+}
+
+/* -------------------------------------------------------------------------- */
+/* File tree, tabs and transient UI                                          */
+/* -------------------------------------------------------------------------- */
+
+.nav-file-title,
+.nav-folder-title {
+  margin: 1px 7px;
+  border-radius: var(--typora-small-radius);
+  transition: color var(--typora-transition), background var(--typora-transition), transform var(--typora-transition);
+}
+
+.nav-file-title:hover,
+.nav-folder-title:hover {
+  color: var(--text-normal);
+  background: rgba(var(--typora-accent-rgb), 0.075);
+}
+
+.nav-file-title.is-active {
+  color: var(--text-accent);
+  background: rgba(var(--typora-accent-rgb), 0.13);
+  box-shadow: inset 3px 0 0 var(--text-accent);
+}
+
+.nav-folder-title {
+  font-weight: 620;
+}
+
+.nav-file-title-content,
+.nav-folder-title-content {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-file-title:active,
+.nav-folder-title:active {
+  transform: translateX(1px);
+}
+
+.nav-collapse-icon {
+  transition: transform var(--typora-transition), color var(--typora-transition);
+}
+
+.menu,
+.suggestion-container,
+.popover,
+.prompt,
+.modal,
+.notice,
+.community-modal {
+  background: var(--typora-surface);
+  border: 1px solid var(--typora-border-strong);
+  border-radius: var(--typora-radius);
+  box-shadow: var(--typora-shadow);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+  backdrop-filter: blur(18px) saturate(135%);
+}
+
+.menu-item,
+.suggestion-item {
+  border-radius: var(--typora-small-radius);
+  transition: color var(--typora-transition), background var(--typora-transition);
+}
+
+.menu-item:hover:not(.is-disabled),
+.suggestion-item.is-selected {
+  color: var(--text-normal);
+  background: rgba(var(--typora-accent-rgb), 0.11);
+}
+
+button,
+.setting-item-control .clickable-icon,
+input,
+textarea,
+select {
+  border-radius: var(--typora-small-radius);
+  transition: color var(--typora-transition), background var(--typora-transition), border-color var(--typora-transition), box-shadow var(--typora-transition);
+}
+
+button.mod-cta,
+button.mod-cta:hover {
+  background: var(--typora-accent);
+}
+
+button:hover,
+input:hover,
+textarea:hover,
+select:hover {
+  border-color: rgba(var(--typora-accent-rgb), 0.48);
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[contenteditable="true"]:focus-visible {
+  outline: 2px solid rgba(var(--typora-accent-rgb), 0.65);
+  outline-offset: 2px;
+}
+
+.status-bar {
+  padding: 0 0.7rem;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: transparent;
+  border-top: 1px solid var(--typora-border);
+}
+
+/* Keep scrollbars discoverable, but make them quiet. */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--typora-accent-rgb), 0.28) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  min-height: 34px;
+  background: rgba(var(--typora-accent-rgb), 0.25);
+  border: 2px solid transparent;
+  border-radius: 99px;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--typora-accent-rgb), 0.48);
+  border-width: 1px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Small screens and accessibility                                           */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 700px) {
+  body {
+    --line-width: 100% !important;
+    --line-width-wide: 100% !important;
+    --max-width: 100% !important;
+  }
+
+  .view-content > .markdown-source-view.mod-cm6 > .cm-scroller,
+  .markdown-preview-view {
+    padding-inline: 1rem;
+    padding-top: 0.85rem;
+  }
+
+  .inline-title {
+    font-size: 1.75em;
+  }
+
+  .workspace-split.mod-left-split > .workspace-tabs,
+  .workspace-split.mod-right-split > .workspace-tabs,
+  .menu,
+  .suggestion-container,
+  .popover,
+  .prompt,
+  .modal,
+  .notice,
+  .community-modal {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

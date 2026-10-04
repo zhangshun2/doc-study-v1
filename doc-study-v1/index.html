@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LeetCode 算法学习</title>
+  <meta name="description" content="LeetCode 算法学习笔记与题解">
+  <link rel="icon" type="image/x-icon" href="_favicon.ico">
+  <!-- 主题样式 -->
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/themes/vue.css">
+  <style>
+    .cover {
+      background: linear-gradient(to bottom, #3a7bd5, #00d2ff) !important;
+    }
+    .cover h1 {
+      color: #fff !important;
+      font-weight: 700;
+    }
+    .cover p {
+      color: rgba(255, 255, 255, 0.9) !important;
+    }
+    .cover a {
+      color: #fff !important;
+      border-color: #fff !important;
+    }
+    .cover a:hover {
+      background: rgba(255, 255, 255, 0.2) !important;
+    }
+    .sidebar-nav ul li a {
+      font-weight: 500;
+    }
+    .sidebar-nav ul li.active > a {
+      color: #3a7bd5 !important;
+      font-weight: 700;
+    }
+    pre {
+      border-radius: 8px;
+    }
+    code {
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">加载中...</div>
+  <script>
+    window.$docsify = {
+      // 基本信息
+      name: 'LeetCode 算法学习',
+      repo: '',
+      
+      // 封面页
+      coverpage: true,
+      onlyCover: false,
+      
+      // 侧边栏
+      loadSidebar: true,
+      subMaxLevel: 3,
+      sidebarDisplayLevel: 1, // 默认折叠级别，1表示只显示一级菜单
+      auto2top: true,
+      
+      // 导航
+      loadNavbar: false,
+      
+      // 搜索插件
+      search: {
+        maxAge: 86400000, // 缓存一天
+        placeholder: '搜索题目或知识点...',
+        noData: '没有找到结果',
+        depth: 6,
+        hideOtherSidebarContent: false
+      },
+      
+      // 代码高亮
+      highlight: {
+        hljs: function(hljs) {
+          hljs.initHighlightingOnLoad();
+        }
+      },
+      
+      // 代码复制
+      copyCode: {
+        buttonText: '复制代码',
+        errorText: '复制失败',
+        successText: '复制成功'
+      },
+      
+      // 分页
+      pagination: {
+        previousText: '上一节',
+        nextText: '下一节',
+        crossChapter: true,
+        crossChapterText: true
+      },
+      
+      // 页脚
+      footer: {
+        copy: 'Copyright © 2024',
+        auth: ' by 张顺',
+        pre: '<hr/>',
+        style: 'font-size: 12px; text-align: center;'
+      }
+    };
+  </script>
+  <!-- Docsify 核心 -->
+  <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+  <!-- 侧边栏折叠插件 -->
+  <script src="//cdn.jsdelivr.net/npm/docsify-sidebar-collapse/dist/docsify-sidebar-collapse.min.js"></script>
+  <!-- 搜索插件 -->
+  <script src="//cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
+  <!-- 代码高亮 -->
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-javascript.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-python.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-java.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-cpp.min.js"></script>
+  <!-- 代码复制插件 -->
+  <script src="//cdn.jsdelivr.net/npm/docsify-copy-code@2"></script>
+  <!-- 分页插件 -->
+  <script src="//cdn.jsdelivr.net/npm/docsify-pagination@latest/dist/docsify-pagination.min.js"></script>
+  <!-- 页脚插件 -->
+  <script src="//cdn.jsdelivr.net/npm/docsify-footer-enh@1/dist/docsify-footer-enh.min.js"></script>
+  <!-- 图片缩放 -->
+  <script src="//cdn.jsdelivr.net/npm/docsify@4/lib/plugins/zoom-image.min.js"></script>
+  <!-- 外部链接 -->
+  <script src="//cdn.jsdelivr.net/npm/docsify@4/lib/plugins/external-script.min.js"></script>
+</body>
+</html>

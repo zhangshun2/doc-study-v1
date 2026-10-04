@@ -1,0 +1,10 @@
+{
+  "accentColor": "#0f0f0f",
+  "cssTheme": "Minimal",
+  "theme": "system",
+  "baseFontSize": 16,
+  "translucency": true,
+  "enabledCssSnippets": [
+    "typora-style"
+  ]
+}
