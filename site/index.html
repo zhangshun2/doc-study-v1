@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="算法学习库：题解、核心模型、完整建模、概念专题与 Java 速查。">
+    <meta name="theme-color" content="#f4f6f8">
+    <title>算法学习库</title>
+    <link rel="stylesheet" href="assets/app.css?v=__ASSET_VERSION__">
+    <link rel="stylesheet" href="assets/vendor/highlight-github.min.css?v=__ASSET_VERSION__">
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">跳到正文</a>
+
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="icon-button mobile-only" id="sidebar-toggle" type="button" aria-label="打开导航" aria-expanded="false">
+          <i data-lucide="panel-left"></i>
+        </button>
+        <a class="brand" href="#/" aria-label="返回首页">
+          <span class="brand-mark" aria-hidden="true">算</span>
+          <span class="brand-copy">
+            <strong>算法学习库</strong>
+            <small id="revision-label">Obsidian · Java</small>
+          </span>
+        </a>
+      </div>
+
+      <button class="search-trigger" id="search-trigger" type="button" aria-label="搜索全部内容">
+        <i data-lucide="search"></i>
+        <span>搜索题目、概念或 Java API</span>
+        <kbd>⌘ K</kbd>
+      </button>
+
+      <div class="topbar-actions">
+        <a class="icon-button" href="https://github.com/zhangshun2/doc-study-v1" target="_blank" rel="noreferrer" aria-label="打开 GitHub 仓库" title="GitHub 仓库">
+          <i data-lucide="github"></i>
+        </a>
+        <button class="icon-button" id="theme-toggle" type="button" aria-label="切换深色模式" title="切换主题">
+          <i data-lucide="moon"></i>
+        </button>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <aside class="sidebar" id="sidebar" aria-label="学习导航">
+        <div class="sidebar-head">
+          <div>
+            <span class="sidebar-kicker">知识导航</span>
+            <strong>从模型到题目</strong>
+          </div>
+          <button class="icon-button mobile-only" id="sidebar-close" type="button" aria-label="关闭导航">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <nav class="sidebar-nav" id="sidebar-nav" aria-label="主导航">
+          <div class="nav-skeleton" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </nav>
+        <div class="sidebar-foot">
+          <span id="build-label">正在读取内容清单</span>
+        </div>
+      </aside>
+
+      <button class="sidebar-scrim" id="sidebar-scrim" type="button" aria-label="关闭导航" tabindex="-1"></button>
+
+      <main class="main" id="main-content">
+        <div class="content-shell">
+          <article class="content" id="content" aria-live="polite">
+            <div class="page-loading">
+              <span class="spinner" aria-hidden="true"></span>
+              <p>正在建立学习视图...</p>
+            </div>
+          </article>
+          <aside class="toc-panel" id="toc-panel" aria-label="当前页目录">
+            <div class="toc-inner">
+              <span class="toc-label">本页目录</span>
+              <nav id="toc-nav" class="toc-nav"></nav>
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
+
+    <div class="search-overlay" id="search-overlay" hidden>
+      <button class="search-backdrop" id="search-backdrop" type="button" aria-label="关闭搜索"></button>
+      <section class="search-dialog" role="dialog" aria-modal="true" aria-labelledby="search-title">
+        <div class="search-head">
+          <i data-lucide="search"></i>
+          <input id="search-input" type="search" autocomplete="off" placeholder="搜索题目、章节、模型或代码关键词">
+          <button class="icon-button" id="search-close" type="button" aria-label="关闭搜索">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <div class="search-meta" id="search-meta">
+          <span id="search-title">全文检索</span>
+          <span>输入关键词后按 Enter 打开第一条结果</span>
+        </div>
+        <div class="search-results" id="search-results">
+          <div class="search-empty">
+            <i data-lucide="command"></i>
+            <p>可搜索题目名称、知识模型、Java API 和标题。</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <noscript>
+      <div class="noscript">本站需要启用 JavaScript 才能渲染 Markdown 内容。</div>
+    </noscript>
+
+    <script src="assets/vendor/marked.min.js?v=__ASSET_VERSION__"></script>
+    <script src="assets/vendor/purify.min.js?v=__ASSET_VERSION__"></script>
+    <script src="assets/vendor/highlight.min.js?v=__ASSET_VERSION__"></script>
+    <script src="assets/vendor/lucide.min.js?v=__ASSET_VERSION__"></script>
+    <script src="assets/app.js?v=__ASSET_VERSION__"></script>
+  </body>
+</html>
