@@ -427,6 +427,7 @@ def copy_site_files() -> None:
     if OUTPUT_DIR.exists():
         shutil.rmtree(OUTPUT_DIR)
     shutil.copytree(SITE_DIR / "assets", OUTPUT_DIR / "assets")
+    (OUTPUT_DIR / ".nojekyll").write_text("", encoding="utf-8")
     index = (SITE_DIR / "index.html").read_text(encoding="utf-8")
     (OUTPUT_DIR / "index.html").write_text(
         index.replace("__ASSET_VERSION__", asset_version()),
