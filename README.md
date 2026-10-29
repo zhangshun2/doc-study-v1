@@ -20,7 +20,33 @@
 
 克隆仓库后，可在 Obsidian 中分别打开以下 Vault 文件夹：`学习文库/`、`LeetCode-系统复习/`、`草稿箱/草稿箱/`。完成笔记或代码练习后，在仓库根目录提交并推送；另一台电脑先拉取最新提交再继续编辑。`.obsidian/workspace.json` 和 `.obsidian/workspace-mobile.json` 是设备窗口布局，不会同步；课程、草稿和可移植的 Vault 设置会随 Git 同步。
 
+新电脑首次使用（先配置好 Gitee 与 GitHub 的 SSH 访问）：
+
+```bash
+git clone -b master git@gitee.com:zhangdatou/doc-study-v1.git 学习文库
+cd 学习文库
+git remote add github git@github.com:zhangshun2/doc-study-v1.git
+bash scripts/install-hooks.sh
+```
+
+已有克隆的电脑无需重新克隆；在仓库根目录执行 `git pull --ff-only origin master`。开始编辑前先拉取，切换电脑前提交并推送。拉取被本地改动阻挡或分支已分叉时，先保存改动、处理差异，不覆盖本地笔记。
+
+保存本次复习和草稿的常用命令：
+
+```bash
+git status --short
+git add -- LeetCode-系统复习 草稿箱
+git commit -m "保存复习记录和手写练习"
+scripts/publish.sh
+```
+
+提交其他目录时，把相应路径加入 `git add`。发布脚本需要 Python 3，并要求已跟踪文件的改动都已提交；如需保留其他未提交改动，可在站点构建通过后使用 `git push origin master`，由已安装的钩子镜像到 GitHub，检查两边的推送结果。
+
+草稿箱可以保留重复实现、未完成代码和试错过程，也可以随时提交；不需要等到做完一题或整理成正式题解再同步。
+
 ## 融合边界
+
+以下规则适用于正式算法库及旧资料迁移。复习区按自身课程组织，草稿箱用于记录练习过程。
 
 - 当前 `学习文库/算法学习/AGENTS.md` 与 schema v3 是唯一规范。
 - 官方题意、约束、签名、示例和事实哈希只从 LeetCode 重新同步，旧题面不能覆盖。
