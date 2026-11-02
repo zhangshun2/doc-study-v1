@@ -414,6 +414,32 @@ NATURAL_QUESTION_SOURCES = [
     RECORD_TEMPLATE,
 ]
 
+LIVE_GENERATION_FIELDS = [
+    "我刚得到",
+    "它只能说明",
+    "它还不能说明",
+    "因此现在只允许问",
+    "隐藏最终方法名后，整条推导是否仍然成立",
+    "删掉当前证据后，下一问是否自然消失",
+    "如果证据没了，下一问还照常存在，说明它来自答案而不是现场",
+]
+
+LIVE_GENERATION_SOURCES = [
+    STANDARD,
+    TEMPLATE,
+    DEMO,
+    HUMAN_GUIDE,
+    REPO_SKILL,
+    INSTALLED_SKILL,
+    AGENTS,
+    WORKBENCH,
+    RECORD_TEMPLATE,
+    SCORE_GUIDE,
+    SITE_APP,
+]
+
+SINGLE_STEP_SOURCES = [STANDARD, SITE_APP]
+
 STAGE_GATE_MARKERS = [
     "| 1. 读题 |",
     "| 2. 扩写 |",
@@ -822,6 +848,14 @@ def run_validator_self_checks() -> list[str]:
         failures.append("complete first record was incorrectly rejected")
     if check_record_has_step(second_missing, "### 问题 3 -> 问题 4："):
         failures.append("incomplete second record was incorrectly accepted")
+    live_generation = "\n".join(LIVE_GENERATION_FIELDS)
+    if not markers_in_order(live_generation, LIVE_GENERATION_FIELDS):
+        failures.append("correct live-generation order was incorrectly rejected")
+    if markers_in_order(
+        "\n".join(reversed(LIVE_GENERATION_FIELDS)),
+        LIVE_GENERATION_FIELDS,
+    ):
+        failures.append("reversed live-generation order was incorrectly accepted")
     return failures
 
 
@@ -1220,6 +1254,56 @@ def check_natural_question_contract(errors: list[str]) -> None:
                     f"{display_path(path)}: natural-question contract is missing "
                     f"{field}"
                 )
+
+
+def check_live_generation_contract(errors: list[str]) -> None:
+    for path in LIVE_GENERATION_SOURCES:
+        text = read_text(path, errors)
+        if text is None:
+            continue
+        if not markers_in_order(text, LIVE_GENERATION_FIELDS):
+            errors.append(
+                f"{display_path(path)}: live-generation contract must keep four "
+                "handoff lines in order, then both reverse checks, then the failure "
+                "diagnosis"
+            )
+
+    for path in SINGLE_STEP_SOURCES:
+        text = read_text(path, errors)
+        if text is not None and "一次只跨一个认知台阶" not in text:
+            errors.append(
+                f"{display_path(path)}: live-generation contract must state that "
+                "each question crosses only one cognitive step"
+            )
+
+    site = read_text(SITE_APP, errors)
+    if site is None:
+        return
+    for phrase in [
+        "const LIVE_GENERATION_RULES = [",
+        "function renderLiveGenerationRules()",
+        "review-live-gates-four",
+        "现场生成与反写检查",
+        "当前证据、它只能证明什么、它还不能证明什么、下一个小问题是什么",
+        "${renderLiveGenerationRules()}",
+    ]:
+        if phrase not in site:
+            errors.append(
+                f"{display_path(SITE_APP)}: live-generation renderer is missing "
+                f"{phrase}"
+            )
+    if not markers_in_order(
+        site,
+        [
+            'class="review-chain-section review-reading-gates"',
+            'class="review-chain-section review-live-generation"',
+            'class="review-chain-section review-next-question"',
+        ],
+    ):
+        errors.append(
+            f"{display_path(SITE_APP)}: live-generation block must sit after the "
+            "reading gates and before the natural-next-question section"
+        )
 
 
 def check_stage_gates(errors: list[str]) -> None:
@@ -1633,6 +1717,7 @@ def main() -> int:
     check_beginner_start_contract(errors)
     check_legacy_language(errors)
     check_natural_question_contract(errors)
+    check_live_generation_contract(errors)
     check_stage_gates(errors)
     check_human_acceptance_standard(errors)
     check_human_causal_order(errors)

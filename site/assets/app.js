@@ -94,6 +94,10 @@ const HUMAN_READING_STEPS = [
       "只写“变化前 -> 触发事件 -> 变化后”和答案产生时刻；第一次变化禁止提前写结构或优化结论。",
       "能在另一个最小例子上重走，并能说明哪条新增证据让值、位置和身份分开。",
       "记录“我现在还不知道什么”和“下一个最小问题”，只跨一个认知台阶。",
+      "每次换问前写全四行：“我刚得到”“它只能说明”“它还不能说明”“因此现在只允许问”；四行必须指向同一份证据和同一个最早空缺。",
+      "当前一问只能用一条原句、一个最小例子、一次手算、一次预算或一项候选比较回答；回答并留下证据后，下一问才允许出现。",
+      "隐藏最终方法名后，检查整条推导是否仍然成立；如果遮住方法名就断掉，说明这一段还缺少现场依赖。",
+      "删掉当前证据后，检查下一问是否自然消失；如果证据没了，下一问还照常存在，说明它来自答案而不是现场。",
     ],
     frame: "我此刻卡在……；我先做……；做完以后新增的证据是……；题目对象是……；以……为例，我先……，接着……；当……发生时，……从……变成……；答案在……时产生。",
     reject: "没有新增证据就直接列对象；只报实现名词；例子只有输入输出；或在第一次变化里就宣布优化和结构。",
@@ -442,6 +446,29 @@ const READING_HARD_GATES = [
     index: "03",
     title: "没有来源不能进入下一步",
     text: "关键结论只能来自原句事实、手算推导、操作预算、候选假设或设计选择。来源混用时要拆开重写。",
+  },
+];
+
+const LIVE_GENERATION_RULES = [
+  {
+    index: "01",
+    title: "我刚得到",
+    text: "只写刚才由一条原句、一个最小例子、一次手算、一次预算或一项候选比较真正得到的证据。没有新增证据，就留在原处。",
+  },
+  {
+    index: "02",
+    title: "它只能说明",
+    text: "限定这份证据当前能证明的最小范围。不要把“数值不同”扩成“身份不同”，也不要把一个例子的结果扩成全部输入。",
+  },
+  {
+    index: "03",
+    title: "它还不能说明",
+    text: "指出它留下的最早空缺：对象、过程、变化、预算、操作需求或候选取舍中的哪一项仍未确定。",
+  },
+  {
+    index: "04",
+    title: "因此现在只允许问",
+    text: "下一问只能用当前空缺回答，并且小到能当场用一条原句、最小例子、手算、预算或候选比较处理；回答并留下证据后，才允许再问下一句。",
   },
 ];
 
@@ -1440,6 +1467,27 @@ function renderReviewCenter(query = null) {
         ${renderReadingHardGates()}
       </section>
 
+      <section class="review-chain-section review-live-generation" aria-label="现场生成与反写检查">
+        <div class="review-section-head">
+          <div>
+            <h2>现场生成与反写检查</h2>
+            <p>
+              每次换问前，把当前证据、它只能证明什么、它还不能证明什么、下一个小问题是什么写成连续四行。
+              当前一问回答完并留下证据，才允许出现下一问；一次只跨一个认知台阶。
+            </p>
+          </div>
+          <span class="review-chain-count">四行交接 · 两项反写检查</span>
+        </div>
+        ${renderLiveGenerationRules()}
+        <div class="review-chain-frame">
+          <span>写完后再反写一次</span>
+          <p>
+            1. 隐藏最终方法名后，整条推导是否仍然成立？2. 删掉当前证据后，下一问是否自然消失？
+            如果证据没了，下一问还照常存在，说明它来自答案而不是现场。已知答案时，先标“事后校验”。
+          </p>
+        </div>
+      </section>
+
       <section class="review-chain-section review-next-question" aria-label="自然下一问的生成方式">
         <div class="review-section-head">
           <div>
@@ -1766,6 +1814,22 @@ function renderReadingHardGates() {
             <strong>${escapeHtml(source)}</strong>
             <span>${escapeHtml(proves)}</span>
             <small>不能证明：${escapeHtml(cannot)}</small>
+          </div>
+        `,
+      ).join("")}
+    </div>
+  `;
+}
+
+function renderLiveGenerationRules() {
+  return `
+    <div class="review-live-gates review-live-gates-four">
+      ${LIVE_GENERATION_RULES.map(
+        (rule) => `
+          <div>
+            <span>${escapeHtml(rule.index)}</span>
+            <strong>${escapeHtml(rule.title)}</strong>
+            <p>${escapeHtml(rule.text)}</p>
           </div>
         `,
       ).join("")}
