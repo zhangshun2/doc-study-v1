@@ -1371,6 +1371,36 @@ button {
   height: 13px;
 }
 
+.review-chain-return {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 5px 9px;
+  margin-top: 7px;
+  padding: 9px 11px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 28%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent-soft) 35%, transparent);
+  color: var(--text-soft);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.review-chain-return strong {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  color: var(--accent-strong);
+  font-size: 10px;
+  font-weight: 760;
+}
+
+.review-chain-return svg {
+  width: 13px;
+  height: 13px;
+}
+
 .review-evidence-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
