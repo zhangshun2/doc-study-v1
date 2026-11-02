@@ -138,6 +138,58 @@ const HUMAN_READING_STEPS = [
   },
 ];
 
+const BEGINNER_QUESTION_CARD = [
+  {
+    index: "01",
+    stage: "刚读完题",
+    ask: "题目这么多字，到底让我交回什么？",
+    evidence: "输入、输出、示例、保证、禁止和未知能分开，且每条都有原题来源。",
+    blocked: "算法名、结构名、复杂度结论、题目没有保证的条件。",
+  },
+  {
+    index: "02",
+    stage: "能复述，但不会动手",
+    ask: "每个字都懂，可第一步具体做什么？",
+    evidence: "别人只看扩写就能按时间演完；每个条件能说出它防止的具体错误。",
+    blocked: "优化理由、最终方法名、没有来源的规则。",
+  },
+  {
+    index: "03",
+    stage: "会走例子，但看不出重点",
+    ask: "谁在什么时候变成了什么，答案又是哪一刻定下来的？",
+    evidence: "值、位置和身份分开；能说出变化前、触发事件、变化后和答案产生时刻。",
+    blocked: "代码容器、结构选择、优化结论。",
+  },
+  {
+    index: "04",
+    stage: "看见变化，但不知道是否值得优化",
+    ask: "照这个笨办法最坏要做多少遍，范围还容得下吗？",
+    evidence: "官方约束、自己的操作预算和待验证候选分开；核心动作重复量有估算。",
+    blocked: "从 n 的大小直接点名算法，或把候选池当成结论。",
+  },
+  {
+    index: "05",
+    stage: "知道可能慢，但不知道该留下什么",
+    ask: "刚才哪件事在重复做，以后要回来查什么，旧信息什么时候可以丢掉？",
+    evidence: "有最小重复例子；说清未来读取什么、何时失效、必须支持哪些操作。",
+    blocked: "具体容器、完整伪代码、尚未比较就宣布的最终方向。",
+  },
+  {
+    index: "06",
+    stage: "已经有几个模糊方向",
+    ask: "哪个办法真能做这些事，代价又够；另一个为什么不行？",
+    evidence: "完整因果方向句；真实候选都有取舍证据；不为了凑数制造假候选。",
+    blocked: "只有方法名、没有拒绝证据、直接写完整 Java。",
+  },
+  {
+    index: "07",
+    stage: "方向已经确认",
+    ask: "变量到底记什么，先做哪一步，反过来又为什么会错？",
+    evidence: "状态、转移、更新顺序、不变量、代码和反例都能回到题目对象与第二次变化。",
+    blocked: "新的算法方向、未经验证的模板顺序、用“显然”代替证明。",
+  },
+];
+
 const ALGORITHM_CHAIN_STEPS = [
   {
     index: "01",
@@ -1011,6 +1063,27 @@ function renderReviewCenter(query = null) {
         </div>
       </header>
 
+      <section class="review-chain-section review-beginner-card" aria-label="小白现场提问卡">
+        <div class="review-section-head">
+          <div>
+            <h2>小白现场提问卡</h2>
+            <p>
+              每一问都要从上一段还没闭合的证据里长出来。这里保留小白心里最自然的原话，再把它改成当场能用原句、例子或手算回答的问题。
+            </p>
+          </div>
+          <span class="review-chain-count">现场先看这一张</span>
+        </div>
+        ${renderBeginnerQuestionCard()}
+        <div class="review-chain-frame">
+          <span>不知道下一步时，只处理最早的空缺</span>
+          <p>
+            不先问“这题用什么算法” -> 找到第一个不能变成具体动作的题面句子 ->
+            把它变成“谁、何时、对谁、做什么” -> 用最小例子观察变化 -> 数清重复 ->
+            追问未来要记住什么、何时可以丢掉 -> 从操作需求比较候选 -> 最后才写状态和代码。
+          </p>
+        </div>
+      </section>
+
       <section class="review-chain-section review-next-question" aria-label="自然下一问的生成方式">
         <div class="review-section-head">
           <div>
@@ -1164,6 +1237,32 @@ function renderReviewCenter(query = null) {
   document.title = `推导链复习 · ${state.manifest.title}`;
   window.scrollTo({ top: 0, behavior: "auto" });
   refreshIcons();
+}
+
+function renderBeginnerQuestionCard() {
+  return `
+    <ol class="beginner-question-list">
+      ${BEGINNER_QUESTION_CARD.map(
+        (item) => `
+          <li>
+            <div class="beginner-question-stage">
+              <span>${escapeHtml(item.index)}</span>
+              <strong>${escapeHtml(item.stage)}</strong>
+              <p>“${escapeHtml(item.ask)}”</p>
+            </div>
+            <div class="beginner-question-evidence">
+              <strong><i data-lucide="circle-check"></i>过关证据</strong>
+              <p>${escapeHtml(item.evidence)}</p>
+            </div>
+            <div class="beginner-question-blocked">
+              <strong><i data-lucide="circle-slash-2"></i>此刻不能出现</strong>
+              <p>${escapeHtml(item.blocked)}</p>
+            </div>
+          </li>
+        `,
+      ).join("")}
+    </ol>
+  `;
 }
 
 function renderReviewChainStep(step) {

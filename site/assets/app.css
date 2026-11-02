@@ -1241,6 +1241,84 @@ button {
   list-style: none;
 }
 
+.beginner-question-list {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--border);
+  list-style: none;
+}
+
+.beginner-question-list > li {
+  display: grid;
+  grid-template-columns: minmax(190px, 0.9fr) minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: 20px;
+  padding: 19px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.beginner-question-stage {
+  min-width: 0;
+}
+
+.beginner-question-stage > span {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.beginner-question-stage > strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.beginner-question-stage > p {
+  margin: 7px 0 0;
+  color: var(--text);
+  font-family: var(--serif);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.beginner-question-evidence,
+.beginner-question-blocked {
+  min-width: 0;
+  padding-left: 20px;
+  border-left: 1px solid var(--border);
+}
+
+.beginner-question-evidence > strong,
+.beginner-question-blocked > strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 760;
+}
+
+.beginner-question-evidence > strong {
+  color: var(--accent-strong);
+}
+
+.beginner-question-blocked > strong {
+  color: var(--danger);
+}
+
+.beginner-question-evidence svg,
+.beginner-question-blocked svg {
+  width: 13px;
+  height: 13px;
+}
+
+.beginner-question-evidence p,
+.beginner-question-blocked p {
+  margin: 6px 0 0;
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
 .review-chain > li {
   display: grid;
   grid-template-columns: 44px minmax(0, 1fr);
@@ -3209,6 +3287,19 @@ pre:hover .copy-code,
   .review-chain > li {
     grid-template-columns: 36px minmax(0, 1fr);
     gap: 12px;
+  }
+
+  .beginner-question-list > li {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 13px;
+    padding: 17px 0;
+  }
+
+  .beginner-question-evidence,
+  .beginner-question-blocked {
+    padding: 12px 0 0;
+    border-top: 1px solid var(--border);
+    border-left: 0;
   }
 
   .review-chain-index {
