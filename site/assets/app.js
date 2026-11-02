@@ -5,6 +5,7 @@ const state = {
   currentPath: null,
   currentAnchor: null,
   flatDocs: [],
+  linkIndex: null,
   searchResults: [],
   activeSearchIndex: -1,
   lastOpened: readLastOpened(),
@@ -54,8 +55,9 @@ async function start() {
       throw new Error(`内容清单读取失败：HTTP ${response.status}`);
     }
     state.manifest = await response.json();
+    state.linkIndex = buildDocumentIndex(state.manifest.docs);
     state.flatDocs = flattenNavigation(state.manifest.nav).map((item) => item.path);
-    elements.revisionLabel.textContent = `${state.manifest.stats.problems} 道题 · Java`;
+    elements.revisionLabel.textContent = `${state.manifest.stats.problems} 道题 · ${state.manifest.stats.reviews} 篇复习`;
     elements.buildLabel.textContent = `版本 ${state.manifest.revision} · 自动发布`;
     renderSidebar();
     route();
@@ -138,10 +140,9 @@ function renderSidebar() {
 
 function renderNavSection(section, currentDoc) {
   const isActiveSection = currentDoc?.category === section.id;
-  const isProblemSection = section.id === "problems";
   const isOpen = isActiveSection || section.id === "start";
-  const body = isProblemSection
-    ? (section.topics || []).map((topic) => renderNavTopic(topic, currentDoc)).join("")
+  const body = section.topics
+    ? section.topics.map((topic) => renderNavTopic(topic, currentDoc, section.id)).join("")
     : `<ul class="nav-list">${(section.items || []).map((item) => renderNavItem(item)).join("")}</ul>`;
   const sectionIcon = navSectionIcon(section.id);
 
@@ -157,8 +158,9 @@ function renderNavSection(section, currentDoc) {
   `;
 }
 
-function renderNavTopic(topic, currentDoc) {
-  const isOpen = currentDoc?.category === "problems" && currentDoc.topic === topic.label;
+function renderNavTopic(topic, currentDoc, sectionId) {
+  const topicCategory = topic.category || sectionId;
+  const isOpen = currentDoc?.category === topicCategory && currentDoc.topic === topic.label;
   return `
     <section class="nav-topic ${isOpen ? "is-open" : ""}" data-topic="${escapeAttribute(topic.label)}">
       <button class="nav-topic-toggle" type="button" aria-expanded="${String(isOpen)}">
@@ -176,6 +178,8 @@ function renderNavTopic(topic, currentDoc) {
 function renderNavItem(item) {
   const number = item.category === "problems"
     ? (item.path.match(/(\d+)/)?.[1] || "")
+    : item.category === "review"
+      ? (item.path.split("/").pop()?.match(/^(\d+)/)?.[1] || "·")
     : item.category.slice(0, 1).toUpperCase();
   const shortTitle = item.category === "problems" ? cleanProblemTitle(item.title) : item.title;
   return `
@@ -205,6 +209,7 @@ function navSectionIcon(id) {
     comparisons: "columns-3",
     java: "coffee",
     resources: "library",
+    review: "repeat-2",
   }[id] || "folder";
 }
 
@@ -262,7 +267,7 @@ async function loadDocument(path, anchor = null) {
       throw new Error(`文档读取失败：HTTP ${response.status}`);
     }
     const markdown = stripFrontmatter(await response.text());
-    const prepared = transformWikiLinks(markdown);
+    const prepared = transformWikiLinks(markdown, path);
     const rendered = marked.parse(prepared);
     const safeHtml = DOMPurify.sanitize(rendered, {
       ADD_ATTR: ["data-doc", "target", "rel"],
@@ -281,12 +286,15 @@ async function loadDocument(path, anchor = null) {
 function renderDocumentShell(doc, safeHtml) {
   const meta = renderMeta(doc);
   const summary = doc.excerpt ? `<p class="page-summary">${escapeHtml(doc.excerpt)}</p>` : "";
+  const isReview = doc.category === "review";
+  const indexTarget = isReview ? "LeetCode-系统复习/00-总入口.md" : "README.md";
+  const indexLabel = isReview ? "复习总入口" : "总索引";
   return `
     <header class="page-head">
       <nav class="breadcrumbs" aria-label="面包屑">
         <a href="#/">学习首页</a>
         <i data-lucide="chevron-right"></i>
-        <a href="${docHref("README.md")}">总索引</a>
+        <a href="${docHref(indexTarget)}">${indexLabel}</a>
         <i data-lucide="chevron-right"></i>
         <span>${escapeHtml(doc.categoryLabel)}</span>
         ${doc.topic && doc.topic !== "总览" ? `<i data-lucide="chevron-right"></i><span>${escapeHtml(doc.topic)}</span>` : ""}
@@ -437,6 +445,14 @@ function renderHome() {
   const problemsNav = state.manifest.nav.find((section) => section.id === "problems");
   const topics = problemsNav?.topics || [];
   const startItems = state.manifest.nav.find((section) => section.id === "start")?.items || [];
+  const reviewItems = [
+    "LeetCode-系统复习/00-总入口.md",
+    "LeetCode-系统复习/01-复习计划/16周弹性计划.md",
+    "LeetCode-系统复习/05-单题流程/单题时间切片.md",
+    "LeetCode-系统复习/06-学习记录/单题复习记录模板.md",
+  ]
+    .map((path) => state.manifest.docs[path])
+    .filter(Boolean);
   const dueDocs = state.manifest.review.due.slice(0, 5).map((path) => state.manifest.docs[path]).filter(Boolean);
   const recentDocs = state.lastOpened
     .map((path) => state.manifest.docs[path])
@@ -449,8 +465,8 @@ function renderHome() {
       <p class="home-kicker">${escapeHtml(state.manifest.sourceLabel)}</p>
       <h1>把理解变成可回忆、可独立实现、可迁移的算法模型</h1>
       <p>
-        当前收录 ${stats.problems} 道题、${stats.core} 张核心模型卡、${stats.models} 个完整建模专题与
-        ${stats.java} 份 Java 速查。题目事实、权威代码、长推理和复习状态保持分层，不复制正文。
+        当前收录 ${stats.problems} 道题、${stats.core} 张核心模型卡、${stats.models} 个完整建模专题、
+        ${stats.java} 份 Java 速查与 ${stats.reviews} 篇系统复习资料。理解、实现和间隔复现共用同一套内容。
       </p>
       <div class="home-actions">
         <a class="primary-button" href="${docHref(primaryTarget.path)}">
@@ -464,6 +480,10 @@ function renderHome() {
         <a class="secondary-button" href="${docHref("03-资料/高效理解与回忆方法.md")}">
           <i data-lucide="brain"></i>
           高效回忆
+        </a>
+        <a class="secondary-button" href="${docHref("LeetCode-系统复习/00-总入口.md")}">
+          <i data-lucide="repeat-2"></i>
+          系统复习
         </a>
       </div>
     </section>
@@ -480,6 +500,34 @@ function renderHome() {
         ${renderStat("核心模型", stats.core, "张", "boxes", "负责快速理解和复述")}
         ${renderStat("完整建模", stats.models, "篇", "network", "保留试错、证明与迁移")}
         ${renderStat("Java 速查", stats.java, "页", "coffee", "集合、队列、比较器与工具")}
+        ${renderStat("系统复习", stats.reviews, "篇", "repeat-2", "计划、时间切片与复习记录")}
+      </div>
+    </section>
+
+    <section class="home-band home-columns">
+      <div>
+        <div class="band-head">
+          <div>
+            <h2>系统复习</h2>
+            <p>从稳定入口进入计划、单题流程和记录模板。</p>
+          </div>
+          <a href="${docHref("LeetCode-系统复习/00-总入口.md")}">查看全部</a>
+        </div>
+        <div class="link-list">
+          ${reviewItems.map((item, index) => renderHomeLink(item, index)).join("")}
+        </div>
+      </div>
+      <div>
+        <div class="band-head">
+          <div>
+            <h2>复习节奏</h2>
+            <p>日期只做提醒，错过间隔不重置计划。</p>
+          </div>
+        </div>
+        <div class="home-note">
+          <strong>本次 &rarr; 下一次可用时段 &rarr; 3 天 &rarr; 1 周 &rarr; 2 周 &rarr; 1 个月</strong>
+          每题只记录 A/B/C/D 状态、下一次复现、最近卡点和自己的过程模型。每次 25 至 45 分钟，到点停表，不补欠账。
+        </div>
       </div>
     </section>
 
@@ -615,7 +663,22 @@ function addCopyButtons(container) {
   });
 }
 
-function transformWikiLinks(markdown) {
+function buildDocumentIndex(docs) {
+  const paths = new Set(Object.keys(docs));
+  const byBasename = new Map();
+  for (const path of paths) {
+    const filename = path.split("/").pop();
+    const stem = filename.replace(/\.md$/i, "");
+    for (const key of new Set([filename, stem])) {
+      const matches = byBasename.get(key) || [];
+      matches.push(path);
+      byBasename.set(key, matches);
+    }
+  }
+  return { paths, byBasename };
+}
+
+function transformWikiLinks(markdown, currentPath) {
   const lines = markdown.split("\n");
   const output = [];
   let fence = null;
@@ -639,45 +702,78 @@ function transformWikiLinks(markdown) {
     const segments = line.split(/(`+[^`]*`+)/g);
     output.push(
       segments
-        .map((segment) => (segment.startsWith("`") ? segment : segment.replace(/\[\[([^\[\]]+)\]\]/g, wikiLinkReplacer)))
+        .map((segment) =>
+          segment.startsWith("`")
+            ? segment
+            : segment.replace(/\[\[([^\[\]]+)\]\]/g, (match, raw) => wikiLinkReplacer(match, raw, currentPath))
+        )
         .join("")
     );
   }
   return output.join("\n");
 }
 
-function wikiLinkReplacer(_match, raw) {
+function wikiLinkReplacer(_match, raw, currentPath) {
   const [rawTarget, rawLabel] = raw.split("|", 2);
   const [targetPart, anchor = ""] = rawTarget.split("#", 2);
-  const target = normalizeDocTarget(targetPart);
-  if (!isLikelyDocumentTarget(target)) {
-    return _match;
-  }
   const label = (rawLabel || rawTarget).trim();
-  if (/\.(json|txt|csv|sh|py|ps1)$/i.test(target)) {
-    return `<a class="wiki-link" href="content/${escapeAttribute(encodePath(target))}" data-doc="${escapeAttribute(target)}">${escapeHtml(label)}</a>`;
+  if (/^[a-z]+:/i.test(targetPart)) {
+    return `<a href="${escapeAttribute(targetPart)}" rel="noreferrer" target="_blank">${escapeHtml(label)}</a>`;
   }
-  const href = docHref(target, anchor);
-  return `<a class="wiki-link" href="${escapeAttribute(href)}" data-doc="${escapeAttribute(target)}">${escapeHtml(label)}</a>`;
+  const target = resolveDocumentPath(targetPart, currentPath);
+  if (target) {
+    const href = docHref(target, anchor);
+    return `<a class="wiki-link" href="${escapeAttribute(href)}" data-doc="${escapeAttribute(target)}">${escapeHtml(label)}</a>`;
+  }
+  const attachment = resolveRelativePath(currentPath, targetPart.trim().replaceAll("\\", "/"));
+  if (/\.(json|txt|csv|sh|py|ps1|base)$/i.test(attachment)) {
+    return `<a class="wiki-link" href="content/${escapeAttribute(encodePath(attachment))}">${escapeHtml(label)}</a>`;
+  }
+  return `<span class="wiki-link missing" title="未找到 ${escapeAttribute(targetPart)}">${escapeHtml(label)}</span>`;
 }
 
-function isLikelyDocumentTarget(target) {
+function resolveDocumentPath(target, currentPath) {
+  const index = state.linkIndex;
   if (!target) {
-    return false;
+    return currentPath;
   }
-  return (
-    target.includes("/") ||
-    /\.(md|json|txt|csv|sh|py|ps1)$/i.test(target) ||
-    ["README", "AGENTS", "problems.json", "00-首页"].includes(target)
-  );
+  if (!index) {
+    return null;
+  }
+
+  const cleaned = target.trim().replaceAll("\\", "/");
+  const candidates = [
+    resolveRelativePath(currentPath, cleaned),
+    cleaned.replace(/^\/+/, ""),
+  ];
+  for (const candidate of candidates) {
+    for (const variant of documentPathVariants(candidate)) {
+      if (index.paths.has(variant)) {
+        return variant;
+      }
+    }
+  }
+
+  const rootTarget = cleaned.replace(/^\.?\//, "");
+  const suffixKeys = documentPathVariants(rootTarget);
+  for (const suffix of suffixKeys) {
+    const matches = [...index.paths].filter((path) => path.endsWith(`/${suffix}`));
+    if (matches.length === 1) {
+      return matches[0];
+    }
+  }
+
+  const basename = rootTarget.split("/").pop();
+  const matches = index.byBasename.get(basename) || index.byBasename.get(basename.replace(/\.md$/i, "")) || [];
+  return matches.length === 1 ? matches[0] : null;
 }
 
-function normalizeDocTarget(target) {
-  let value = target.trim().replace(/^\.\//, "").replace(/^\/+/, "");
-  if (!value || /\.[a-z0-9]+$/i.test(value)) {
-    return value;
+function documentPathVariants(value) {
+  const normalized = value.replace(/^\.\//, "");
+  if (!normalized) {
+    return [];
   }
-  return `${value}.md`;
+  return /\.[a-z0-9]+$/i.test(normalized) ? [normalized] : [normalized, `${normalized}.md`];
 }
 
 function postprocessLinks(container, currentPath) {

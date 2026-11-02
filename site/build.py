@@ -18,7 +18,12 @@ from urllib.parse import quote
 ROOT = Path(__file__).resolve().parents[1]
 SITE_DIR = ROOT / "site"
 SOURCE_DIR = ROOT / "学习文库" / "算法学习"
+REVIEW_DIR = ROOT / "LeetCode-系统复习"
 OUTPUT_DIR = ROOT / "_site"
+SOURCE_ROOTS = [
+    (SOURCE_DIR, ""),
+    (REVIEW_DIR, "LeetCode-系统复习/"),
+]
 
 SKIP_DIRS = {".obsidian", "__pycache__"}
 SKIP_FILES = {".DS_Store"}
@@ -60,6 +65,7 @@ CATEGORY_LABELS = {
     "comparisons": "跨题对照",
     "java": "Java 速查",
     "resources": "方法与资料",
+    "review": "系统复习",
 }
 
 GROUP_ORDER = [
@@ -73,7 +79,29 @@ GROUP_ORDER = [
     "comparisons",
     "java",
     "resources",
+    "review",
 ]
+
+REVIEW_TOPIC_ORDER = [
+    "总入口",
+    "复习计划",
+    "单题流程",
+    "学习记录",
+    "基础公开课",
+    "标签公开课",
+    "Hot 100 题单",
+    "学习基准",
+]
+
+REVIEW_TOPIC_LABELS = {
+    "01-复习计划": "复习计划",
+    "02-基础公开课": "基础公开课",
+    "03-标签公开课": "标签公开课",
+    "04-Hot100题单": "Hot 100 题单",
+    "05-单题流程": "单题流程",
+    "06-学习记录": "学习记录",
+    "99-Skill": "学习基准",
+}
 
 
 def relative_files(base: Path) -> list[Path]:
@@ -177,6 +205,10 @@ def problem_number(path: str) -> int:
 def classify(relative: str) -> tuple[str, str]:
     parts = Path(relative).parts
     first = parts[0] if parts else ""
+    if first == "LeetCode-系统复习":
+        if len(parts) <= 2:
+            return "review", "总入口"
+        return "review", REVIEW_TOPIC_LABELS.get(parts[1], "其他")
     if first == "题目":
         topic = parts[1] if len(parts) > 1 else "未分类"
         return "problems", topic
@@ -257,6 +289,26 @@ def build_nav(docs: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
         [path for path, doc in docs.items() if doc["category"] == "resources"],
         key=lambda path: path,
     )
+    review_paths = [path for path, doc in docs.items() if doc["category"] == "review"]
+    review_topics: list[dict[str, Any]] = []
+    for topic in sorted(
+        {docs[path]["topic"] for path in review_paths},
+        key=lambda value: (
+            REVIEW_TOPIC_ORDER.index(value) if value in REVIEW_TOPIC_ORDER else len(REVIEW_TOPIC_ORDER),
+            value,
+        ),
+    ):
+        topic_paths = sorted(
+            [path for path in review_paths if docs[path]["topic"] == topic],
+            key=lambda path: (problem_number(path), path),
+        )
+        review_topics.append(
+            {
+                "label": topic,
+                "category": "review",
+                "items": items(topic_paths),
+            }
+        )
 
     return [
         {
@@ -266,6 +318,7 @@ def build_nav(docs: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
                 [
                     "README.md",
                     "00-首页.md",
+                    "LeetCode-系统复习/00-总入口.md",
                     "学习看板/README.md",
                     "01-地图/算法知识地图.md",
                     "03-资料/高效理解与回忆方法.md",
@@ -307,6 +360,11 @@ def build_nav(docs: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
             "label": "方法与资料",
             "items": items(resource_paths),
         },
+        {
+            "id": "review",
+            "label": "复习系统",
+            "topics": review_topics,
+        },
     ]
 
 
@@ -331,6 +389,7 @@ def build_manifest(docs: dict[str, dict[str, Any]]) -> dict[str, Any]:
         doc["category"] == "java" and Path(doc["path"]).name != "00-索引.md"
         for doc in docs.values()
     )
+    review_count = sum(doc["category"] == "review" for doc in docs.values())
     review_due = [
         doc["path"]
         for doc in problems
@@ -358,11 +417,11 @@ def build_manifest(docs: dict[str, dict[str, Any]]) -> dict[str, Any]:
         revision = "local"
 
     return {
-        "title": "算法学习库",
-        "subtitle": "从理解、复述到独立实现与迁移",
+        "title": "算法学习与复习库",
+        "subtitle": "从理解、复述到独立实现、间隔复现与迁移",
         "generatedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
         "revision": revision,
-        "sourceLabel": "学习文库/算法学习",
+        "sourceLabel": "学习文库 · 算法学习与系统复习",
         "homepage": "README.md",
         "stats": {
             "problems": problem_count,
@@ -371,6 +430,7 @@ def build_manifest(docs: dict[str, dict[str, Any]]) -> dict[str, Any]:
             "concepts": concept_count,
             "comparisons": comparison_count,
             "java": java_count,
+            "reviews": review_count,
             "documents": len(public_docs),
             "reviewDue": len(review_due),
             "independent": len(independent),
@@ -433,44 +493,46 @@ def copy_site_files() -> None:
         index.replace("__ASSET_VERSION__", asset_version()),
         encoding="utf-8",
     )
-    for relative in relative_files(SOURCE_DIR):
-        source = SOURCE_DIR / relative
-        target = OUTPUT_DIR / "content" / relative
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, target)
+    for source_root, prefix in SOURCE_ROOTS:
+        for relative in relative_files(source_root):
+            source = source_root / relative
+            target = OUTPUT_DIR / "content" / prefix / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
 
 
 def collect_docs() -> dict[str, dict[str, Any]]:
     docs: dict[str, dict[str, Any]] = {}
-    for relative_path in relative_files(SOURCE_DIR):
-        if relative_path.suffix.lower() != ".md":
-            continue
-        relative = relative_path.as_posix()
-        if relative.startswith(TEMPLATE_PREFIX):
-            continue
-        markdown = (SOURCE_DIR / relative_path).read_text(encoding="utf-8")
-        frontmatter, body = parse_frontmatter(markdown)
-        category, topic = classify(relative)
-        title = first_heading(body) or frontmatter.get("titleCn") or relative_path.stem
-        text = plain_text(body)
-        docs[relative] = {
-            "path": relative,
-            "title": str(title),
-            "category": category,
-            "categoryLabel": CATEGORY_LABELS.get(category, category),
-            "topic": topic,
-            "headings": headings(body),
-            "excerpt": excerpt(body),
-            "searchText": text[:12000],
-            "type": frontmatter.get("type"),
-            "mastery": frontmatter.get("mastery"),
-            "reviewStatus": frontmatter.get("reviewStatus"),
-            "nextReview": frontmatter.get("nextReview"),
-            "lastReviewed": frontmatter.get("lastReviewed"),
-            "topics": frontmatter.get("topics") or [],
-            "sourceUrl": frontmatter.get("sourceUrl"),
-            "isTemplate": relative.startswith(TEMPLATE_PREFIX),
-        }
+    for source_root, prefix in SOURCE_ROOTS:
+        for relative_path in relative_files(source_root):
+            if relative_path.suffix.lower() != ".md":
+                continue
+            relative = (Path(prefix) / relative_path).as_posix()
+            if relative.startswith(TEMPLATE_PREFIX):
+                continue
+            markdown = (source_root / relative_path).read_text(encoding="utf-8")
+            frontmatter, body = parse_frontmatter(markdown)
+            category, topic = classify(relative)
+            title = first_heading(body) or frontmatter.get("titleCn") or relative_path.stem
+            text = plain_text(body)
+            docs[relative] = {
+                "path": relative,
+                "title": str(title),
+                "category": category,
+                "categoryLabel": CATEGORY_LABELS.get(category, category),
+                "topic": topic,
+                "headings": headings(body),
+                "excerpt": excerpt(body),
+                "searchText": text[:12000],
+                "type": frontmatter.get("type"),
+                "mastery": frontmatter.get("mastery"),
+                "reviewStatus": frontmatter.get("reviewStatus"),
+                "nextReview": frontmatter.get("nextReview"),
+                "lastReviewed": frontmatter.get("lastReviewed"),
+                "topics": frontmatter.get("topics") or [],
+                "sourceUrl": frontmatter.get("sourceUrl"),
+                "isTemplate": relative.startswith(TEMPLATE_PREFIX),
+            }
     return docs
 
 
