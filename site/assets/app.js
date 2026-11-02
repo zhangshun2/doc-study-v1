@@ -63,7 +63,7 @@ const HUMAN_READING_STEPS = [
   },
   {
     index: "02",
-    title: "把题干扩写成完整生活过程",
+    title: "逐句扩写题干，合成可执行过程",
     question: "把压缩的题面展开成“谁拿着什么，从哪里开始，重复做什么，何时停止，最后交出什么”。",
     novice: "小白常觉得每个字都懂，却复述不出具体动作。这时不是再找一个标签，而是先抓会改变动作、限制和停止时机的句子，再把它们补成人在现实中会经历的过程。",
     must: [
@@ -1011,6 +1011,32 @@ function renderReviewCenter(query = null) {
         </div>
       </header>
 
+      <section class="review-chain-section review-next-question" aria-label="自然下一问的生成方式">
+        <div class="review-section-head">
+          <div>
+            <h2>不知道下一步时，不要先问“这题用什么算法”</h2>
+            <p>
+              先找当前最早的空缺。下一问必须由上一段已经得到的证据逼出来；回答它的应当是一条原句、一个更小的例子或一次手算，
+              而不是“我印象里这题该用某个结构”。
+            </p>
+          </div>
+          <span class="review-chain-count">五句断点</span>
+        </div>
+        <div class="review-chain-frame">
+          <span>真正卡住时，把空缺写完整</span>
+          <p>
+            我现在已经能确认：______；我现在还不能确定：______；这个空缺正在阻碍：______；
+            因此下一个最小问题是：______；哪一种具体输入、例子、约束或手算结果能回答它：______。
+          </p>
+        </div>
+        <ul class="review-chain-must">
+          <li>如果写不出“这个空缺正在阻碍什么”，当前通常还不是推导断点，而是还没有认真读题或手算。</li>
+          <li>下一问要小到能当场用原句、例子或一次演算回答，不能直接问“完整算法是什么”。</li>
+          <li>换问时至少还原“刚刚确认什么 -> 最早缺什么 -> 下一问只问什么”；第三句说不出来，就说明这一问跳过了证据。</li>
+          <li>回答以后先复述判断改变了什么，再问下一问；不要因为已经知道答案就跳过后面的证据。</li>
+        </ul>
+      </section>
+
       <section class="review-chain-section">
         <div class="review-section-head">
           <div>
@@ -1587,11 +1613,12 @@ function renderBankDetail(record) {
       <ol class="bank-stage-list" aria-label="人类读题阶段">
         ${[
           ["01", "原题事实"],
-          ["02", "扩写过程"],
-          ["03", "对象与变化"],
+          ["02", "人话扩写"],
+          ["03", "对象与第一次变化"],
           ["04", "范围与候选"],
           ["05", "第二次变化"],
           ["06", "确认方向"],
+          ["07", "推导链"],
         ]
           .map(
             ([index, label], position) => `
@@ -1621,15 +1648,16 @@ function renderBankDetail(record) {
             <div class="bank-section-heading">
               <span>02</span>
               <div>
-                <h2>把压缩题干扩写成人话</h2>
-                <p>还不要想算法。先回答谁拿着什么、按什么顺序做什么、遇到什么条件停止。</p>
+                <h2>先逐句扩写，再合成一个人能执行的过程</h2>
+                <p>还不要想对象清单或算法。先确认每个原句新增了谁、什么动作、什么顺序、什么限制，以及忽略它会犯什么具体错误。</p>
               </div>
             </div>
             <ol class="bank-question-list">
-              <li>题目世界里的对象有哪些？哪些值相同但身份不同？</li>
-              <li>最直接的人工过程从哪个对象开始，下一步看哪里？</li>
-              <li>哪个事件让状态或候选集合第一次发生变化？</li>
-              <li>答案在哪一类事件之后才成为确定结果？</li>
+              <li>这句话新增了哪个对象、动作、身份、顺序或停止条件？</li>
+              <li>如果忽略这句话，我会在过程里做错哪一个具体动作或交回什么错误结果？</li>
+              <li>哪一句改变了谁先处理、谁后处理，或者哪个对象不能提前丢掉？</li>
+              <li>把这些句子按时间合起来以后，一个普通人从哪里开始、反复做什么、何时停下、最后交出什么？</li>
+              <li>扩写里有没有题面没有保证的内容？它只能标成推测，不能拿去证明后面的方向。</li>
             </ol>
             <div class="bank-reading-links">
               <a href="${docHref("LeetCode-系统复习/05-单题流程/单题推导标准卡.md")}">
@@ -1645,13 +1673,20 @@ function renderBankDetail(record) {
             <div class="bank-section-heading">
               <span>03</span>
               <div>
-                <h2>官方示例</h2>
-                <p>示例用于检查你的手工过程，不替代边界和反例。</p>
+                <h2>清点对象，手走过程，第一次捕捉变化</h2>
+                <p>现在才从扩写进入具体例子。先分清对象身份，再走最慢但正确的过程，最后只记录发生了什么，不提前写结构或优化结论。</p>
               </div>
             </div>
+            <ol class="bank-question-list">
+              <li>题目世界里的对象有哪些？哪些值相同但位置或身份不同，不能合并？</li>
+              <li>在最小但完整的例子里，我第一个拿起谁，下一步看哪里，按什么顺序做？</li>
+              <li>哪个事件让哪个对象从什么状态变成什么状态？答案在哪一刻成为确定结果？</li>
+              <li>换一个同类小例子，我能不能不看答案重走同一条人工过程？</li>
+            </ol>
             ${
               record.officialExamples?.length
                 ? `<div class="bank-examples">
+                    <p class="bank-muted">用下面示例核对手工过程。示例只检查过程，不替代边界和反例。</p>
                     ${record.officialExamples
                       .map(
                         (example, index) => `
@@ -1713,22 +1748,37 @@ function renderBankDetail(record) {
             <div class="bank-section-heading">
               <span>05</span>
               <div>
-                <h2>第二次捕捉变化，再确认方向</h2>
-                <p>只有找到重复查询、候选失效、子问题复用或递归结构中的主要证据，才能进入下一步。</p>
+                <h2>带着预算第二次捕捉变化</h2>
+                <p>第一次变化只说明过程里发生了什么。现在带着操作预算重看，找出真正重复、会失效或可复用的工作，再写清未来需要哪些操作。</p>
               </div>
             </div>
             <ol class="bank-question-list">
               <li>哪份工作被反复做，保留什么历史才能不再重扫？</li>
               <li>哪批候选会在同一个事件后一起失效，为什么可以安全丢掉？</li>
               <li>同一个子问题会不会从多条路径重复到达，需要复用吗？</li>
-              <li>有真实替代方向时，它在当前题目的哪个条件下失效或代价过高？</li>
+            </ol>
+          </section>
+
+          <section class="bank-fact-section">
+            <div class="bank-section-heading">
+              <span>06</span>
+              <div>
+                <h2>比较候选，确认算法方向</h2>
+                <p>现在才允许具体方法名进入比较。候选必须能承担上一步的查询、插入、删除、取极值或恢复现场，并通过当前预算。</p>
+              </div>
+            </div>
+            <ol class="bank-question-list">
+              <li>这个候选消除了第二次变化里的哪份重复劳动或失效扫描？</li>
+              <li>它需要哪些操作，时间和额外空间在当前范围里是否允许？</li>
+              <li>有真实替代方向时，它在当前题目哪个条件下失效或代价过高？</li>
               <li>没有形成真实歧义时，我检查过的熟悉替代方向为什么不能承担当前操作？</li>
+              <li>我能不能不报方法名，先用完整因果句说清“为什么必须是这类操作”？</li>
             </ol>
             ${
               solution
                 ? `<div class="bank-solution-gate">
-                    <strong>方向确认以后再打开正式文档</strong>
-                    <p>这里的链接进入现有题解，不另存第二份答案。若还说不清“为什么需要这些操作”，先留在上面。</p>
+                    <strong>方向确认以后，再用正式文档校验</strong>
+                    <p>先自己写出方向确认句，再打开现有题解。若还说不清“为什么需要这些操作”，先留在第 5 段。</p>
                     <div class="bank-reading-links">
                       <a href="${docHref(solution.path, solution.reasoningAnchor)}"><i data-lucide="git-branch"></i>人的推导</a>
                       <a href="${docHref(solution.path, solution.answerAnchor)}"><i data-lucide="shield-check"></i>答案与不变量</a>
@@ -1739,19 +1789,35 @@ function renderBankDetail(record) {
             }
           </section>
 
-          <details class="bank-code-gate">
-            <summary>
-              <span>
-                <strong>我已经完成方向确认，展开签名与 Java 模板</strong>
-                <small>如果还说不清主方向、所需操作和适用边界，先不要展开。</small>
-              </span>
-              <i data-lucide="chevron-down"></i>
-            </summary>
-            <div class="bank-code-body">
-              <p>${escapeHtml(renderSignatureText(record.signature))}</p>
-              <pre><code class="language-java">${escapeHtml(record.javaTemplate || "当前快照没有 Java 模板。")}</code></pre>
+          <section class="bank-fact-section">
+            <div class="bank-section-heading">
+              <span>07</span>
+              <div>
+                <h2>方向确认后，才进入推导链</h2>
+                <p>从这里开始只讨论状态、更新顺序、不变量和代码。任何一项都必须能回到第 3 段的对象和第 5 段的变化。</p>
+              </div>
             </div>
-          </details>
+            <ol class="bank-question-list">
+              <li>每个状态在题目世界里代表什么，覆盖哪段对象，何时被读取和更新？</li>
+              <li>初始值、停止条件和答案时机分别对应现实过程中的哪一刻？</li>
+              <li>交换两个更新动作后，哪一个最小输入会产生错误结果？</li>
+              <li>不变量为什么能证明不会漏、不会多、不会误删？</li>
+              <li>每一段代码对应哪个对象、状态和动作，关闭资料后能否重建？</li>
+            </ol>
+            <details class="bank-code-gate">
+              <summary>
+                <span>
+                  <strong>我已经完成方向确认，展开签名与 Java 模板</strong>
+                  <small>如果还说不清主方向、所需操作和适用边界，先不要展开。</small>
+                </span>
+                <i data-lucide="chevron-down"></i>
+              </summary>
+              <div class="bank-code-body">
+                <p>${escapeHtml(renderSignatureText(record.signature))}</p>
+                <pre><code class="language-java">${escapeHtml(record.javaTemplate || "当前快照没有 Java 模板。")}</code></pre>
+              </div>
+            </details>
+          </section>
 
           <details class="bank-official-hints">
             <summary>

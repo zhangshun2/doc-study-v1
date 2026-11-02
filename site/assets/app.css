@@ -2105,7 +2105,7 @@ button {
 
 .bank-stage-list {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   margin: 0;
   padding: 0;
   border-bottom: 1px solid var(--border);
@@ -2132,10 +2132,9 @@ button {
 }
 
 .bank-stage-list span {
-  overflow: hidden;
   font-size: 10px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .bank-stage-list li.active {
@@ -3312,18 +3311,20 @@ pre:hover .copy-code,
   }
 
   .bank-stage-list {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .bank-stage-list li {
     border-bottom: 1px solid var(--border);
   }
 
-  .bank-stage-list li:nth-child(3n) {
+  .bank-stage-list li:nth-child(2n) {
     border-right: 0;
   }
 
-  .bank-stage-list li:nth-child(n + 4) {
+  .bank-stage-list li:last-child {
+    grid-column: 1 / -1;
+    border-right: 0;
     border-bottom: 0;
   }
 
