@@ -9,6 +9,11 @@ const state = {
   searchResults: [],
   activeSearchIndex: -1,
   lastOpened: readLastOpened(),
+  reviewActive: false,
+  reviewFilter: "due",
+  reviewQuery: "",
+  reviewPriority: "all",
+  reviewDifficulty: "all",
 };
 
 const elements = {
@@ -31,6 +36,105 @@ const elements = {
   revisionLabel: document.querySelector("#revision-label"),
   buildLabel: document.querySelector("#build-label"),
 };
+
+const REVIEW_CHAIN_STEPS = [
+  {
+    index: "01",
+    title: "对象与目标",
+    question: "输入里到底有哪些对象、关系和作用范围？题目最后要求返回哪一个结果？",
+    must: [
+      "逐个指出数组、节点、区间、图或状态分别代表什么。",
+      "说明哪些条件会限制后续动作，哪些只是输出格式。",
+      "把最终返回值说成一个具体对象，而不是“求出答案”。",
+    ],
+    frame: "我处理的对象是……；这些对象之间的关系是……；题目最终要我返回……；因为题目规定……，所以后续不能……。",
+    reject: "先说“双指针”“动态规划”或某个数据结构，却还说不清对象和目标。",
+  },
+  {
+    index: "02",
+    title: "最小人工过程",
+    question: "不用算法术语，人在一个最小例子上会按什么时间顺序一步步做事？",
+    must: [
+      "写出初始例子、初始状态和第一次判断。",
+      "每次只描述一个动作，并给出动作前后的具体值或对象。",
+      "指出哪一个时刻产生答案，或哪一个条件令过程停止。",
+    ],
+    frame: "从初始状态……开始；我先做……，状态从……变成……；接着……；当……时，得到结果……。",
+    reject: "直接从题目跳到结论，或用一个更大例子掩盖没有想清的第一步。",
+  },
+  {
+    index: "03",
+    title: "必须保存的信息",
+    question: "哪项信息会继续影响未来判断？为什么丢掉它就无法完成下一步？",
+    must: [
+      "逐项说明需要保存的值、候选、区间、计数或关系。",
+      "说明每项信息在未来的哪一个判断里被再次读取。",
+      "说明它何时失效或可以被删除，不能只说“放进哈希表/栈”。",
+    ],
+    frame: "我必须保存……，因为后面要在……时读取它来判断……；当……发生后，它可以被……。",
+    reject: "只报容器名，不说容器里保存的业务信息，也不说为什么需要它。",
+  },
+  {
+    index: "04",
+    title: "状态与更新",
+    question: "哪个事件改变哪项信息？读取、写入、删除和覆盖的先后顺序是什么？",
+    must: [
+      "把每个事件拆成读取旧状态、计算、写入新状态和产生结果。",
+      "在最小例子上逐轮列出关键变量，不只写“更新指针”。",
+      "解释顺序颠倒后会出现哪一个错误结果。",
+    ],
+    frame: "第……轮先读取……；据此计算……；然后写入……；如果调换……和……，就会……。",
+    reject: "无法预测下一轮状态，或只能通过运行代码来反推更新顺序。",
+  },
+  {
+    index: "05",
+    title: "不变量与安全性",
+    question: "凭什么证明当前选择不会漏解、重复或破坏已经处理的结果？",
+    must: [
+      "写出每一步都成立的不变量，包括它覆盖了哪些对象。",
+      "说明当前候选为什么能被安全保留、排除或结算。",
+      "指出证明依赖的题目条件，并检查该条件在边界时仍成立。",
+    ],
+    frame: "循环每一轮开始时，我都能确认……；因此……不会漏掉；当……时，候选……可以安全排除，因为……。",
+    reject: "用“这是标准做法”“贪心显然成立”或只复述复杂度来替代证明。",
+  },
+  {
+    index: "06",
+    title: "结构与代码映射",
+    question: "需要哪些操作，为什么这个结构支持它们？每一段 Java 对应哪一个状态动作？",
+    must: [
+      "列出实际需要的查询、插入、删除、取极值或遍历操作。",
+      "解释结构的选择理由和对应代价，不先写代码再猜理由。",
+      "把初始化、循环、更新、终止和返回逐项映射回自然语言过程。",
+    ],
+    frame: "自然语言里的……动作对应代码中的……；这个标识符表示……；这一行必须放在这里，因为……。",
+    reject: "函数能跑，但关键变量含义、更新位置或返回条件无法用自己的话解释。",
+  },
+  {
+    index: "07",
+    title: "反例与失效边界",
+    question: "改动哪一个条件会让当前模型失效？最小反例最先在哪一步暴露问题？",
+    must: [
+      "主动构造一个能挑战不变量的最小输入，并完整演算。",
+      "指出失效发生在读取、更新、排除候选还是结果产生的哪一步。",
+      "区分题目边界和模型失效边界：空输入、单元素、重复值、负数等都要对应具体影响。",
+    ],
+    frame: "把条件……改成……后，模型会在第……步失效；最小反例是……；原因是原来的……不再成立。",
+    reject: "只列一串边界名称，却说不清每个边界会改变哪项状态或哪条理由。",
+  },
+  {
+    index: "08",
+    title: "闭卷重建",
+    question: "关闭全部参考后，能否重新生成过程、伪代码、Java 和自测，并解释每一处关键选择？",
+    must: [
+      "先口述完整链，再写伪代码，最后写可提交 Java。",
+      "自己设计至少一个检查当前理解的输入并手算预期结果。",
+      "完成后再对照资料，只记录第一处真实缺口，不把浏览当作验收。",
+    ],
+    frame: "我在不参考资料的情况下完成了……；我自己的检查输入是……；我第一处卡住的是……；下一次从这里继续……。",
+    reject: "边看答案边抄写、运行通过但讲不出原因，或用“熟悉”“看懂了”代替独立证据。",
+  },
+];
 
 marked.setOptions({
   gfm: true,
@@ -77,6 +181,8 @@ function bindShellEvents() {
   elements.searchInput.addEventListener("input", handleSearchInput);
   elements.themeToggle.addEventListener("click", toggleTheme);
   elements.content.addEventListener("click", handleContentClick);
+  elements.content.addEventListener("input", handleReviewControls);
+  elements.content.addEventListener("change", handleReviewControls);
 }
 
 function route() {
@@ -85,6 +191,10 @@ function route() {
   closeSearch();
   if (target.home) {
     renderHome();
+    return;
+  }
+  if (target.review) {
+    renderReviewCenter(target.query);
     return;
   }
   loadDocument(target.path, target.anchor);
@@ -96,6 +206,9 @@ function parseRoute() {
     return { home: true };
   }
   const [encodedPath, query = ""] = raw.split("?");
+  if (encodedPath === "review") {
+    return { review: true, query: new URLSearchParams(query) };
+  }
   if (!encodedPath.startsWith("doc/")) {
     return { home: true };
   }
@@ -131,9 +244,19 @@ function flattenNavigation(nav) {
 
 function renderSidebar() {
   const currentDoc = state.manifest.docs[state.currentPath];
-  elements.sidebarNav.innerHTML = state.manifest.nav
-    .map((section) => renderNavSection(section, currentDoc))
-    .join("");
+  elements.sidebarNav.innerHTML = `
+    <a class="review-nav-link ${state.reviewActive ? "active" : ""}" href="#/review">
+      <span class="review-nav-icon"><i data-lucide="rotate-ccw"></i></span>
+      <span>
+        <strong>复习中心</strong>
+        <small>完整推导链 · 8 个确认点</small>
+      </span>
+      <i data-lucide="arrow-up-right"></i>
+    </a>
+    ${state.manifest.nav
+      .map((section) => renderNavSection(section, currentDoc))
+      .join("")}
+  `;
   refreshIcons();
   updateActiveNav();
 }
@@ -234,7 +357,13 @@ function handleSidebarClick(event) {
 }
 
 function updateActiveNav(path = state.currentPath) {
-  elements.sidebarNav.querySelectorAll(".nav-link.active").forEach((link) => link.classList.remove("active"));
+  elements.sidebarNav
+    .querySelectorAll(".nav-link.active, .review-nav-link.active")
+    .forEach((link) => link.classList.remove("active"));
+  if (state.reviewActive) {
+    elements.sidebarNav.querySelector(".review-nav-link")?.classList.add("active");
+    return;
+  }
   if (!path) {
     return;
   }
@@ -254,6 +383,7 @@ async function loadDocument(path, anchor = null) {
     renderNotFound(path);
     return;
   }
+  state.reviewActive = false;
   state.currentPath = path;
   state.currentAnchor = anchor;
   updateActiveNav(path);
@@ -289,6 +419,7 @@ function renderDocumentShell(doc, safeHtml) {
   const isReview = doc.category === "review";
   const indexTarget = isReview ? "LeetCode-系统复习/00-总入口.md" : "README.md";
   const indexLabel = isReview ? "复习总入口" : "总索引";
+  const reviewStrip = doc.type === "problem" ? renderProblemReviewStrip(doc) : "";
   return `
     <header class="page-head">
       <nav class="breadcrumbs" aria-label="面包屑">
@@ -302,8 +433,41 @@ function renderDocumentShell(doc, safeHtml) {
       <h1 class="page-title">${escapeHtml(doc.title)}</h1>
       ${summary}
       ${meta}
+      ${reviewStrip}
     </header>
     <div class="markdown-body">${safeHtml}</div>
+  `;
+}
+
+function renderProblemReviewStrip(doc) {
+  const status = doc.reviewStatus || "未安排";
+  const nextReview = doc.nextReview || "未排期";
+  const attempts = Number.isInteger(doc.independentAttempts) ? doc.independentAttempts : 0;
+  const errors = Array.isArray(doc.errorTags) ? doc.errorTags : [];
+  const reviewHref = `#/review?query=${encodeURIComponent(cleanProblemTitle(doc.title))}`;
+  return `
+    <section class="problem-review-strip" aria-label="本题闭卷复习入口">
+      <div class="problem-review-callout">
+        <span><i data-lucide="git-branch"></i>完整链检查</span>
+        <strong>先从代码解释倒推过程，再闭卷重建。</strong>
+        <small>复习状态和日期只用于安排回访，不代表已经掌握。</small>
+      </div>
+      <div class="problem-review-actions">
+        <a class="primary-button compact" href="${reviewHref}">
+          <i data-lucide="book-open-check"></i>闭卷重建本题
+        </a>
+        <a class="secondary-button compact" href="${docHref("学习看板/单题复习工作台.md")}">
+          <i data-lucide="list-checks"></i>记录断点
+        </a>
+      </div>
+      <div class="problem-review-facts" aria-label="本题复习属性">
+        <span><i class="review-status-dot review-status-${reviewStatusClass(status)}"></i>${escapeHtml(status)}</span>
+        <span>${escapeHtml(doc.mastery || "未学")}</span>
+        <span>${nextReview === "未排期" ? "未排期" : `下次 ${escapeHtml(nextReview)}`}</span>
+        <span>独立 ${attempts} 次</span>
+        <span class="problem-review-errors">${errors.length ? errors.map((tag) => escapeHtml(tag)).join("、") : "暂无错因"}</span>
+      </div>
+    </section>
   `;
 }
 
@@ -437,6 +601,7 @@ function renderPager(path) {
 }
 
 function renderHome() {
+  state.reviewActive = false;
   state.currentPath = null;
   state.currentAnchor = null;
   updateActiveNav(null);
@@ -455,31 +620,36 @@ function renderHome() {
     .map((path) => state.manifest.docs[path])
     .filter(Boolean);
   const dueDocs = state.manifest.review.due.slice(0, 5).map((path) => state.manifest.docs[path]).filter(Boolean);
+  const scheduledDocs = state.manifest.review.scheduled
+    .slice(0, 5)
+    .map((path) => state.manifest.docs[path])
+    .filter(Boolean);
+  const unarrangedDocs = state.manifest.review.unarranged
+    .slice(0, 5)
+    .map((path) => state.manifest.docs[path])
+    .filter(Boolean);
   const recentDocs = state.lastOpened
     .map((path) => state.manifest.docs[path])
     .filter((doc) => doc && doc.path !== "README.md")
     .slice(0, 5);
 
-  const primaryTarget =
-    dueDocs[0] ||
-    state.manifest.docs["学习看板/单题复习工作台.md"] ||
-    state.manifest.docs[state.manifest.homepage];
+  const nextReviewDoc = dueDocs[0] || scheduledDocs[0] || unarrangedDocs[0];
   elements.content.innerHTML = `
     <section class="home-intro">
       <p class="home-kicker">${escapeHtml(state.manifest.sourceLabel)}</p>
       <h1>把理解变成可回忆、可独立实现、可迁移的算法模型</h1>
       <p>
-        当前收录 ${stats.problems} 道题、${stats.core} 张核心模型卡、${stats.models} 个完整建模专题、
-        ${stats.java} 份 Java 速查与 ${stats.reviews} 篇复习资料。每道题在一个题库工作台里完成提取和回写。
+        从题目对象和最小人工过程开始，一直走到状态更新、不变量、代码映射和反例。
+        站点只负责保存事实、推导和记录；不能用一个方法名、一段代码或完成数量替代这条链。
       </p>
       <div class="home-actions">
-        <a class="primary-button" href="${docHref(primaryTarget.path)}">
-          <i data-lucide="${dueDocs.length ? "calendar-check" : "book-open"}"></i>
-          ${dueDocs.length ? `复习 ${cleanProblemTitle(primaryTarget.title)}` : "开始单题复习"}
+        <a class="primary-button" href="#/review">
+          <i data-lucide="git-branch"></i>
+          开始完整推导链
         </a>
-        <a class="secondary-button" href="${docHref("学习看板/README.md")}">
-          <i data-lucide="layout-dashboard"></i>
-          学习看板
+        <a class="secondary-button" href="${docHref("学习看板/单题复习工作台.md")}">
+          <i data-lucide="clipboard-check"></i>
+          单题工作台
         </a>
         <a class="secondary-button" href="${docHref("03-资料/高效理解与回忆方法.md")}">
           <i data-lucide="brain"></i>
@@ -504,7 +674,7 @@ function renderHome() {
         ${renderStat("核心模型", stats.core, "张", "boxes", "负责快速理解和复述")}
         ${renderStat("完整建模", stats.models, "篇", "network", "保留试错、证明与迁移")}
         ${renderStat("Java 速查", stats.java, "页", "coffee", "集合、队列、比较器与工具")}
-        ${renderStat("复习资料", stats.reviews, "篇", "repeat-2", "工作台、计划、时间切片与记录")}
+        ${renderStat("复习资料", stats.reviews, "篇", "repeat-2", "完整链、长时段、计划与记录")}
       </div>
     </section>
 
@@ -513,9 +683,9 @@ function renderHome() {
         <div class="band-head">
           <div>
             <h2>单题复习</h2>
-            <p>题库负责模型和代码，工作台负责提取与回写。</p>
+            <p>先重建完整因果链，再看代码和状态记录。</p>
           </div>
-          <a href="${docHref("学习看板/单题复习工作台.md")}">打开工作台</a>
+          <a href="#/review">打开推导链复习</a>
         </div>
         <div class="link-list">
           ${reviewItems.map((item, index) => renderHomeLink(item, index)).join("")}
@@ -524,13 +694,23 @@ function renderHome() {
       <div>
         <div class="band-head">
           <div>
-            <h2>复习节奏</h2>
-            <p>日期只做提醒，错过间隔不重置计划。</p>
+            <h2>怎样确认一段真的通过</h2>
+            <p>“熟悉”和“看懂了”都不是证据。</p>
           </div>
         </div>
-        <div class="home-note">
-          <strong>本次 &rarr; 下一次可用时段 &rarr; 3 天 &rarr; 1 周 &rarr; 2 周 &rarr; 1 个月</strong>
-          每题只记录 A/B/C/D 结果、下一次复现、最近卡点和自己的过程模型。到时间就停表，不补欠账。
+        <div class="review-evidence-list">
+          <div><span>复述</span><p>不看资料说出对象、状态、事件和结果，不夹带方法名。</p></div>
+          <div><span>演算</span><p>在最小例子上逐轮写出关键信息，预测下一轮变化。</p></div>
+          <div><span>反证</span><p>说明不变量为什么成立，并指出改动哪个条件会让它失效。</p></div>
+          <div><span>重建</span><p>关闭参考后独立写伪代码、Java 和自己设计的检查输入。</p></div>
+        </div>
+        <div class="home-note compact">
+          <strong>排期只是回访提醒</strong>
+          ${
+            nextReviewDoc
+              ? `当前可优先回看「${escapeHtml(cleanProblemTitle(nextReviewDoc.title))}」，也可以从任意一道题开始完整链。`
+              : "从题库任选一道题，先判断这条链是否真的能被重新生成。"
+          }
         </div>
       </div>
     </section>
@@ -550,29 +730,19 @@ function renderHome() {
       <div>
         <div class="band-head">
           <div>
-            <h2>${dueDocs.length ? "待复习" : "复习说明"}</h2>
-            <p>${dueDocs.length ? "来自标准题解属性区的待复习状态。" : "复习排期只由标准题解维护。"}</p>
+            <h2>最近打开</h2>
+            <p>仅保存在当前浏览器，用于接续上一次工作。</p>
           </div>
         </div>
         ${
-          dueDocs.length
-            ? `<div class="link-list">${dueDocs.map((item, index) => renderHomeLink(item, index)).join("")}</div>`
+          recentDocs.length
+            ? `<div class="link-list">${recentDocs.map((item, index) => renderHomeLink(item, index)).join("")}</div>`
             : `
               <div class="home-note">
-                <strong>当前没有到期题目</strong>
-                在标准题解的 frontmatter 中把 <code>reviewStatus</code> 设为“待复习”并填写 <code>nextReview</code>，下一次发布后会自动进入这里。
+                <strong>还没有最近记录</strong>
+                打开一道标准题解或核心模型后，这里会显示当前浏览器里的访问顺序。
               </div>
             `
-        }
-        ${
-          recentDocs.length
-            ? `
-              <div class="band-head" style="margin-top: 26px;">
-                <div><h2>最近打开</h2><p>仅保存在当前浏览器。</p></div>
-              </div>
-              <div class="link-list">${recentDocs.map((item, index) => renderHomeLink(item, index)).join("")}</div>
-            `
-            : ""
         }
       </div>
     </section>
@@ -625,6 +795,302 @@ function renderHomeLink(item, index) {
       <i data-lucide="arrow-right"></i>
     </a>
   `;
+}
+
+function renderReviewCenter(query = null) {
+  state.reviewActive = true;
+  state.currentPath = null;
+  state.currentAnchor = null;
+  elements.tocPanel.hidden = true;
+  if (query?.get("status")) {
+    state.reviewFilter = normalizeReviewFilter(query.get("status"));
+  } else if (query?.get("query")) {
+    state.reviewFilter = "all";
+  } else if (query?.get("pick") === "1") {
+    state.reviewFilter = "all";
+  }
+  if (query?.get("query")) {
+    state.reviewQuery = query.get("query");
+  }
+  updateActiveNav(null);
+
+  const review = state.manifest.review;
+  const pickerOpen = query?.get("pick") === "1";
+  const suggestedPath =
+    review.due[0] ||
+    review.upcoming[0] ||
+    review.unarranged[0] ||
+    review.reviewed[0];
+  const suggested = suggestedPath ? state.manifest.docs[suggestedPath] : null;
+
+  elements.content.innerHTML = `
+    <section class="review-center">
+      <header class="review-hero">
+        <p class="review-eyebrow"><i data-lucide="git-branch"></i>推导链复习</p>
+        <h1>把一条因果链重新生成，才算这一轮复习</h1>
+        <p>
+          不是先看“今天几道题”，也不是用完成数确认自己学会了。每次只选一道题，从对象和目标开始，
+          把最小例子、状态更新、不变量、代码映射和失效边界逐段说清。只要一段依赖“显然”
+          “标准做法”或“直接套模板”，这一轮就停在那个最早缺口。
+        </p>
+        <div class="review-hero-actions">
+          ${
+            suggested
+              ? `<a class="primary-button" href="${docHref(suggested.path)}">
+                  <i data-lucide="book-open-check"></i>
+                  从「${escapeHtml(cleanProblemTitle(suggested.title))}」重建
+                </a>`
+              : ""
+          }
+          <a class="secondary-button" href="#/review?pick=1">
+            <i data-lucide="list-filter"></i>自己选择题目
+          </a>
+          <a class="secondary-button" href="${docHref("学习看板/单题复习工作台.md")}">
+            <i data-lucide="list-checks"></i>记录本轮断点
+          </a>
+          <a class="secondary-button" href="${docHref("03-资料/高效理解与回忆方法.md")}">
+            <i data-lucide="brain"></i>理解与回忆方法
+          </a>
+        </div>
+      </header>
+
+      <section class="review-chain-section">
+        <div class="review-section-head">
+          <div>
+            <h2>本次唯一主链：逐段生成，不逐段打勾</h2>
+            <p>
+              下面不是待办清单。每一段只有一个作用：要求你产出下一段所依赖的关系、数据和理由。
+              链条没有闭合时，可以继续推导；只有同一处反复没有新证据时才保存断点。
+            </p>
+          </div>
+          <span class="review-chain-count">8 个确认点</span>
+        </div>
+        <ol class="review-chain">
+          ${REVIEW_CHAIN_STEPS.map(renderReviewChainStep).join("")}
+        </ol>
+      </section>
+
+      <section class="review-evidence" aria-label="怎样确认这一段真的通过">
+        <div class="review-section-head">
+          <div>
+            <h2>一段“通过”需要四种证据</h2>
+            <p>能看懂参考答案，只能说明你能沿着别人的路径前进，不能证明你能自己生成这条路径。</p>
+          </div>
+        </div>
+        <div class="review-evidence-grid">
+          <div><span>01</span><strong>能复述</strong><p>不用方法名，按对象、事件和结果说清前后关系。</p></div>
+          <div><span>02</span><strong>能演算</strong><p>在最小例子上预测下一轮状态，实际演算与预测一致。</p></div>
+          <div><span>03</span><strong>能反证</strong><p>知道不变量依赖什么条件，改动它后能指出第一个失效点。</p></div>
+          <div><span>04</span><strong>能重建</strong><p>不看答案重写伪代码、Java 和你自己的检查输入。</p></div>
+        </div>
+      </section>
+
+      <section class="review-rules" aria-label="复习停止与推进规则">
+        <div>
+          <span><i data-lucide="unlink"></i>断点优先</span>
+          <h3>卡住时只补最早断点</h3>
+          <p>如果第 4 步说不清，不要跳到代码抄一遍。记录“哪一项状态在哪个事件后出错”，下一段从这里继续。</p>
+        </div>
+        <div>
+          <span><i data-lucide="hourglass"></i>长时段允许</span>
+          <h3>不把 20 分钟当成学习目标</h3>
+          <p>状态允许且链条仍在产生新证据时，可以连续推进整条链。保存点只防止中断后丢失上下文，不是新的打卡指标。</p>
+        </div>
+        <div>
+          <span><i data-lucide="badge-check"></i>证据验收</span>
+          <h3>“看懂了”不是通过条件</h3>
+          <p>通过条件只有：关系能复述、例子能演算、理由能反证、代码能独立重建。做不到时保留断点，不伪造完成。</p>
+        </div>
+      </section>
+
+      <details class="review-picker" ${pickerOpen ? "open" : ""}>
+        <summary>
+          <span>
+            <strong>选题辅助</strong>
+            <small>日期、阶段和次数只帮助决定从哪里开始，不评价这一轮学得怎样。</small>
+          </span>
+          <i data-lucide="chevron-down"></i>
+        </summary>
+        <section class="review-picker-body">
+          <div class="review-controls">
+            <label class="review-search-control">
+              <i data-lucide="search"></i>
+              <input id="review-query" type="search" value="${escapeAttribute(state.reviewQuery)}" placeholder="题名、主题或错因">
+            </label>
+            <label>
+              <span>回访范围</span>
+              <select id="review-status-filter">
+                ${renderReviewOption("all", "全部题目", state.reviewFilter)}
+                ${renderReviewOption("due", "今日提醒", state.reviewFilter)}
+                ${renderReviewOption("scheduled", "全部已排期", state.reviewFilter)}
+                ${renderReviewOption("upcoming", "未来排期", state.reviewFilter)}
+                ${renderReviewOption("unarranged", "尚未排期", state.reviewFilter)}
+                ${renderReviewOption("reviewed", "已复习", state.reviewFilter)}
+              </select>
+            </label>
+            <label>
+              <span>优先级</span>
+              <select id="review-priority-filter">
+                ${renderReviewOption("all", "全部", state.reviewPriority)}
+                ${renderReviewOption("P0", "P0", state.reviewPriority)}
+                ${renderReviewOption("P1", "P1", state.reviewPriority)}
+                ${renderReviewOption("P2", "P2", state.reviewPriority)}
+              </select>
+            </label>
+            <label>
+              <span>难度</span>
+              <select id="review-difficulty-filter">
+                ${renderReviewOption("all", "全部", state.reviewDifficulty)}
+                ${renderReviewOption("Easy", "简单", state.reviewDifficulty)}
+                ${renderReviewOption("Medium", "中等", state.reviewDifficulty)}
+                ${renderReviewOption("Hard", "困难", state.reviewDifficulty)}
+              </select>
+            </label>
+          </div>
+          <div id="review-queue" class="review-queue" aria-live="polite">
+            ${renderReviewQueue()}
+          </div>
+        </section>
+      </details>
+    </section>
+  `;
+
+  document.title = `推导链复习 · ${state.manifest.title}`;
+  window.scrollTo({ top: 0, behavior: "auto" });
+  refreshIcons();
+}
+
+function renderReviewChainStep(step) {
+  return `
+    <li>
+      <span class="review-chain-index">${escapeHtml(step.index)}</span>
+      <div class="review-chain-body">
+        <h3>${escapeHtml(step.title)}</h3>
+        <p>${escapeHtml(step.question)}</p>
+        <ul class="review-chain-must">
+          ${step.must.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
+        </ul>
+        <div class="review-chain-frame">
+          <span>这一段至少能完整说出</span>
+          <p>${escapeHtml(step.frame)}</p>
+        </div>
+        <div class="review-chain-reject">
+          <strong><i data-lucide="circle-x"></i>没有通过</strong>
+          <span>${escapeHtml(step.reject)}</span>
+        </div>
+      </div>
+    </li>
+  `;
+}
+
+function renderReviewOption(value, label, selected) {
+  return `<option value="${escapeAttribute(value)}" ${value === selected ? "selected" : ""}>${escapeHtml(label)}</option>`;
+}
+
+function normalizeReviewFilter(value) {
+  return ["all", "due", "scheduled", "upcoming", "unarranged", "reviewed"].includes(value) ? value : "due";
+}
+
+function reviewStatusClass(status) {
+  return {
+    未安排: "unarranged",
+    待复习: "scheduled",
+    已复习: "reviewed",
+  }[status] || "unarranged";
+}
+
+function renderReviewQueue() {
+  const docs = filteredReviewDocs();
+  if (!docs.length) {
+    return `
+      <div class="review-empty">
+        <i data-lucide="list-filter"></i>
+        <strong>当前筛选下没有题目</strong>
+        <p>这不是前面的进度欠账。换一个队列，或直接打开单题复习工作台开始。</p>
+      </div>
+    `;
+  }
+  return docs
+    .map((doc) => {
+      const status = doc.reviewStatus || "未安排";
+      const attempts = Number.isInteger(doc.independentAttempts) ? doc.independentAttempts : 0;
+      const errors = Array.isArray(doc.errorTags) && doc.errorTags.length ? doc.errorTags.join("、") : "暂无错因";
+      return `
+        <a class="review-queue-row" href="${docHref(doc.path)}">
+          <span class="review-priority review-priority-${escapeAttribute(doc.priority || "P2")}">${escapeHtml(doc.priority || "P?")}</span>
+          <span class="review-queue-main">
+            <strong>${escapeHtml(cleanProblemTitle(doc.title))}</strong>
+            <small>${escapeHtml(doc.topic || "未分类")} · ${escapeHtml(difficultyLabel(doc.difficulty))} · ${escapeHtml(doc.mastery || "未学")}</small>
+          </span>
+          <span class="review-queue-status">
+            <span><i class="review-status-dot review-status-${reviewStatusClass(status)}"></i>${escapeHtml(status)}</span>
+            <small>${escapeHtml(doc.nextReview || "未排期")}</small>
+          </span>
+          <span class="review-queue-evidence">
+            <span>独立 ${attempts} 次</span>
+            <small>${escapeHtml(errors)}</small>
+          </span>
+          <i data-lucide="arrow-up-right"></i>
+        </a>
+      `;
+    })
+    .join("");
+}
+
+function filteredReviewDocs() {
+  const review = state.manifest.review;
+  const paths = review[state.reviewFilter] || [];
+  const query = normalizeText(state.reviewQuery);
+  return paths
+    .map((path) => state.manifest.docs[path])
+    .filter(Boolean)
+    .filter((doc) => state.reviewPriority === "all" || doc.priority === state.reviewPriority)
+    .filter((doc) => state.reviewDifficulty === "all" || doc.difficulty === state.reviewDifficulty)
+    .filter((doc) => {
+      if (!query) {
+        return true;
+      }
+      return normalizeText(
+        [
+          doc.title,
+          doc.topic,
+          doc.primaryPattern,
+          doc.mastery,
+          ...(doc.errorTags || []),
+        ].join(" ")
+      ).includes(query);
+    });
+}
+
+function difficultyLabel(value) {
+  return {
+    Easy: "简单",
+    Medium: "中等",
+    Hard: "困难",
+  }[value] || value || "难度未知";
+}
+
+function handleReviewControls(event) {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement)) {
+    return;
+  }
+  if (target.id === "review-query") {
+    state.reviewQuery = target.value;
+  } else if (target.id === "review-status-filter") {
+    state.reviewFilter = normalizeReviewFilter(target.value);
+  } else if (target.id === "review-priority-filter") {
+    state.reviewPriority = target.value;
+  } else if (target.id === "review-difficulty-filter") {
+    state.reviewDifficulty = target.value;
+  } else {
+    return;
+  }
+  const queue = document.querySelector("#review-queue");
+  if (queue) {
+    queue.innerHTML = renderReviewQueue();
+    refreshIcons();
+  }
 }
 
 function handleContentClick(event) {

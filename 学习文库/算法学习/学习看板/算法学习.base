@@ -39,7 +39,7 @@ properties:
 
 views:
   - type: table
-    name: 今日复习
+    name: 到期回访（低权重）
     filters:
       and:
         - 'type == "problem"'

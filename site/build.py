@@ -393,13 +393,57 @@ def build_manifest(docs: dict[str, dict[str, Any]]) -> dict[str, Any]:
     review_count = sum(doc["category"] == "review" for doc in docs.values())
     review_count += int("学习看板/单题复习工作台.md" in docs)
     today = dt.date.today().isoformat()
+    priority_order = {"P0": 0, "P1": 1, "P2": 2}
+
+    def review_order(doc: dict[str, Any]) -> tuple[Any, ...]:
+        next_review = doc.get("nextReview")
+        return (
+            priority_order.get(str(doc.get("priority")), 9),
+            next_review if isinstance(next_review, str) else "9999-12-31",
+            problem_number(doc["path"]),
+            doc["title"],
+        )
+
+    scheduled = sorted(
+        [
+            doc["path"]
+            for doc in problems
+            if doc.get("reviewStatus") == "待复习"
+        ],
+        key=lambda path: review_order(docs[path]),
+    )
     review_due = [
-        doc["path"]
-        for doc in problems
-        if doc.get("reviewStatus") == "待复习"
-        and isinstance(doc.get("nextReview"), str)
-        and doc["nextReview"] <= today
+        path
+        for path in scheduled
+        if isinstance(docs[path].get("nextReview"), str)
+        and docs[path]["nextReview"] <= today
     ]
+    review_upcoming = [
+        path
+        for path in scheduled
+        if isinstance(docs[path].get("nextReview"), str)
+        and docs[path]["nextReview"] > today
+    ]
+    review_unarranged = sorted(
+        [
+            doc["path"]
+            for doc in problems
+            if doc.get("reviewStatus") == "未安排"
+        ],
+        key=lambda path: review_order(docs[path]),
+    )
+    review_reviewed = sorted(
+        [
+            doc["path"]
+            for doc in problems
+            if doc.get("reviewStatus") == "已复习"
+        ],
+        key=lambda path: review_order(docs[path]),
+    )
+    review_all = sorted(
+        [doc["path"] for doc in problems],
+        key=lambda path: review_order(docs[path]),
+    )
     independent = [
         doc["path"]
         for doc in problems
@@ -409,6 +453,19 @@ def build_manifest(docs: dict[str, dict[str, Any]]) -> dict[str, Any]:
         doc["path"]
         for doc in problems
         if doc.get("mastery") == "可迁移"
+    ]
+    error_counts: dict[str, list[str]] = {}
+    for doc in problems:
+        for tag in doc.get("errorTags") or []:
+            label = str(tag).strip()
+            if label:
+                error_counts.setdefault(label, []).append(doc["path"])
+    review_errors = [
+        {"tag": tag, "count": len(paths), "paths": sorted(paths)}
+        for tag, paths in sorted(
+            error_counts.items(),
+            key=lambda item: (-len(item[1]), item[0]),
+        )
     ]
 
     try:
@@ -438,13 +495,22 @@ def build_manifest(docs: dict[str, dict[str, Any]]) -> dict[str, Any]:
             "reviews": review_count,
             "documents": len(public_docs),
             "reviewDue": len(review_due),
+            "reviewScheduled": len(scheduled),
+            "reviewUnarranged": len(review_unarranged),
+            "reviewReviewed": len(review_reviewed),
             "independent": len(independent),
             "transferable": len(transferable),
         },
         "review": {
+            "all": review_all,
             "due": review_due,
+            "scheduled": scheduled,
+            "upcoming": review_upcoming,
+            "unarranged": review_unarranged,
+            "reviewed": review_reviewed,
             "independent": independent,
             "transferable": transferable,
+            "errors": review_errors,
         },
         "nav": build_nav(docs),
         "docs": public_docs,
@@ -536,6 +602,12 @@ def collect_docs() -> dict[str, dict[str, Any]]:
                 "lastReviewed": frontmatter.get("lastReviewed"),
                 "topics": frontmatter.get("topics") or [],
                 "sourceUrl": frontmatter.get("sourceUrl"),
+                "leetcodeId": frontmatter.get("leetcodeId"),
+                "difficulty": frontmatter.get("difficulty"),
+                "primaryPattern": frontmatter.get("primaryPattern"),
+                "priority": frontmatter.get("priority"),
+                "errorTags": frontmatter.get("errorTags") or [],
+                "independentAttempts": frontmatter.get("independentAttempts"),
                 "isTemplate": relative.startswith(TEMPLATE_PREFIX),
             }
     return docs
