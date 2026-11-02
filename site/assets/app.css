@@ -1250,7 +1250,7 @@ button {
 
 .beginner-question-list > li {
   display: grid;
-  grid-template-columns: minmax(190px, 0.9fr) minmax(0, 1.15fr) minmax(0, 0.85fr);
+  grid-template-columns: minmax(190px, 0.8fr) minmax(0, 0.95fr) minmax(0, 1.25fr);
   gap: 20px;
   padding: 19px 0;
   border-bottom: 1px solid var(--border);
@@ -1281,14 +1281,16 @@ button {
   line-height: 1.65;
 }
 
-.beginner-question-evidence,
-.beginner-question-blocked {
+.beginner-question-gap,
+.beginner-question-contract {
   min-width: 0;
   padding-left: 20px;
   border-left: 1px solid var(--border);
 }
 
+.beginner-question-gap > strong,
 .beginner-question-evidence > strong,
+.beginner-question-unlock > strong,
 .beginner-question-blocked > strong {
   display: inline-flex;
   align-items: center;
@@ -1297,26 +1299,140 @@ button {
   font-weight: 760;
 }
 
+.beginner-question-gap > strong {
+  color: var(--accent);
+}
+
 .beginner-question-evidence > strong {
   color: var(--accent-strong);
+}
+
+.beginner-question-unlock > strong {
+  color: var(--text);
 }
 
 .beginner-question-blocked > strong {
   color: var(--danger);
 }
 
+.beginner-question-gap svg,
 .beginner-question-evidence svg,
+.beginner-question-unlock svg,
 .beginner-question-blocked svg {
   width: 13px;
   height: 13px;
 }
 
+.beginner-question-gap p,
 .beginner-question-evidence p,
+.beginner-question-unlock p,
 .beginner-question-blocked p {
   margin: 6px 0 0;
   color: var(--text-soft);
   font-size: 12px;
   line-height: 1.7;
+}
+
+.beginner-question-contract {
+  display: grid;
+  gap: 13px;
+}
+
+.beginner-question-contract > div {
+  min-width: 0;
+}
+
+.beginner-question-contract > div + div {
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+}
+
+.review-live-gates {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.review-live-gates > div {
+  min-width: 0;
+  padding: 18px 20px;
+}
+
+.review-live-gates > div:first-child {
+  padding-left: 0;
+}
+
+.review-live-gates > div + div {
+  border-left: 1px solid var(--border);
+}
+
+.review-live-gates span {
+  display: block;
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 760;
+}
+
+.review-live-gates strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 13px;
+}
+
+.review-live-gates p {
+  margin: 7px 0 0;
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.75;
+}
+
+.review-source-rules {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+}
+
+.review-source-rules-head,
+.review-source-rule {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.55fr) minmax(0, 1fr) minmax(150px, 0.85fr);
+  gap: 16px;
+  padding: 11px 14px;
+}
+
+.review-source-rules-head {
+  background: var(--surface-muted, rgba(127, 127, 127, 0.07));
+}
+
+.review-source-rules-head strong {
+  grid-column: 1 / 3;
+  font-size: 12px;
+}
+
+.review-source-rules-head span {
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
+.review-source-rule + .review-source-rule {
+  border-top: 1px solid var(--border);
+}
+
+.review-source-rule strong {
+  color: var(--accent-strong);
+  font-size: 11px;
+}
+
+.review-source-rule span,
+.review-source-rule small {
+  color: var(--text-soft);
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.review-source-rule small {
+  color: var(--danger);
 }
 
 .review-chain > li {
@@ -3295,11 +3411,41 @@ pre:hover .copy-code,
     padding: 17px 0;
   }
 
-  .beginner-question-evidence,
-  .beginner-question-blocked {
+  .beginner-question-gap,
+  .beginner-question-contract {
     padding: 12px 0 0;
     border-top: 1px solid var(--border);
     border-left: 0;
+  }
+
+  .beginner-question-contract > div + div {
+    padding-top: 0;
+    border-top: 0;
+    margin-top: 13px;
+  }
+
+  .review-live-gates {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .review-live-gates > div,
+  .review-live-gates > div:first-child {
+    padding: 16px 0;
+  }
+
+  .review-live-gates > div + div {
+    border-top: 1px solid var(--border);
+    border-left: 0;
+  }
+
+  .review-source-rules-head,
+  .review-source-rule {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+  }
+
+  .review-source-rules-head strong {
+    grid-column: auto;
   }
 
   .review-chain-index {

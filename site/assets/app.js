@@ -143,51 +143,91 @@ const BEGINNER_QUESTION_CARD = [
     index: "01",
     stage: "刚读完题",
     ask: "题目这么多字，到底让我交回什么？",
+    gap: "题目事实、未知和脑中的方法名还没有分开。",
     evidence: "输入、输出、示例、保证、禁止和未知能分开，且每条都有原题来源。",
+    unlock: "答完只得到题目事实清单；仍然不能选择算法。",
     blocked: "算法名、结构名、复杂度结论、题目没有保证的条件。",
   },
   {
     index: "02",
     stage: "能复述，但不会动手",
     ask: "每个字都懂，可第一步具体做什么？",
+    gap: "题目里的对象之间存在动作，但人还无法按时间演完。",
     evidence: "别人只看扩写就能按时间演完；每个条件能说出它防止的具体错误。",
+    unlock: "答完得到直接人工过程；仍然没有任何优化依据。",
     blocked: "优化理由、最终方法名、没有来源的规则。",
   },
   {
     index: "03",
     stage: "会走例子，但看不出重点",
     ask: "谁在什么时候变成了什么，答案又是哪一刻定下来的？",
+    gap: "能看见动作，却不知道哪个事件真正改变了对象或答案。",
     evidence: "值、位置和身份分开；能说出变化前、触发事件、变化后和答案产生时刻。",
+    unlock: "答完得到第一次变化；仍然不能判断哪份工作值得优化。",
     blocked: "代码容器、结构选择、优化结论。",
   },
   {
     index: "04",
     stage: "看见变化，但不知道是否值得优化",
     ask: "照这个笨办法最坏要做多少遍，范围还容得下吗？",
+    gap: "只知道过程可能慢，还不知道最坏重复量和可承受预算。",
     evidence: "官方约束、自己的操作预算和待验证候选分开；核心动作重复量有估算。",
+    unlock: "答完只排除复杂度家族并留下功能候选；范围不能点名算法。",
     blocked: "从 n 的大小直接点名算法，或把候选池当成结论。",
   },
   {
     index: "05",
     stage: "知道可能慢，但不知道该留下什么",
     ask: "刚才哪件事在重复做，以后要回来查什么，旧信息什么时候可以丢掉？",
+    gap: "知道有代价，却还没有指出重复、失效、复用或顺序的最小证据。",
     evidence: "有最小重复例子；说清未来读取什么、何时失效、必须支持哪些操作。",
+    unlock: "答完才形成操作需求；仍然不能把某个容器当成结论。",
     blocked: "具体容器、完整伪代码、尚未比较就宣布的最终方向。",
   },
   {
     index: "06",
     stage: "已经有几个模糊方向",
     ask: "哪个办法真能做这些事，代价又够；另一个为什么不行？",
+    gap: "候选还没有和操作、寿命、预算及失效条件逐项比较。",
     evidence: "完整因果方向句；真实候选都有取舍证据；不为了凑数制造假候选。",
+    unlock: "答完才允许进入状态、更新顺序和代码推导。",
     blocked: "只有方法名、没有拒绝证据、直接写完整 Java。",
   },
   {
     index: "07",
     stage: "方向已经确认",
     ask: "变量到底记什么，先做哪一步，反过来又为什么会错？",
+    gap: "方向已经有了，但状态、顺序、不变量和代码还没有逐项对应。",
     evidence: "状态、转移、更新顺序、不变量、代码和反例都能回到题目对象与第二次变化。",
+    unlock: "答完可以闭卷重建判断路径、伪代码、Java 和测试。",
     blocked: "新的算法方向、未经验证的模板顺序、用“显然”代替证明。",
   },
+];
+
+const READING_HARD_GATES = [
+  {
+    index: "01",
+    title: "范围只缩小候选",
+    text: "先数慢过程重复了多少次核心动作，再排除不能稳定承受的复杂度家族。范围不能直接点名哈希、双指针或动态规划。",
+  },
+  {
+    index: "02",
+    title: "第二次变化后才确认方向",
+    text: "第一次变化只说发生了什么；必须再用最小例子证明重复、失效或复用真实存在，之后才允许写完整方向确认句。",
+  },
+  {
+    index: "03",
+    title: "没有来源不能进入下一步",
+    text: "关键结论只能来自原句事实、手算推导、操作预算、候选假设或设计选择。来源混用时要拆开重写。",
+  },
+];
+
+const READING_SOURCE_RULES = [
+  ["原句事实", "题目写了什么", "不能证明算法方向"],
+  ["手算推导", "这个例子发生了什么", "不能证明所有输入"],
+  ["操作预算", "最多重复多少", "不能指定具体方法"],
+  ["候选假设", "方向可能承担什么", "不能当成已选中"],
+  ["设计选择", "状态和代码怎样落实", "不能反证方向正确"],
 ];
 
 const ALGORITHM_CHAIN_STEPS = [
@@ -1084,6 +1124,20 @@ function renderReviewCenter(query = null) {
         </div>
       </section>
 
+      <section class="review-chain-section review-reading-gates" aria-label="人类读题硬门槛和证据来源">
+        <div class="review-section-head">
+          <div>
+            <h2>先确认标准：现场只承认有来源的结论</h2>
+            <p>
+              下一问只能由当前最早缺口产生。原句、手算、预算和候选假设各自只能证明自己的部分；
+              后面的代码不能替前面缺失的证据作证。
+            </p>
+          </div>
+          <span class="review-chain-count">三条硬门槛 · 五类来源</span>
+        </div>
+        ${renderReadingHardGates()}
+      </section>
+
       <section class="review-chain-section review-next-question" aria-label="自然下一问的生成方式">
         <div class="review-section-head">
           <div>
@@ -1250,18 +1304,59 @@ function renderBeginnerQuestionCard() {
               <strong>${escapeHtml(item.stage)}</strong>
               <p>“${escapeHtml(item.ask)}”</p>
             </div>
-            <div class="beginner-question-evidence">
-              <strong><i data-lucide="circle-check"></i>过关证据</strong>
-              <p>${escapeHtml(item.evidence)}</p>
+            <div class="beginner-question-gap">
+              <strong><i data-lucide="scan-search"></i>最早缺口</strong>
+              <p>${escapeHtml(item.gap)}</p>
             </div>
-            <div class="beginner-question-blocked">
-              <strong><i data-lucide="circle-slash-2"></i>此刻不能出现</strong>
-              <p>${escapeHtml(item.blocked)}</p>
+            <div class="beginner-question-contract">
+              <div class="beginner-question-evidence">
+                <strong><i data-lucide="circle-check"></i>过关证据</strong>
+                <p>${escapeHtml(item.evidence)}</p>
+              </div>
+              <div class="beginner-question-unlock">
+                <strong><i data-lucide="lock-open"></i>答完才允许</strong>
+                <p>${escapeHtml(item.unlock)}</p>
+              </div>
+              <div class="beginner-question-blocked">
+                <strong><i data-lucide="circle-slash-2"></i>仍不能出现</strong>
+                <p>${escapeHtml(item.blocked)}</p>
+              </div>
             </div>
           </li>
         `,
       ).join("")}
     </ol>
+  `;
+}
+
+function renderReadingHardGates() {
+  return `
+    <div class="review-live-gates">
+      ${READING_HARD_GATES.map(
+        (gate) => `
+          <div>
+            <span>${escapeHtml(gate.index)}</span>
+            <strong>${escapeHtml(gate.title)}</strong>
+            <p>${escapeHtml(gate.text)}</p>
+          </div>
+        `,
+      ).join("")}
+    </div>
+    <div class="review-source-rules">
+      <div class="review-source-rules-head">
+        <strong>每一步的结论必须有来源</strong>
+        <span>来源指这一步凭什么可以这样说，不是参考文献</span>
+      </div>
+      ${READING_SOURCE_RULES.map(
+        ([source, proves, cannot]) => `
+          <div class="review-source-rule">
+            <strong>${escapeHtml(source)}</strong>
+            <span>${escapeHtml(proves)}</span>
+            <small>不能证明：${escapeHtml(cannot)}</small>
+          </div>
+        `,
+      ).join("")}
+    </div>
   `;
 }
 
