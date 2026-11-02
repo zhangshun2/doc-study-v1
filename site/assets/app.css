@@ -1154,6 +1154,48 @@ button {
   margin-top: 38px;
 }
 
+.review-phase-divider {
+  display: grid;
+  gap: 6px;
+  margin-top: 38px;
+  padding: 18px 20px;
+  border-top: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--accent-soft) 75%, transparent), transparent 72%);
+}
+
+.review-phase-divider span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent-strong);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 760;
+}
+
+.review-phase-divider svg {
+  width: 14px;
+  height: 14px;
+}
+
+.review-phase-divider strong {
+  font-size: 15px;
+}
+
+.review-phase-divider p {
+  max-width: 820px;
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.review-derivation-section {
+  margin-top: 28px;
+}
+
 .review-section-head {
   display: flex;
   align-items: end;
