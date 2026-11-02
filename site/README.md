@@ -36,7 +36,7 @@ python3 -m http.server 8000 -d _site
 
 ## 发布方式
 
-推送 `master` 或 `main` 后，GitHub Actions 会执行 `python3 site/build.py`，再把 `_site` 部署到 GitHub Pages。
+推送 `master` 或 `main` 后，GitHub Actions 都会执行 `python3 site/build.py` 并校验 `_site`。`master` 是内容源分支；GitHub Pages 的环境保护规则只允许 `main` 部署，因此发布任务只在镜像分支 `main` 上执行。
 
 GitHub 仓库需要把 `Settings -> Pages -> Build and deployment -> Source` 设为 `GitHub Actions`。工作流已开启自动配置，但首次发布后仍应在仓库设置中确认这一项。
 

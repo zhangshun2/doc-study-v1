@@ -9,7 +9,7 @@
 | `origin` | `git@gitee.com:zhangdatou/doc-study-v1.git` | `master` | 主仓库，日常备份与国内访问 |
 | `github` | `git@github.com:zhangshun2/doc-study-v1.git` | `main` | GitHub 默认分支，触发 Pages 构建 |
 
-本地只有一个长期分支 `master`。GitHub 上没有 `master`，发布时把本地的 `master` 推成那边的 `main`，两边内容始终一致。
+本地只有一个长期分支 `master`。GitHub 默认分支是 `main`，发布时把本地的 `master` 推成那边的 `main`，两边内容始终一致。
 
 其他分支（如 `develop`、旧 `master-docsify`）不属于发布分支，脚本不会动它们。
 
@@ -31,7 +31,7 @@ scripts/publish.sh
 
 1. 检查工作区是否干净、当前是否在 `master`。
 2. 本地跑一次 `python3 site/build.py`，构建失败就不发布。
-3. 推送 `origin/master` 与 `github/main`。
+3. 推送 `origin/master` 与 `github/main`。`origin/master` 的 `pre-push` 钩子也会镜像一次 `github/main`。
 4. 通过 GitHub API 确认这次提交已经触发构建，并打印运行页和站点地址。
 
 可调环境变量：`WAIT_SECONDS=0` 跳过构建状态检查，`SKIP_BUILD=1` 跳过本地构建自检。
@@ -59,7 +59,11 @@ PORT=5000 scripts/preview.sh
 
 ## GitHub 自动构建
 
-`.github/workflows/pages.yml` 在 `master` 或 `main` 有推送时自动执行：构建站点、上传产物、发布到 GitHub Pages，站点地址 <https://zhangshun2.github.io/doc-study-v1/>。
+`.github/workflows/pages.yml` 在 `master` 或 `main` 有推送时都会执行构建与产物校验。由于 GitHub 仓库的 `github-pages` 环境保护规则只允许 `main` 部署，发布任务仅在 `main` 上执行。`master` 是内容源分支，`main` 是部署镜像分支，两者保持同一提交。
+
+两个分支使用独立的并发组，避免 `master` 的校验运行取消 `main` 的部署运行。
+
+站点地址：<https://zhangshun2.github.io/doc-study-v1/>
 
 仓库需要保持两项设置开启（管理员权限，只能在网页操作）：
 

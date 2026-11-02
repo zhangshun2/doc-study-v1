@@ -56,7 +56,7 @@ deadline=$(( $(date +%s) + WAIT_SECONDS ))
 run_url=""
 while [ "$(date +%s)" -lt "$deadline" ]; do
   run_url="$(curl -fsS --max-time 15 \
-    "https://api.github.com/repos/$slug/actions/runs?head_sha=$sha&per_page=1" \
+    "https://api.github.com/repos/$slug/actions/runs?head_sha=$sha&branch=$GITHUB_BRANCH&per_page=1" \
     | python3 -c 'import json,sys;d=json.load(sys.stdin);r=d.get("workflow_runs") or [];print(r[0]["html_url"] if r else "")' \
     2>/dev/null || true)"
   [ -n "$run_url" ] && break

@@ -13,7 +13,10 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  # master is the source branch; main is the only branch allowed by the
+  # github-pages environment. Separate groups keep the mirror run from
+  # cancelling the deployable run.
+  group: pages-${{ github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -46,6 +49,7 @@ jobs:
 
   deploy:
     needs: build
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
