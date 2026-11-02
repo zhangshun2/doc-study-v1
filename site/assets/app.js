@@ -42,6 +42,7 @@ const HUMAN_READING_STEPS = [
     index: "01",
     title: "只读原题事实",
     question: "在还不知道用什么算法时，题目原句到底给了什么、要求什么、明确禁止什么？",
+    novice: "小白常先想“这题是不是做过”，因为记忆会比题目事实更早出现。先把猜测放到一边，才能确认原句到底允许和禁止什么。",
     must: [
       "先分开抄下输入、输出、示例、约束和特殊保证，不把脑中的解释混进原题。",
       "区分“题目事实”“由事实推出的结论”和“我还不知道的部分”。",
@@ -54,6 +55,7 @@ const HUMAN_READING_STEPS = [
     index: "02",
     title: "把题干扩写成完整生活过程",
     question: "把压缩的题面展开成“谁拿着什么，从哪里开始，重复做什么，何时停止，最后交出什么”。",
+    novice: "小白常觉得每个字都懂，却复述不出具体动作。这时不是再找一个标签，而是把压缩句补回人在现实中会经历的时间和条件。",
     must: [
       "补全题面中省略的主语、动作对象、动作顺序和结果产生时刻。",
       "每一条扩写都能指回原句；属于自己推测的内容必须标明“推测”。",
@@ -66,6 +68,7 @@ const HUMAN_READING_STEPS = [
     index: "03",
     title: "清点题目里的对象",
     question: "人话过程里反复出现的元素、位置、区间、节点、目标和结果，分别是什么？",
+    novice: "小白容易把数组、Map 当成题目对象。先问世界里的谁是谁，才能判断两个同值元素到底是不是同一个身份。",
     must: [
       "先列业务对象，例如数字、位置、区间、节点、路径和答案。",
       "说明对象之间是先后、相邻、包含、依赖还是可达关系。",
@@ -78,6 +81,7 @@ const HUMAN_READING_STEPS = [
     index: "04",
     title: "让一个人手工做最小例子",
     question: "不用任何算法技巧，一个普通人拿到最小但完整的例子，会按什么时间顺序动手？",
+    novice: "小白常停在“意思懂了，但第一步做什么”。最小例子把下一步该看谁、手该改什么变成可执行动作。",
     must: [
       "先写最直接、可能很慢的做法，不急着优化。",
       "每一步只包含一个可观察动作，并写出动作前后的具体内容。",
@@ -90,6 +94,7 @@ const HUMAN_READING_STEPS = [
     index: "05",
     title: "第一次捕捉变化",
     question: "手工过程中，哪一个信息在每一步发生变化？变化由什么事件触发，结果在哪一刻产生？",
+    novice: "小白常觉得过程“就是这样”，却说不清到底是什么在变。没有变化记录，后面就找不到重复劳动发生在哪。",
     must: [
       "为关键对象写清“变化前 -> 触发事件 -> 变化后”。",
       "区分当前检查位置、历史信息、候选范围、累计结果和最终答案。",
@@ -102,6 +107,7 @@ const HUMAN_READING_STEPS = [
     index: "06",
     title: "读范围，生成候选算法池",
     question: "官方约束允许多少操作？慢过程需要的操作，又能引出哪些仍待验证的方向？",
+    novice: "小白常把范围当算法暗号，或者完全不看。先数慢过程要做多少事，再按实际重复动作提候选，范围才和方向发生关系。",
     must: [
       "把官方约束、自己推导的操作预算和候选方向分开写，不把学习推导冒充成官方推荐复杂度。",
       "用慢过程的大致运算量判断哪些复杂度家族首先不够，再根据查询历史、等待结算、区间维护、候选淘汰或子问题复用扩充候选。",
@@ -114,6 +120,7 @@ const HUMAN_READING_STEPS = [
     index: "07",
     title: "第二次捕捉变化，寻找重复劳动",
     question: "这是重复查询、候选失效还是子问题复用？哪份历史值得保留，哪批候选已经不可能有用？",
+    novice: "小白常知道“有重复”，却不知道该保存值、位置、次数还是有效期。继续问未来何时会读取它、何时失效，结构需求才会出现。",
     must: [
       "指出最昂贵或最频繁的重复动作，并判断它属于重复查询、候选失效、子问题复用，还是多种同时存在。",
       "问清这份信息未来是否还会被读取、读取时需要值/位置/次数/有效期，以及什么时候失效。",
@@ -126,6 +133,7 @@ const HUMAN_READING_STEPS = [
     index: "08",
     title: "确认算法方向，再进入推导链",
     question: "哪个候选方案真正满足当前过程所需操作和预算？其他看似可行的方法为什么不优先？",
+    novice: "小白常选择最熟悉的方法。比较候选是在追问：它解决了当前哪份重复劳动，依赖什么条件，换一个条件会在哪里失效。",
     must: [
       "列出至少两个候选方向，分别说明所需操作、代价和失效条件。",
       "选择与当前过程最贴合的最小方案，不按“高级程度”选择。",
@@ -141,6 +149,7 @@ const ALGORITHM_CHAIN_STEPS = [
     index: "01",
     title: "定义状态的真实含义",
     question: "每个变量保存的是哪一个题目事实？它是否足够支持下一步判断？",
+    novice: "小白常以为变量名就是状态定义。真正的问题是：这个变量在题目世界里覆盖哪些对象，未来哪一步会读取它。",
     must: [
       "用完整句子定义状态，例如“下标 i 之前出现过的数值及其位置”。",
       "区分状态、临时变量、输入本身和最终答案。",
@@ -153,6 +162,7 @@ const ALGORITHM_CHAIN_STEPS = [
     index: "02",
     title: "确定初始状态、停止条件和答案时机",
     question: "过程从哪里开始，什么时候结束，结果在哪一步被产生或读取？",
+    novice: "小白常靠模板决定初值。回到最小例子的起点，看每个初值在现实中代表什么，初始化才有来源。",
     must: [
       "逐项写出初始值，并说明它对应的现实含义。",
       "说明循环或递归的停止条件，以及停止时哪些状态已经完整。",
@@ -165,6 +175,7 @@ const ALGORITHM_CHAIN_STEPS = [
     index: "03",
     title: "写清一次状态转移",
     question: "当前事件到来后，先读什么、计算什么、写入什么？下一轮凭什么还能继续？",
+    novice: "小白常能写出循环，却不知道一次循环改变了什么。把一轮拆成读取、计算和写入，才能预测下一轮。",
     must: [
       "把一次转移拆成输入事件、旧状态、计算、新状态四部分。",
       "在最小例子上逐轮演算至少三轮，并预测下一轮。",
@@ -177,6 +188,7 @@ const ALGORITHM_CHAIN_STEPS = [
     index: "04",
     title: "确认更新顺序",
     question: "查询、计算、写入、删除和覆盖中，哪两个动作交换后会产生错误？",
+    novice: "小白常背“先查后写”，却说不清交换后的错误。用一个最小输入让错误真的发生，顺序理由才成立。",
     must: [
       "指出同一轮里多个写操作的依赖顺序。",
       "说明“先查后写”“先取后删”“先保存旧值再覆盖”等原因。",
@@ -189,6 +201,7 @@ const ALGORITHM_CHAIN_STEPS = [
     index: "05",
     title: "建立不变量与正确性理由",
     question: "每一步开始和结束时，什么关系始终成立？它如何保证不漏解、不重复、不误删？",
+    novice: "小白常把正确性说成“模板保证”。不变量要分别回答为什么不会漏、不会重复，以及为什么可以安全丢弃。",
     must: [
       "写出与当前算法对象绑定的一条或几条不变量。",
       "说明每条不变量依赖哪些题目条件和更新顺序。",
@@ -201,6 +214,7 @@ const ALGORITHM_CHAIN_STEPS = [
     index: "06",
     title: "从所需操作反推结构",
     question: "算法过程实际需要哪些查询和修改？所选结构的长处是否正好对应这些操作？",
+    novice: "小白常先选结构再找用途。反过来，从过程真正需要的查询、插入、删除和取极值，比较哪个结构最贴合。",
     must: [
       "列出过程中必须支持的查询、插入、删除、取极值、遍历或回退。",
       "比较数组、哈希、栈、队列、堆、树或图结构的具体操作代价。",
@@ -213,6 +227,7 @@ const ALGORITHM_CHAIN_STEPS = [
     index: "07",
     title: "伪代码、Java 与过程逐段对齐",
     question: "每一段代码对应自然语言中的哪个对象和动作？关键标识符与更新位置能否一一指回？",
+    novice: "小白常让代码跑通就算理解。逐段对齐是在确认每一行是否真的对应一个题目对象、动作或状态变化。",
     must: [
       "先写与状态定义一致的伪代码，再写清晰 Java 基准实现。",
       "逐个解释初始化、循环、关键判断、状态写入和返回语句。",
@@ -225,6 +240,7 @@ const ALGORITHM_CHAIN_STEPS = [
     index: "08",
     title: "反例、边界与闭卷重建",
     question: "改哪个条件会让模型失效？关闭资料后，能否独立重建过程、代码和自己的检查输入？",
+    novice: "小白常把闭卷重建变成默写代码。真正要重建的是读题、方向、模型、代码和自测之间的连续关系。",
     must: [
       "主动构造一个挑战不变量的最小输入并完整演算。",
       "把空输入、单元素、重复值、极端值等边界落到具体状态变化上。",
@@ -710,6 +726,7 @@ function renderHome() {
   const topics = problemsNav?.topics || [];
   const startItems = state.manifest.nav.find((section) => section.id === "start")?.items || [];
   const reviewItems = [
+    "LeetCode-系统复习/05-单题流程/单题推导标准卡.md",
     "学习看板/单题复习工作台.md",
     "LeetCode-系统复习/00-总入口.md",
     "LeetCode-系统复习/01-复习计划/16周弹性计划.md",
@@ -745,6 +762,10 @@ function renderHome() {
         <a class="primary-button" href="#/review">
           <i data-lucide="git-branch"></i>
           从人类读题开始
+        </a>
+        <a class="secondary-button" href="${docHref("LeetCode-系统复习/05-单题流程/单题推导标准卡.md")}">
+          <i data-lucide="route"></i>
+          单题推导标准卡
         </a>
         <a class="secondary-button" href="${docHref("学习看板/单题复习工作台.md")}">
           <i data-lucide="clipboard-check"></i>
@@ -948,8 +969,11 @@ function renderReviewCenter(query = null) {
           <a class="secondary-button" href="${docHref("学习看板/单题复习工作台.md")}">
             <i data-lucide="list-checks"></i>记录本轮断点
           </a>
+          <a class="secondary-button" href="${docHref("LeetCode-系统复习/05-单题流程/单题推导标准卡.md")}">
+            <i data-lucide="clipboard-list"></i>单题推导标准卡
+          </a>
           <a class="secondary-button" href="${docHref("LeetCode-系统复习/05-单题流程/人类读题与算法确认.md")}">
-            <i data-lucide="route"></i>完整标准与示例
+            <i data-lucide="route"></i>完整原因与示例
           </a>
           <a class="secondary-button" href="${docHref("LeetCode-系统复习/05-单题流程/小白读题现场示范.md")}">
             <i data-lucide="message-circle-more"></i>小白现场示范
@@ -1098,6 +1122,10 @@ function renderReviewChainStep(step) {
       <div class="review-chain-body">
         <h3>${escapeHtml(step.title)}</h3>
         <p>${escapeHtml(step.question)}</p>
+        <div class="review-chain-novice">
+          <strong><i data-lucide="user-round"></i>小白的自然反应</strong>
+          <span>${escapeHtml(step.novice)}</span>
+        </div>
         <ul class="review-chain-must">
           ${step.must.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
         </ul>

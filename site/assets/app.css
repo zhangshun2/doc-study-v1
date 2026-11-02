@@ -1284,6 +1284,37 @@ button {
   color: var(--accent);
 }
 
+.review-chain-novice {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.review-chain-novice strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 760;
+}
+
+.review-chain-novice strong svg {
+  width: 13px;
+  height: 13px;
+  color: var(--accent);
+}
+
+.review-chain-novice span {
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
 .review-chain-frame {
   margin-top: 14px;
   padding: 12px 14px;
