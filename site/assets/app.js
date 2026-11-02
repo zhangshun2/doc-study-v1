@@ -923,7 +923,7 @@ function renderReviewCenter(query = null) {
         <p class="review-eyebrow"><i data-lucide="git-branch"></i>人类读题与算法确认</p>
         <h1>先走完一个人会怎么想，再验证机器会怎么做</h1>
         <p>
-          每一段先记录“我现在确定什么、还不确定什么、下一个最小问题是什么”，不直接展示整理好的专家路径。
+          真正卡住时再记录“我现在确定什么、还不确定什么、下一个最小问题是什么”，不直接展示整理好的专家路径。
           拿到题先只读事实，再把压缩题面扩写成完整生活过程；随后清点对象、手工做例子并第一次捕捉变化，
           再读范围缩小候选方向、第二次寻找重复劳动。只有说清“为什么需要这些操作”并比较候选确认方向，
           才进入状态、不变量、代码和反例。方法名不能替代这条人类判断路径。
@@ -966,11 +966,11 @@ function renderReviewCenter(query = null) {
           <div>
             <h2>第一层：从题面走到算法方向</h2>
             <p>
-              这六道门不是六个待办项，而是六次必须依次通过的人类判断。第三道门内部依次完成对象、人工过程和第一次变化；
-              第四道门把约束、操作预算和候选方向分开，第五道门才找重复、失效和复用。候选池不是结论，范围也不直接替你选算法。
+              这六段不是六个待办项，而是六个连续判断阶段。第三段依次完成对象、人工过程和第一次变化；
+              第四段把约束、操作预算和候选方向分开，第五段才找重复、失效和复用。候选池不是结论，范围也不直接替你选算法。
             </p>
           </div>
-          <span class="review-chain-count">6 道方向判断门</span>
+          <span class="review-chain-count">6 个方向判断阶段</span>
         </div>
         <ol class="review-chain">
           ${HUMAN_READING_STEPS.map(renderReviewChainStep).join("")}
@@ -978,7 +978,7 @@ function renderReviewCenter(query = null) {
       </section>
 
       <div class="review-phase-divider">
-        <span><i data-lucide="shield-check"></i>方向闸门</span>
+        <span><i data-lucide="shield-check"></i>方向确认</span>
         <strong>没有确认“需要哪些操作、排除哪些方向”，不要进入代码。</strong>
         <p>方向确认不是说出算法名，而是能说明：哪份重复劳动要被消除，候选结构是否支持所需操作，以及数据范围为什么允许它。</p>
       </div>
@@ -992,7 +992,7 @@ function renderReviewCenter(query = null) {
               如果状态定义无法回到题干中的对象和变化，说明算法方向尚未真正确认。
             </p>
           </div>
-          <span class="review-chain-count">8 个模型确认点</span>
+          <span class="review-chain-count">8 个推导确认点</span>
         </div>
         <ol class="review-chain">
           ${ALGORITHM_CHAIN_STEPS.map(renderReviewChainStep).join("")}
