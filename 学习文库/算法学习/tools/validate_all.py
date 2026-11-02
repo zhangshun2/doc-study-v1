@@ -14,6 +14,10 @@ TOOLS_ROOT = LIBRARY_ROOT / "tools"
 
 def main() -> int:
     commands = [
+        (
+            "Human reading contract",
+            [sys.executable, str(TOOLS_ROOT / "validate_human_reading.py")],
+        ),
         ("Library contract", [sys.executable, str(TOOLS_ROOT / "validate_library.py")]),
         (
             "Java blocks and official examples",
