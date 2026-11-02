@@ -162,6 +162,82 @@ const HUMAN_READING_STEPS = [
   },
 ];
 
+const SEVEN_STEP_GUIDE = [
+  {
+    index: "01",
+    title: "读题",
+    question: "题目给了我什么，要我交回什么？",
+    evidence: "输入、输出、保证、禁止、示例和未知都能指回原句。",
+  },
+  {
+    index: "02",
+    title: "扩写题干",
+    question: "一个人拿着什么，从哪里开始，下一步做什么，何时停止？",
+    evidence: "别人能按时间顺序照着演完，并知道每个条件防住什么错误。",
+  },
+  {
+    index: "03",
+    title: "对象、慢过程和第一次变化",
+    question: "谁有身份，最笨但正确的过程怎样走，哪一刻答案确定？",
+    evidence: "对象身份分开，人工过程走通，变化前、触发事件、变化后和答案时刻都有例子。",
+  },
+  {
+    index: "04",
+    title: "数据范围",
+    question: "笨过程最坏重复多少，哪些复杂度方向先被排除？",
+    evidence: "官方约束、自己的操作预算、被排除的家族和功能候选分开。",
+  },
+  {
+    index: "05",
+    title: "再捕捉变化",
+    question: "带着代价重看，哪份信息被反复询问、会过期、会复用或必须保序？",
+    evidence: "最小例子证明重复或失效真实发生，并写出未来需要哪些操作。",
+  },
+  {
+    index: "06",
+    title: "确认算法方向",
+    question: "需要哪些操作，哪个候选真能承担，哪个替代方向在哪里失效？",
+    evidence: "真实候选的代价、依赖、失效条件和完整方向确认句都能对应到操作需求。",
+  },
+  {
+    index: "07",
+    title: "完整思维链",
+    question: "对象怎样变成状态，更新顺序、不变量、代码和反例怎样逐段接上？",
+    evidence: "变量能指回题目对象，更新顺序有反例检查，闭卷可以重新生成整条链。",
+  },
+];
+
+const TWO_SUM_SEVEN_STEP_DEMO = [
+  {
+    title: "读题",
+    text: "输入是 nums 和 target；要交回两个不同的原始下标；每个输入只有一个答案；下标顺序不限。此时只能确认返回要求，不能先报结构。",
+  },
+  {
+    title: "扩写题干",
+    text: "先固定一个位置，再检查它后面的位置，把两个数相加。等于 target 就交回两个下标；否则继续。两个下标必须不同，因为同一个元素不能用两次。",
+  },
+  {
+    title: "对象、慢过程和第一次变化",
+    text: "数值和下标不是同一个对象；两个相同的值可以属于不同下标。用 [3,2,4]、target = 6 手算，(1,2) 第一次得到合法答案。变化前这一对还不是答案；触发事件是和第一次等于 target；变化后答案确定并停止。",
+  },
+  {
+    title: "数据范围",
+    text: "n <= 10^4，最坏约检查 n(n-1)/2 个位置对；数值可到正负 10^9，不能拿数值直接当下标开数组。范围只能排除方向，留下的功能问题是：扫描当前数时，能否直接问补数以前是否出现、在哪个位置？",
+  },
+  {
+    title: "再捕捉变化",
+    text: "慢过程反复追问 target - nums[i] 以前是否出现。用 [3,3]、target = 6 取证：处理第二个 3 时必须看见第一个 3，同时不能把当前元素当成自己的配对。需要按数值查询历史位置，并把当前值和位置加入历史。",
+  },
+  {
+    title: "确认算法方向",
+    text: "原位置必须保留，所以不能排序丢掉下标；需要按补数快速查询，因此选择保存已见数值到原始下标的映射。[3,3] 同时证明必须先查询、后加入，否则会查到自己。",
+  },
+  {
+    title: "完整思维链",
+    text: "状态是处理当前位置以前出现过的值到原始下标。处理 i 时先查询 target - nums[i]，找到就返回历史下标和 i；找不到才加入 nums[i] -> i。不变量是处理 i 前，历史里只可能有下标小于 i 的元素。",
+  },
+];
+
 const BEGINNER_ACTION_STEPS = [
   {
     gap: "只知道题面文字",
@@ -1316,10 +1392,10 @@ function renderReviewCenter(query = null) {
         <p class="review-eyebrow"><i data-lucide="git-branch"></i>人类读题与算法确认</p>
         <h1>先走完一个人会怎么想，再验证机器会怎么做</h1>
         <p>
-          拿到题先只问：题目给了我什么，要我交回什么？完成一个普通人能执行的过程后，
-          先回答“有哪些对象和关系”，再回答“照着最笨的办法走一遍，哪一刻什么变了，答案何时定下来”。
-          只有先走完这次人工过程，才读数据范围、带着代价重看重复与失效、比较候选并确认方向，
-          最后才进入状态、不变量、代码和反例。八个问题由当前空缺依次产生，方法名不能替代这条路径。
+          拿到题只按七步走：先读题，再把题干扩写成普通人能执行的动作；接着分清对象、走最笨的正确过程并记录第一次变化；
+          然后才读数据范围，带着代价再捕捉变化，比较候选并确认方向，最后进入完整思维链。
+          每一步只用三句交接：“我现在知道了什么，但它还解释不了什么，所以下一句只能问什么。”
+          八问和验收表都在做完以后用于查漏，不是动手前要背的待办。
         </p>
         <div class="review-hero-actions">
           ${
@@ -1357,16 +1433,72 @@ function renderReviewCenter(query = null) {
         </div>
       </header>
 
-      <section class="review-chain-section review-beginner-card" aria-label="小白现场提问卡">
+      <section class="review-chain-section review-seven-live" aria-label="小白现场七步">
         <div class="review-section-head">
           <div>
-            <h2>现场交接表 · 八个自然问题</h2>
+            <h2>小白现场七步 · 唯一解题主线</h2>
             <p>
-              八问嵌在七段里，问题 3 和问题 4 同属第三阶段。每次换问先写清“我刚得到什么、为什么它还不能停、所以为什么现在轮到这一问”；
-              前一问没有产生这个空缺，就不提前回答下一问。
+              这不是把专家答案拆成七段，而是规定一个还不知道方法的人，现场按什么顺序得到下一份证据。
+              前一步没有交出证据，后一步的方法名、结构名和代码都没有证明资格。
             </p>
           </div>
-          <span class="review-chain-count">3 句交接 · 8 个自然问题</span>
+          <span class="review-chain-count">7 步 · 1 条证据链</span>
+        </div>
+        <ol class="seven-step-list">
+          ${SEVEN_STEP_GUIDE.map(
+            (step) => `
+              <li>
+                <span>${escapeHtml(step.index)}</span>
+                <div>
+                  <strong>${escapeHtml(step.title)}</strong>
+                  <p>${escapeHtml(step.question)}</p>
+                </div>
+                <small>${escapeHtml(step.evidence)}</small>
+              </li>
+            `,
+          ).join("")}
+        </ol>
+        <div class="review-chain-frame seven-step-handoff">
+          <span>每次换步只接这三句</span>
+          <p>
+            我现在知道了：______。但它还解释不了：______。所以下一句只能问：______。
+            回答只能来自一条原句、一个最小例子、一次手算、一次预算或一项候选比较。
+          </p>
+        </div>
+        <details class="seven-step-demo" open>
+          <summary>
+            <span>
+              <strong>两数之和：从读题到完整链</strong>
+              <small>看的不是“用映射”这个结论，而是每一步为什么现在轮到它。</small>
+            </span>
+            <i data-lucide="chevron-down"></i>
+          </summary>
+          <ol>
+            ${TWO_SUM_SEVEN_STEP_DEMO.map(
+              (step, index) => `
+                <li>
+                  <span>${String(index + 1).padStart(2, "0")}</span>
+                  <div>
+                    <strong>${escapeHtml(step.title)}</strong>
+                    <p>${escapeHtml(step.text)}</p>
+                  </div>
+                </li>
+              `,
+            ).join("")}
+          </ol>
+        </details>
+      </section>
+
+      <section class="review-chain-section review-beginner-card" aria-label="完成后的八问复核">
+        <div class="review-section-head">
+          <div>
+            <h2>完成后的八问复核 · 现场交接表 · 八个自然问题</h2>
+            <p>
+              这一节只用来在做完以后定位最早断点，不替代上面的七步现场。问题 3 和问题 4 同属第三步：
+              每次复核先写清“我刚得到什么、为什么它还不能停、所以为什么现在轮到这一问”；前一问没有产生这个空缺，就不提前回答下一问。
+            </p>
+          </div>
+          <span class="review-chain-count">事后查漏 · 8 个自然问题</span>
         </div>
         <div class="review-chain-frame">
           <span>每次换问前先接上这三句</span>
@@ -1389,10 +1521,10 @@ function renderReviewCenter(query = null) {
       <section class="review-chain-section review-beginner-actions" aria-label="小白起步动作表">
         <div class="review-section-head">
           <div>
-            <h2>新手的起步动作表：没有灵感时，先做哪一个纸面动作</h2>
+            <h2>卡住时的诊断工具：先做哪一个纸面动作</h2>
             <p>
-              零起点不是失败。不要等“想明白”再动笔，也不要为了显得真实补写一个事后候选；先完成一个当前能做的动作，
-              让题目多出证据，下一问再由这份证据产生。没有形成候选就写“没有形成候选”，没有发生转折就写“没有发生转折”。
+              这张表不另建路线，只帮助你在七步中的当前一步找到下一件纸面动作。不要等“想明白”再动笔，
+              也不要为了显得真实补写一个事后候选；没有形成候选就写“没有形成候选”，没有发生转折就写“没有发生转折”。
             </p>
           </div>
           <span class="review-chain-count">8 个最早卡点 · 1 个纸面动作</span>
@@ -1417,10 +1549,10 @@ function renderReviewCenter(query = null) {
       <section class="review-chain-section review-beginner-standard" aria-label="小白现场统一标准">
         <div class="review-section-head">
           <div>
-            <h2>小白现场统一标准</h2>
+            <h2>七步的详细证据门槛</h2>
             <p>
-              每一行只说明当前证据留下的最早空缺、此刻唯一该问的问题、第一件实际纸面动作，
-              以及做完后只允许多出的证据。禁止提前出现的内容没有证明资格；下一问只能由新增证据自然产生。
+              这里只展开同一套七步，不再建立第二条路线。每一行说明当前证据留下的最早空缺、此刻唯一该问的问题、
+              第一件实际纸面动作，以及做完后只允许多出的证据。禁止提前出现的内容没有证明资格；下一问只能由新增证据自然产生。
             </p>
           </div>
           <span class="review-chain-count">7 个阶段 · 1 条证据链</span>
@@ -1456,7 +1588,7 @@ function renderReviewCenter(query = null) {
       <section class="review-chain-section review-reading-gates" aria-label="人类读题硬门槛和证据来源">
         <div class="review-section-head">
           <div>
-            <h2>先确认标准：现场只承认有来源的结论</h2>
+            <h2>完成后的证据检查：现场只承认有来源的结论</h2>
             <p>
               下一问只能由当前最早缺口产生。原句、手算、预算和候选假设各自只能证明自己的部分；
               后面的代码不能替前面缺失的证据作证。
@@ -1470,10 +1602,9 @@ function renderReviewCenter(query = null) {
       <section class="review-chain-section review-live-generation" aria-label="现场生成与反写检查">
         <div class="review-section-head">
           <div>
-            <h2>现场生成与反写检查</h2>
+            <h2>写完后的反写检查</h2>
             <p>
-              每次换问前，把当前证据、它只能证明什么、它还不能证明什么、下一个小问题是什么写成连续四行。
-              当前一问回答完并留下证据，才允许出现下一问；一次只跨一个认知台阶。
+              这是完成一段后的检查工具，不是新的解题步骤。按“当前证据、它只能证明什么、它还不能证明什么、下一个小问题是什么”连续写四行，一次只跨一个认知台阶；当前一问回答完并留下证据，才允许出现下一问。
             </p>
           </div>
           <span class="review-chain-count">四行交接 · 两项反写检查</span>
@@ -1517,14 +1648,14 @@ function renderReviewCenter(query = null) {
       <section class="review-chain-section">
         <div class="review-section-head">
           <div>
-            <h2>第一层：从题面走到算法方向</h2>
+            <h2>七步详解：第 1-6 步怎样从题面走到算法方向</h2>
             <p>
-              七段现场中，前六段负责从题面走到算法方向，第七段才进入推导链。这六段不是六个待办项，而是六个连续判断阶段。第三段先留下当前困惑、实际纸面动作和新增证据，再填写六列对象表，随后回答人工过程和第一次变化；
-              第四段把约束、操作预算和候选方向分开，第五段才找重复、失效和复用。每段都有退出条件；
+              这里展开的仍是上面同一条七步主线：前六步负责从题面走到算法方向，第七步才进入推导链。这六个判断阶段不是六个独立待办。第三步先留下当前困惑、实际纸面动作和新增证据，再填写六列对象表，随后回答人工过程和第一次变化；
+              第四步把约束、操作预算和候选方向分开，第五步才找重复、失效和复用。每一步都有退出条件；
               候选池不是结论，范围也不直接替你选算法。没有真实歧义时，不为了“至少两个候选”编造假方案。
             </p>
           </div>
-          <span class="review-chain-count">问题 1-7 形成方向 · 问题 8 进入推导链</span>
+          <span class="review-chain-count">第 1-6 步形成方向 · 第 7 步进入推导链</span>
         </div>
         <ol class="review-chain">
           ${HUMAN_READING_STEPS.map(renderReviewChainStep).join("")}
@@ -1540,7 +1671,7 @@ function renderReviewCenter(query = null) {
       <section class="review-chain-section review-derivation-section">
         <div class="review-section-head">
           <div>
-            <h2>第二层：算法方向确认后的推导链</h2>
+            <h2>七步详解：第 7 步的完整思维链</h2>
             <p>
               从这里开始才讨论状态、更新和代码。每一段都继承第一层的判断；
               如果状态定义无法回到题干中的对象和变化，说明算法方向尚未真正确认。

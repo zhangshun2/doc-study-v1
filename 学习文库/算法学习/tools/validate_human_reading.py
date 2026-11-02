@@ -90,6 +90,70 @@ STAGE_MAP = [
     "阶段 7：问题 8",
 ]
 
+SEVEN_STEPS = [
+    "读题",
+    "扩写题干",
+    "对象、慢过程",
+    "第一次变化",
+    "数据范围",
+    "再捕捉变化",
+    "确认算法方向",
+    "完整思维链",
+]
+
+SEVEN_STEP_HANDOFF = [
+    "我现在知道了",
+    "但它还解释不了",
+    "所以下一句只能问",
+]
+
+SEVEN_STEP_RANGES = {
+    STANDARD: (
+        "## 小白现场七步标准",
+        "## 人类解题验收标准",
+    ),
+    TEMPLATE: (
+        "## 小白现场七步",
+        "## 执行顺序",
+    ),
+    REPO_SKILL: (
+        "## 唯一的现场七步",
+        "## 小白现场必须留下",
+    ),
+    INSTALLED_SKILL: (
+        "## The one live seven-step sequence",
+        "## Human-reading evidence contract",
+    ),
+    AGENTS: (
+        "### 唯一的现场七步",
+        "### 发布前的人类解题验收",
+    ),
+}
+
+POST_HOC_REVIEW_MARKERS = {
+    STANDARD: "## 八个自然问题",
+    TEMPLATE: "做完一次口头推导后，再用八个自然问题复核",
+    DEMO: "## 9. 闭卷先按七步回放",
+    HUMAN_GUIDE: "## 做完后的八个自然问题",
+    REPO_SKILL: "## 做完后的八个自然问题复核",
+    INSTALLED_SKILL: "## 完成后的八个自然问题复核",
+    AGENTS: "现场讲解只沿上面的七步推进。做题完成以后",
+    WORKBENCH: "现场只按七步推进。完成以后",
+    SITE_APP: "完成后的八问复核",
+}
+
+POST_HOC_LIVE_MARKERS = {
+    STANDARD: SEVEN_STEP_RANGES[STANDARD][0],
+    TEMPLATE: SEVEN_STEP_RANGES[TEMPLATE][0],
+    DEMO: "本次现场只按七个阶段走",
+    HUMAN_GUIDE: "本页解释为什么必须按",
+    REPO_SKILL: SEVEN_STEP_RANGES[REPO_SKILL][0],
+    INSTALLED_SKILL: SEVEN_STEP_RANGES[INSTALLED_SKILL][0],
+    AGENTS: SEVEN_STEP_RANGES[AGENTS][0],
+    WORKBENCH: "实际开始一道题时",
+    SITE_APP: "const SEVEN_STEP_GUIDE = [",
+}
+
 STAGE_MAP_SOURCES = [STANDARD, TEMPLATE, AGENTS]
 
 STANDARD_HEADINGS = [
@@ -242,7 +306,7 @@ REQUIRED_PHRASES = {
         "没有发生真实转折",
     ],
     DEMO: [
-        "八个自然问题嵌在七个阶段里",
+        "八个自然问题嵌在这七个阶段里",
         "没有形成候选",
         "事后校验",
         "第一次变化",
@@ -326,13 +390,16 @@ REQUIRED_PHRASES = {
     ],
     SITE_APP: [
         "const BEGINNER_QUESTION_CARD",
-        "现场交接表 · 八个自然问题",
+        "const SEVEN_STEP_GUIDE",
+        "const TWO_SUM_SEVEN_STEP_DEMO",
+        "小白现场七步 · 唯一解题主线",
+        "完成后的八问复核 · 现场交接表 · 八个自然问题",
         "我刚得到",
         "但它还不能说明",
         "所以现在只问",
-        "问题 3 和问题 4 同属第三阶段",
+        "问题 3 和问题 4 同属第三步",
         "const BEGINNER_ACTION_STEPS",
-        "新手的起步动作表",
+        "卡住时的诊断工具：先做哪一个纸面动作",
         "renderBeginnerActionTable",
         "当前最早空缺",
         "第一件实际做的纸面动作",
@@ -347,6 +414,7 @@ REQUIRED_PHRASES = {
         "const BEGINNER_LIVE_STANDARD",
         "renderBeginnerLiveStandard",
         "小白现场统一标准",
+        "七步的详细证据门槛",
     ],
 }
 
@@ -671,6 +739,85 @@ def check_question_sequence(errors: list[str]) -> None:
             )
 
 
+def check_seven_step_live_path(errors: list[str]) -> None:
+    for path, (start_marker, end_marker) in SEVEN_STEP_RANGES.items():
+        text = read_text(path, errors)
+        if text is None:
+            continue
+        start = text.find(start_marker)
+        end = text.find(end_marker, start + len(start_marker)) if start >= 0 else -1
+        section = text[start:end] if start >= 0 and end > start else ""
+        if not section:
+            errors.append(
+                f"{display_path(path)}: cannot isolate the one live seven-step path"
+            )
+            continue
+        if not markers_in_order(section, SEVEN_STEPS):
+            errors.append(
+                f"{display_path(path)}: the live path must keep the canonical seven "
+                "steps in order"
+            )
+        if not markers_in_order(section, SEVEN_STEP_HANDOFF):
+            errors.append(
+                f"{display_path(path)}: the live path must use the canonical handoff "
+                "我现在知道了 -> 但它还解释不了 -> 所以下一句只能问"
+            )
+
+    site = read_text(SITE_APP, errors)
+    if site is None:
+        return
+    site_start = site.find("const SEVEN_STEP_GUIDE = [")
+    site_end = site.find("const BEGINNER_ACTION_STEPS = [", site_start)
+    site_section = (
+        site[site_start:site_end]
+        if site_start >= 0 and site_end > site_start
+        else ""
+    )
+    if not site_section:
+        errors.append(
+            f"{display_path(SITE_APP)}: cannot isolate SEVEN_STEP_GUIDE"
+        )
+    elif not markers_in_order(site_section, SEVEN_STEPS):
+        errors.append(
+            f"{display_path(SITE_APP)}: SEVEN_STEP_GUIDE must keep the canonical "
+            "seven steps in order"
+        )
+    review_start = site.find('aria-label="小白现场七步"')
+    review_end = site.find('aria-label="完成后的八问复核"', review_start)
+    review_section = (
+        site[review_start:review_end]
+        if review_start >= 0 and review_end > review_start
+        else ""
+    )
+    if not review_section:
+        errors.append(
+            f"{display_path(SITE_APP)}: cannot isolate the rendered seven-step block"
+        )
+    elif not markers_in_order(review_section, SEVEN_STEP_HANDOFF):
+        errors.append(
+            f"{display_path(SITE_APP)}: rendered seven-step block must use the "
+            "canonical three-line handoff"
+        )
+
+    for path, review_marker in POST_HOC_REVIEW_MARKERS.items():
+        text = read_text(path, errors)
+        if text is None:
+            continue
+        live_marker = POST_HOC_LIVE_MARKERS[path]
+        live_position = text.find(live_marker)
+        review_position = text.find(review_marker)
+        if live_position < 0 or review_position < 0:
+            errors.append(
+                f"{display_path(path)}: live path or post-hoc eight-question "
+                "review marker is missing"
+            )
+        elif review_position <= live_position:
+            errors.append(
+                f"{display_path(path)}: the eight questions must be presented as a "
+                "post-hoc review after the live seven-step path"
+            )
+
+
 def check_stage_three_evidence_order(errors: list[str]) -> None:
     ranges = {
         STANDARD: ("## 第三阶段：", "## 第四阶段："),
@@ -856,6 +1003,10 @@ def run_validator_self_checks() -> list[str]:
         LIVE_GENERATION_FIELDS,
     ):
         failures.append("reversed live-generation order was incorrectly accepted")
+    if not markers_in_order("\n".join(SEVEN_STEPS), SEVEN_STEPS):
+        failures.append("canonical seven-step order was incorrectly rejected")
+    if markers_in_order("\n".join(reversed(SEVEN_STEPS)), SEVEN_STEPS):
+        failures.append("reversed seven-step order was incorrectly accepted")
     return failures
 
 
@@ -1705,6 +1856,7 @@ def main() -> int:
     errors.extend(f"validator self-check: {failure}" for failure in run_validator_self_checks())
     check_required_phrases(errors)
     check_question_sequence(errors)
+    check_seven_step_live_path(errors)
     check_stage_three_evidence_order(errors)
     check_object_tables(errors)
     check_minimal_counterexamples(errors)
@@ -1730,8 +1882,8 @@ def main() -> int:
         return 1
 
     print(
-        "Human reading contract passed: 8 questions, 7 ordered stages, "
-        "gated natural-question handoffs."
+        "Human reading contract passed: 7 live steps, 8 post-hoc questions, "
+        "ordered evidence handoffs."
     )
     return 0
 
