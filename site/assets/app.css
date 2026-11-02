@@ -2215,6 +2215,47 @@ button {
   line-height: 1.7;
 }
 
+.bank-human-contract {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 18px;
+  padding: 14px 0 14px 16px;
+  border-left: 2px solid var(--accent);
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.bank-human-contract p {
+  margin: 0;
+}
+
+.bank-human-contract p > span,
+.bank-human-evidence > strong {
+  display: inline-block;
+  margin-right: 8px;
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 780;
+  letter-spacing: 0;
+}
+
+.bank-human-question {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.bank-human-evidence ul {
+  display: grid;
+  gap: 4px;
+  margin: 5px 0 0;
+  padding-left: 19px;
+}
+
+.bank-human-evidence li::marker {
+  color: var(--accent);
+}
+
 .bank-question-list li::marker {
   color: var(--accent);
   font-family: var(--mono);

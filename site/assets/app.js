@@ -1577,6 +1577,23 @@ function renderBankProblemRow(record) {
   `;
 }
 
+function renderHumanStageContract(step) {
+  return `
+    <div class="bank-human-contract">
+      <p class="bank-human-question">
+        <span>小白此刻只问</span>
+        ${escapeHtml(step.question)}
+      </p>
+      <div class="bank-human-evidence">
+        <strong>这一段要交出的证据</strong>
+        <ul>${step.must.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+      </div>
+      <p><span>不能提前出现</span>${escapeHtml(step.reject)}</p>
+      <p><span>说不清就退回</span>${escapeHtml(step.returnTo)}</p>
+    </div>
+  `;
+}
+
 function renderBankDetail(record) {
   const requiredComplexity = record.complexity?.required || [];
   const advancedComplexity = record.complexity?.advanced || [];
@@ -1641,6 +1658,7 @@ function renderBankDetail(record) {
                 <p>下面保持题面原样。先把事实、由事实推出的结论和你的猜测分开。</p>
               </div>
             </div>
+            ${renderHumanStageContract(HUMAN_READING_STEPS[0])}
             <div class="markdown-body bank-statement">${statement}</div>
           </section>
 
@@ -1652,6 +1670,7 @@ function renderBankDetail(record) {
                 <p>还不要想对象清单或算法。先确认每个原句新增了谁、什么动作、什么顺序、什么限制，以及忽略它会犯什么具体错误。</p>
               </div>
             </div>
+            ${renderHumanStageContract(HUMAN_READING_STEPS[1])}
             <ol class="bank-question-list">
               <li>这句话新增了哪个对象、动作、身份、顺序或停止条件？</li>
               <li>如果忽略这句话，我会在过程里做错哪一个具体动作或交回什么错误结果？</li>
@@ -1677,6 +1696,7 @@ function renderBankDetail(record) {
                 <p>现在才从扩写进入具体例子。先分清对象身份，再走最慢但正确的过程，最后只记录发生了什么，不提前写结构或优化结论。</p>
               </div>
             </div>
+            ${renderHumanStageContract(HUMAN_READING_STEPS[2])}
             <ol class="bank-question-list">
               <li>题目世界里的对象有哪些？哪些值相同但位置或身份不同，不能合并？</li>
               <li>在最小但完整的例子里，我第一个拿起谁，下一步看哪里，按什么顺序做？</li>
@@ -1712,6 +1732,7 @@ function renderBankDetail(record) {
                 <p>先抄官方约束，再单独估算慢过程的操作量。范围只排除复杂度家族，不替人点名算法。</p>
               </div>
             </div>
+            ${renderHumanStageContract(HUMAN_READING_STEPS[3])}
             <div class="bank-constraint-block">
               <h3>官方约束</h3>
               ${
@@ -1752,6 +1773,7 @@ function renderBankDetail(record) {
                 <p>第一次变化只说明过程里发生了什么。现在带着操作预算重看，找出真正重复、会失效或可复用的工作，再写清未来需要哪些操作。</p>
               </div>
             </div>
+            ${renderHumanStageContract(HUMAN_READING_STEPS[4])}
             <ol class="bank-question-list">
               <li>哪份工作被反复做，保留什么历史才能不再重扫？</li>
               <li>哪批候选会在同一个事件后一起失效，为什么可以安全丢掉？</li>
@@ -1767,6 +1789,7 @@ function renderBankDetail(record) {
                 <p>现在才允许具体方法名进入比较。候选必须能承担上一步的查询、插入、删除、取极值或恢复现场，并通过当前预算。</p>
               </div>
             </div>
+            ${renderHumanStageContract(HUMAN_READING_STEPS[5])}
             <ol class="bank-question-list">
               <li>这个候选消除了第二次变化里的哪份重复劳动或失效扫描？</li>
               <li>它需要哪些操作，时间和额外空间在当前范围里是否允许？</li>
@@ -1797,6 +1820,10 @@ function renderBankDetail(record) {
                 <p>从这里开始只讨论状态、更新顺序、不变量和代码。任何一项都必须能回到第 3 段的对象和第 5 段的变化。</p>
               </div>
             </div>
+            ${renderHumanStageContract({
+              ...ALGORITHM_CHAIN_STEPS[0],
+              returnTo: "状态或更新说不清，留在第 7 段；发现主方向本身没有依据，退回第 6 段。",
+            })}
             <ol class="bank-question-list">
               <li>每个状态在题目世界里代表什么，覆盖哪段对象，何时被读取和更新？</li>
               <li>初始值、停止条件和答案时机分别对应现实过程中的哪一刻？</li>
