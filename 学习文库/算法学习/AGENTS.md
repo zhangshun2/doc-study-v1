@@ -76,6 +76,8 @@
 
 “待复习”不覆盖“可迁移”。旧“已完成”只保守迁移为“已理解”，不能自动写成“可独立实现”。
 
+标准题解（`type: "problem"`）是同一道题复习排期的唯一调度源。核心卡、完整建模和 Java 速查可以维护自己的回忆状态，但不得为同一道题再生成一份日期任务。执行单题复习时，从学习看板筛选，在单题复习工作台完成提取，最后只回写标准题解的 `mastery`、`reviewStatus`、`nextReview`、`lastReviewed`、`errorTags` 和 `independentAttempts`。
+
 ## 事实与哈希
 
 - `problems.json` 是官方事实的结构化快照。`sourceFactsSha256` 覆盖题意、示例、约束、提示、标签、方法签名和 Java 模板的规范化结果。

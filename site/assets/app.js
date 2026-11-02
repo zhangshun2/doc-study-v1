@@ -446,6 +446,7 @@ function renderHome() {
   const topics = problemsNav?.topics || [];
   const startItems = state.manifest.nav.find((section) => section.id === "start")?.items || [];
   const reviewItems = [
+    "学习看板/单题复习工作台.md",
     "LeetCode-系统复习/00-总入口.md",
     "LeetCode-系统复习/01-复习计划/16周弹性计划.md",
     "LeetCode-系统复习/05-单题流程/单题时间切片.md",
@@ -459,19 +460,22 @@ function renderHome() {
     .filter((doc) => doc && doc.path !== "README.md")
     .slice(0, 5);
 
-  const primaryTarget = dueDocs[0] || state.manifest.docs[state.manifest.homepage];
+  const primaryTarget =
+    dueDocs[0] ||
+    state.manifest.docs["学习看板/单题复习工作台.md"] ||
+    state.manifest.docs[state.manifest.homepage];
   elements.content.innerHTML = `
     <section class="home-intro">
       <p class="home-kicker">${escapeHtml(state.manifest.sourceLabel)}</p>
       <h1>把理解变成可回忆、可独立实现、可迁移的算法模型</h1>
       <p>
         当前收录 ${stats.problems} 道题、${stats.core} 张核心模型卡、${stats.models} 个完整建模专题、
-        ${stats.java} 份 Java 速查与 ${stats.reviews} 篇系统复习资料。理解、实现和间隔复现共用同一套内容。
+        ${stats.java} 份 Java 速查与 ${stats.reviews} 篇复习资料。每道题在一个题库工作台里完成提取和回写。
       </p>
       <div class="home-actions">
         <a class="primary-button" href="${docHref(primaryTarget.path)}">
           <i data-lucide="${dueDocs.length ? "calendar-check" : "book-open"}"></i>
-          ${dueDocs.length ? `复习 ${cleanProblemTitle(primaryTarget.title)}` : "打开算法总索引"}
+          ${dueDocs.length ? `复习 ${cleanProblemTitle(primaryTarget.title)}` : "开始单题复习"}
         </a>
         <a class="secondary-button" href="${docHref("学习看板/README.md")}">
           <i data-lucide="layout-dashboard"></i>
@@ -500,7 +504,7 @@ function renderHome() {
         ${renderStat("核心模型", stats.core, "张", "boxes", "负责快速理解和复述")}
         ${renderStat("完整建模", stats.models, "篇", "network", "保留试错、证明与迁移")}
         ${renderStat("Java 速查", stats.java, "页", "coffee", "集合、队列、比较器与工具")}
-        ${renderStat("系统复习", stats.reviews, "篇", "repeat-2", "计划、时间切片与复习记录")}
+        ${renderStat("复习资料", stats.reviews, "篇", "repeat-2", "工作台、计划、时间切片与记录")}
       </div>
     </section>
 
@@ -508,10 +512,10 @@ function renderHome() {
       <div>
         <div class="band-head">
           <div>
-            <h2>系统复习</h2>
-            <p>从稳定入口进入计划、单题流程和记录模板。</p>
+            <h2>单题复习</h2>
+            <p>题库负责模型和代码，工作台负责提取与回写。</p>
           </div>
-          <a href="${docHref("LeetCode-系统复习/00-总入口.md")}">查看全部</a>
+          <a href="${docHref("学习看板/单题复习工作台.md")}">打开工作台</a>
         </div>
         <div class="link-list">
           ${reviewItems.map((item, index) => renderHomeLink(item, index)).join("")}
@@ -526,7 +530,7 @@ function renderHome() {
         </div>
         <div class="home-note">
           <strong>本次 &rarr; 下一次可用时段 &rarr; 3 天 &rarr; 1 周 &rarr; 2 周 &rarr; 1 个月</strong>
-          每题只记录 A/B/C/D 状态、下一次复现、最近卡点和自己的过程模型。每次 25 至 45 分钟，到点停表，不补欠账。
+          每题只记录 A/B/C/D 结果、下一次复现、最近卡点和自己的过程模型。到时间就停表，不补欠账。
         </div>
       </div>
     </section>
@@ -547,7 +551,7 @@ function renderHome() {
         <div class="band-head">
           <div>
             <h2>${dueDocs.length ? "待复习" : "复习说明"}</h2>
-            <p>${dueDocs.length ? "来自题解属性区的待复习状态。" : "状态由 Obsidian 属性区维护。"}</p>
+            <p>${dueDocs.length ? "来自标准题解属性区的待复习状态。" : "复习排期只由标准题解维护。"}</p>
           </div>
         </div>
         ${
@@ -556,7 +560,7 @@ function renderHome() {
             : `
               <div class="home-note">
                 <strong>当前没有到期题目</strong>
-                在题目或核心卡的 frontmatter 中把 <code>reviewStatus</code> 设为“待复习”，下一次发布后会自动进入这里。
+                在标准题解的 frontmatter 中把 <code>reviewStatus</code> 设为“待复习”并填写 <code>nextReview</code>，下一次发布后会自动进入这里。
               </div>
             `
         }
@@ -747,7 +751,7 @@ function resolveDocumentPath(target, currentPath) {
     cleaned.replace(/^\/+/, ""),
   ];
   for (const candidate of candidates) {
-    for (const variant of documentPathVariants(candidate)) {
+    for (const variant of documentPathVariants(normalizeSourcePath(candidate))) {
       if (index.paths.has(variant)) {
         return variant;
       }
@@ -766,6 +770,10 @@ function resolveDocumentPath(target, currentPath) {
   const basename = rootTarget.split("/").pop();
   const matches = index.byBasename.get(basename) || index.byBasename.get(basename.replace(/\.md$/i, "")) || [];
   return matches.length === 1 ? matches[0] : null;
+}
+
+function normalizeSourcePath(value) {
+  return value.replace(/^学习文库\/算法学习\//, "");
 }
 
 function documentPathVariants(value) {

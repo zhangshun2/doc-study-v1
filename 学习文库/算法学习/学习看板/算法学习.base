@@ -42,6 +42,7 @@ views:
     name: 今日复习
     filters:
       and:
+        - 'type == "problem"'
         - 'reviewStatus == "待复习"'
         - 'nextReview != null'
         - 'date(nextReview) <= today()'
@@ -50,6 +51,8 @@ views:
       - titleCn
       - mastery
       - nextReview
+      - lastReviewed
+      - independentAttempts
       - primaryPattern
       - errorTags
     sort:

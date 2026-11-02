@@ -320,6 +320,7 @@ def build_nav(docs: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
                     "00-首页.md",
                     "LeetCode-系统复习/00-总入口.md",
                     "学习看板/README.md",
+                    "学习看板/单题复习工作台.md",
                     "01-地图/算法知识地图.md",
                     "03-资料/高效理解与回忆方法.md",
                 ]
@@ -390,10 +391,14 @@ def build_manifest(docs: dict[str, dict[str, Any]]) -> dict[str, Any]:
         for doc in docs.values()
     )
     review_count = sum(doc["category"] == "review" for doc in docs.values())
+    review_count += int("学习看板/单题复习工作台.md" in docs)
+    today = dt.date.today().isoformat()
     review_due = [
         doc["path"]
         for doc in problems
         if doc.get("reviewStatus") == "待复习"
+        and isinstance(doc.get("nextReview"), str)
+        and doc["nextReview"] <= today
     ]
     independent = [
         doc["path"]
