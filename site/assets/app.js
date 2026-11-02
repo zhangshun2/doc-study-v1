@@ -14,6 +14,14 @@ const state = {
   reviewQuery: "",
   reviewPriority: "all",
   reviewDifficulty: "all",
+  factBank: null,
+  factBankPromise: null,
+  factBankRequest: 0,
+  bankActive: false,
+  bankView: "official",
+  bankGroup: "all",
+  bankQuery: "",
+  bankDifficulty: "all",
 };
 
 const elements = {
@@ -270,8 +278,8 @@ function bindShellEvents() {
   elements.searchInput.addEventListener("input", handleSearchInput);
   elements.themeToggle.addEventListener("click", toggleTheme);
   elements.content.addEventListener("click", handleContentClick);
-  elements.content.addEventListener("input", handleReviewControls);
-  elements.content.addEventListener("change", handleReviewControls);
+  elements.content.addEventListener("input", handleContentControls);
+  elements.content.addEventListener("change", handleContentControls);
 }
 
 function route() {
@@ -286,6 +294,10 @@ function route() {
     renderReviewCenter(target.query);
     return;
   }
+  if (target.bank) {
+    renderFactBank(target.query);
+    return;
+  }
   loadDocument(target.path, target.anchor);
 }
 
@@ -297,6 +309,9 @@ function parseRoute() {
   const [encodedPath, query = ""] = raw.split("?");
   if (encodedPath === "review") {
     return { review: true, query: new URLSearchParams(query) };
+  }
+  if (encodedPath === "bank") {
+    return { bank: true, query: new URLSearchParams(query) };
   }
   if (!encodedPath.startsWith("doc/")) {
     return { home: true };
@@ -334,14 +349,24 @@ function flattenNavigation(nav) {
 function renderSidebar() {
   const currentDoc = state.manifest.docs[state.currentPath];
   elements.sidebarNav.innerHTML = `
-    <a class="review-nav-link ${state.reviewActive ? "active" : ""}" href="#/review">
-      <span class="review-nav-icon"><i data-lucide="rotate-ccw"></i></span>
-      <span>
-        <strong>复习中心</strong>
-        <small>人类读题 · 方向确认 · 推导链</small>
-      </span>
-      <i data-lucide="arrow-up-right"></i>
-    </a>
+    <div class="landmark-links">
+      <a class="review-nav-link fact-bank-nav-link ${state.bankActive ? "active" : ""}" href="#/bank">
+        <span class="review-nav-icon"><i data-lucide="library-big"></i></span>
+        <span>
+          <strong>官方事实题库</strong>
+          <small>原题事实 · 约束 · 四类视图</small>
+        </span>
+        <i data-lucide="arrow-up-right"></i>
+      </a>
+      <a class="review-nav-link ${state.reviewActive ? "active" : ""}" href="#/review">
+        <span class="review-nav-icon"><i data-lucide="rotate-ccw"></i></span>
+        <span>
+          <strong>复习中心</strong>
+          <small>人类读题 · 方向确认 · 推导链</small>
+        </span>
+        <i data-lucide="arrow-up-right"></i>
+      </a>
+    </div>
     ${state.manifest.nav
       .map((section) => renderNavSection(section, currentDoc))
       .join("")}
@@ -449,6 +474,10 @@ function updateActiveNav(path = state.currentPath) {
   elements.sidebarNav
     .querySelectorAll(".nav-link.active, .review-nav-link.active")
     .forEach((link) => link.classList.remove("active"));
+  if (state.bankActive) {
+    elements.sidebarNav.querySelector(".fact-bank-nav-link")?.classList.add("active");
+    return;
+  }
   if (state.reviewActive) {
     elements.sidebarNav.querySelector(".review-nav-link")?.classList.add("active");
     return;
@@ -473,6 +502,7 @@ async function loadDocument(path, anchor = null) {
     return;
   }
   state.reviewActive = false;
+  state.bankActive = false;
   state.currentPath = path;
   state.currentAnchor = anchor;
   updateActiveNav(path);
@@ -691,6 +721,7 @@ function renderPager(path) {
 
 function renderHome() {
   state.reviewActive = false;
+  state.bankActive = false;
   state.currentPath = null;
   state.currentAnchor = null;
   updateActiveNav(null);
@@ -733,9 +764,13 @@ function renderHome() {
         确认算法以后，才进入状态、更新、不变量、代码和反例。不能反过来用方法名替代读题过程。
       </p>
       <div class="home-actions">
-        <a class="primary-button" href="#/review">
+        <a class="primary-button" href="#/bank">
+          <i data-lucide="library-big"></i>
+          从官方题面开始
+        </a>
+        <a class="secondary-button" href="#/review">
           <i data-lucide="git-branch"></i>
-          从人类读题开始
+          推导链复习
         </a>
         <a class="secondary-button" href="${docHref("LeetCode-系统复习/05-单题流程/单题推导标准卡.md")}">
           <i data-lucide="route"></i>
@@ -764,6 +799,7 @@ function renderHome() {
         </div>
       </div>
       <div class="stats-grid">
+        ${renderStat("官方题面事实", state.manifest.factBank?.stats.records || stats.problems, "题", "library-big", `${state.manifest.factBank?.stats.interview || 0} 道本地 P0 策展`)}
         ${renderStat("标准题解", stats.problems, "题", "list-checks", "含官方事实与 Java 实现")}
         ${renderStat("核心模型", stats.core, "张", "boxes", "负责快速理解和复述")}
         ${renderStat("完整建模", stats.models, "篇", "network", "保留试错、证明与迁移")}
@@ -893,6 +929,7 @@ function renderHomeLink(item, index) {
 
 function renderReviewCenter(query = null) {
   state.reviewActive = true;
+  state.bankActive = false;
   state.currentPath = null;
   state.currentAnchor = null;
   elements.tocPanel.hidden = true;
@@ -1203,6 +1240,609 @@ function difficultyLabel(value) {
   }[value] || value || "难度未知";
 }
 
+async function renderFactBank(query = new URLSearchParams()) {
+  state.bankActive = true;
+  state.reviewActive = false;
+  state.currentPath = null;
+  state.currentAnchor = null;
+  elements.tocPanel.hidden = true;
+  updateActiveNav();
+
+  state.bankView = normalizeBankView(query.get("view") || "official");
+  state.bankGroup = query.get("group") || "all";
+  state.bankQuery = query.get("q") || "";
+  state.bankDifficulty = normalizeBankDifficulty(query.get("difficulty"));
+  const selectedId = Number(query.get("id"));
+  const requestId = ++state.factBankRequest;
+
+  elements.content.innerHTML = loadingMarkup("正在读取官方题面事实...");
+  document.title = `官方事实题库 · ${state.manifest.title}`;
+
+  try {
+    await loadFactBank();
+    if (requestId !== state.factBankRequest || !state.bankActive) {
+      return;
+    }
+    const selected = Number.isInteger(selectedId) && selectedId > 0
+      ? state.factBank.recordById[String(selectedId)] || null
+      : null;
+    elements.content.innerHTML = renderFactBankPage(selected);
+    addCopyButtons(elements.content);
+    elements.content.querySelectorAll("pre code").forEach((block) => {
+      if (window.hljs) {
+        window.hljs.highlightElement(block);
+      }
+    });
+    document.title = selected
+      ? `${selected.id}. ${selected.titleCn} · 官方事实题库`
+      : `官方事实题库 · ${state.manifest.title}`;
+    window.scrollTo({ top: 0, behavior: "auto" });
+    refreshIcons();
+  } catch (error) {
+    if (requestId !== state.factBankRequest || !state.bankActive) {
+      return;
+    }
+    elements.content.innerHTML = renderBankError(error);
+    refreshIcons();
+  }
+}
+
+async function loadFactBank() {
+  if (state.factBank) {
+    return state.factBank;
+  }
+  if (!state.factBankPromise) {
+    const revision = encodeURIComponent(state.manifest.revision || "local");
+    state.factBankPromise = fetch(`assets/fact-bank.json?v=${revision}`, { cache: "no-cache" })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`官方题面事实读取失败：HTTP ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((factBank) => {
+        state.factBank = factBank;
+        return factBank;
+      })
+      .catch((error) => {
+        state.factBankPromise = null;
+        throw error;
+      });
+  }
+  return state.factBankPromise;
+}
+
+function normalizeBankView(value) {
+  return ["official", "interview", "system", "tags"].includes(value) ? value : "official";
+}
+
+function normalizeBankDifficulty(value) {
+  return ["Easy", "Medium", "Hard"].includes(value) ? value : "all";
+}
+
+function bankHref({ view = state.bankView, group = "all", q = "", difficulty = "all", id = null } = {}) {
+  const params = new URLSearchParams();
+  params.set("view", normalizeBankView(view));
+  if (group && group !== "all") {
+    params.set("group", group);
+  }
+  if (q) {
+    params.set("q", q);
+  }
+  if (difficulty && difficulty !== "all") {
+    params.set("difficulty", difficulty);
+  }
+  if (id !== null && id !== undefined && id !== "") {
+    params.set("id", String(id));
+  }
+  return `#/bank?${params.toString()}`;
+}
+
+function renderFactBankPage(selectedRecord) {
+  const factBank = state.factBank;
+  const stats = factBank.stats;
+  const views = factBank.views;
+  const currentView = views[state.bankView];
+  return `
+    <section class="fact-bank">
+      <header class="bank-hero">
+        <p class="review-eyebrow"><i data-lucide="library-big"></i>官方题面事实</p>
+        <h1>先读原题，再让推导长出来</h1>
+        <p>
+          这里只负责给出题面已经写了什么、明确约束了什么，以及哪些内容仍未知。
+          不从标签直接宣布算法，也不把本地题解伪装成平台事实。先完成扩写、对象过程、范围缩小和第二次变化，再打开推导与代码。
+        </p>
+        <div class="bank-stat-line">
+          <span><strong>${stats.records}</strong> 道原题事实</span>
+          <span><strong>${stats.easy}</strong> 简单</span>
+          <span><strong>${stats.medium}</strong> 中等</span>
+          <span><strong>${stats.hard}</strong> 困难</span>
+          <span><strong>${stats.interview}</strong> 道本地 P0</span>
+        </div>
+      </header>
+
+      <nav class="bank-view-switch" aria-label="题面事实视图">
+        ${Object.entries(views)
+          .map(
+            ([id, view]) => `
+              <a class="bank-view-tab ${id === state.bankView ? "active" : ""}" href="${bankHref({ view: id })}">
+                <span>${escapeHtml(view.label)}</span>
+                <small>${escapeHtml(bankViewMeta(id))}</small>
+              </a>
+            `
+          )
+          .join("")}
+      </nav>
+
+      <section class="bank-view-note" aria-label="当前视图说明">
+        <span>${escapeHtml(currentView.label)}</span>
+        <p>${escapeHtml(currentView.description)}</p>
+      </section>
+
+      ${selectedRecord ? renderBankDetail(selectedRecord) : renderBankBrowser()}
+    </section>
+  `;
+}
+
+function bankViewMeta(view) {
+  return {
+    official: "Platform snapshot",
+    interview: "Local P0 only",
+    system: "By problem form",
+    tags: "LeetCode tags",
+  }[view] || "";
+}
+
+function renderBankBrowser() {
+  const view = state.factBank.views[state.bankView];
+  if (state.bankGroup !== "all" && !view.groups.some((group) => group.id === state.bankGroup)) {
+    state.bankGroup = "all";
+  }
+  const groups = view.groups || [];
+  return `
+    <section class="bank-browser" id="bank-browser">
+      <div class="bank-toolbar">
+        <label class="bank-search-control">
+          <span>搜索题面、标签或分类</span>
+          <i data-lucide="search"></i>
+          <input id="bank-query" type="search" value="${escapeAttribute(state.bankQuery)}" placeholder="例如：单调栈、text =、P0">
+        </label>
+        <label>
+          <span>当前视图分组</span>
+          <select id="bank-group-filter">
+            <option value="all" ${state.bankGroup === "all" ? "selected" : ""}>全部（${state.factBank.stats.records}）</option>
+            ${groups
+              .map(
+                (group) => `
+                  <option value="${escapeAttribute(group.id)}" ${group.id === state.bankGroup ? "selected" : ""}>
+                    ${escapeHtml(group.label)}（${group.problemIds.length}）
+                  </option>
+                `
+              )
+              .join("")}
+          </select>
+        </label>
+        <label>
+          <span>LeetCode 难度</span>
+          <select id="bank-difficulty-filter">
+            ${renderBankOption("all", "全部难度", state.bankDifficulty)}
+            ${renderBankOption("Easy", "简单", state.bankDifficulty)}
+            ${renderBankOption("Medium", "中等", state.bankDifficulty)}
+            ${renderBankOption("Hard", "困难", state.bankDifficulty)}
+          </select>
+        </label>
+      </div>
+      <div id="bank-results" aria-live="polite">
+        ${renderBankResults()}
+      </div>
+    </section>
+  `;
+}
+
+function renderBankOption(value, label, selected) {
+  return `<option value="${escapeAttribute(value)}" ${value === selected ? "selected" : ""}>${escapeHtml(label)}</option>`;
+}
+
+function renderBankResults() {
+  const records = filteredBankRecords();
+  const view = state.factBank.views[state.bankView];
+  const group = view.groups.find((item) => item.id === state.bankGroup);
+  const context = group ? group.label : view.label;
+  return `
+    <div class="bank-results-meta">
+      <span>${escapeHtml(context)}</span>
+      <strong>${records.length} 道</strong>
+      <small>列表只显示题面事实与分类；打开题目后先停在读题阶段。</small>
+    </div>
+    ${
+      records.length
+        ? `<div class="bank-problem-list">${records.map(renderBankProblemRow).join("")}</div>`
+        : `
+          <div class="bank-empty">
+            <i data-lucide="search-x"></i>
+            <strong>当前条件下没有题目</strong>
+            <p>换一个分组、难度或更短的关键词。筛选结果不是学习进度。</p>
+          </div>
+        `
+    }
+  `;
+}
+
+function filteredBankRecords() {
+  const view = state.factBank.views[state.bankView];
+  const group = view.groups.find((item) => item.id === state.bankGroup);
+  const allowedIds = group ? new Set(group.problemIds.map(String)) : null;
+  const query = normalizeText(state.bankQuery);
+  return state.factBank.records
+    .filter((record) => !allowedIds || allowedIds.has(String(record.id)))
+    .filter((record) => state.bankDifficulty === "all" || record.difficulty === state.bankDifficulty)
+    .filter((record) => !query || bankRecordSearchText(record).includes(query))
+    .sort(
+      (left, right) =>
+        ["Easy", "Medium", "Hard"].indexOf(left.difficulty) -
+          ["Easy", "Medium", "Hard"].indexOf(right.difficulty) ||
+        left.id - right.id
+    );
+}
+
+function bankRecordSearchText(record) {
+  if (!record._searchText) {
+    record._searchText = normalizeText(
+      [
+        record.id,
+        record.titleCn,
+        record.titleEn,
+        record.primaryPattern,
+        ...(record.priorities || []),
+        ...(record.checklistTags || []),
+        ...(record.officialTags || []).map((tag) => tag.translatedName),
+        stripHtmlText(record.descriptionHtml),
+        ...(record.constraints || []),
+      ].join(" ")
+    );
+  }
+  return record._searchText;
+}
+
+function renderBankProblemRow(record) {
+  const priorities = record.priorities || [];
+  return `
+    <a class="bank-problem-row" href="${bankHref({
+      view: state.bankView,
+      group: state.bankGroup,
+      q: state.bankQuery,
+      difficulty: state.bankDifficulty,
+      id: record.id,
+    })}">
+      <span class="bank-problem-number">${escapeHtml(String(record.id).padStart(2, "0"))}</span>
+      <span class="bank-problem-main">
+        <strong>${escapeHtml(record.titleCn)}</strong>
+        <small>${escapeHtml(record.titleEn || "")} · ${escapeHtml(record.primaryPattern || "未分类")}</small>
+      </span>
+      <span class="bank-problem-tags">
+        <span class="bank-difficulty bank-difficulty-${escapeAttribute(record.difficulty)}">${escapeHtml(difficultyLabel(record.difficulty))}</span>
+        ${priorities.map((priority) => `<span class="bank-priority">${escapeHtml(priority)}</span>`).join("")}
+        ${record.officialTags.slice(0, 2).map((tag) => `<span>${escapeHtml(tag.translatedName)}</span>`).join("")}
+      </span>
+      <i data-lucide="arrow-up-right"></i>
+    </a>
+  `;
+}
+
+function renderBankDetail(record) {
+  const requiredComplexity = record.complexity?.required || [];
+  const advancedComplexity = record.complexity?.advanced || [];
+  const tags = (record.officialTags || []).map((tag) => tag.translatedName);
+  const priorities = record.priorities || [];
+  const solution = record.solution;
+  const statement = sanitizeHtml(record.descriptionHtml);
+  const sourceSha = record.sourceFactsSha256 ? record.sourceFactsSha256.slice(0, 12) : "未记录";
+  return `
+    <section class="bank-detail">
+      <div class="bank-detail-top">
+        <a class="secondary-button compact" href="${bankHref({
+          view: state.bankView,
+          group: state.bankGroup,
+          q: state.bankQuery,
+          difficulty: state.bankDifficulty,
+        })}">
+          <i data-lucide="arrow-left"></i>返回题目列表
+        </a>
+        <span>Source checked ${escapeHtml(record.sourceCheckedAt || "未记录")}</span>
+      </div>
+
+      <header class="bank-detail-head">
+        <p class="bank-detail-number">LeetCode ${escapeHtml(record.id)} · ${escapeHtml(difficultyLabel(record.difficulty))}</p>
+        <h1>${escapeHtml(record.titleCn)}</h1>
+        <p>${escapeHtml(record.titleEn || "")}</p>
+        <div class="bank-chip-row">
+          ${priorities.map((priority) => `<span class="bank-priority">${escapeHtml(priority)}</span>`).join("")}
+          <span><i data-lucide="network"></i>${escapeHtml(record.system?.label || "未分类")}</span>
+          ${tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
+        </div>
+      </header>
+
+      <ol class="bank-stage-list" aria-label="人类读题阶段">
+        ${[
+          ["01", "原题事实"],
+          ["02", "扩写过程"],
+          ["03", "对象与变化"],
+          ["04", "范围与候选"],
+          ["05", "第二次变化"],
+          ["06", "确认方向"],
+        ]
+          .map(
+            ([index, label], position) => `
+              <li class="${position === 0 ? "active" : ""}">
+                <b>${index}</b>
+                <span>${label}</span>
+              </li>
+            `
+          )
+          .join("")}
+      </ol>
+
+      <div class="bank-detail-layout">
+        <div class="bank-detail-main">
+          <section class="bank-fact-section">
+            <div class="bank-section-heading">
+              <span>01</span>
+              <div>
+                <h2>先只读原题事实</h2>
+                <p>下面保持题面原样。先把事实、由事实推出的结论和你的猜测分开。</p>
+              </div>
+            </div>
+            <div class="markdown-body bank-statement">${statement}</div>
+          </section>
+
+          <section class="bank-fact-section">
+            <div class="bank-section-heading">
+              <span>02</span>
+              <div>
+                <h2>把压缩题干扩写成人话</h2>
+                <p>还不要想算法。先回答谁拿着什么、按什么顺序做什么、遇到什么条件停止。</p>
+              </div>
+            </div>
+            <ol class="bank-question-list">
+              <li>题目世界里的对象有哪些？哪些值相同但身份不同？</li>
+              <li>最直接的人工过程从哪个对象开始，下一步看哪里？</li>
+              <li>哪个事件让状态或候选集合第一次发生变化？</li>
+              <li>答案在哪一类事件之后才成为确定结果？</li>
+            </ol>
+            <div class="bank-reading-links">
+              <a href="${docHref("LeetCode-系统复习/05-单题流程/单题推导标准卡.md")}">
+                <i data-lucide="clipboard-list"></i>按标准卡写下自己的扩写
+              </a>
+              <a href="${docHref("LeetCode-系统复习/05-单题流程/小白读题现场示范.md")}">
+                <i data-lucide="message-circle-more"></i>看小白怎样停下来问下一步
+              </a>
+            </div>
+          </section>
+
+          <section class="bank-fact-section">
+            <div class="bank-section-heading">
+              <span>03</span>
+              <div>
+                <h2>官方示例</h2>
+                <p>示例用于检查你的手工过程，不替代边界和反例。</p>
+              </div>
+            </div>
+            ${
+              record.officialExamples?.length
+                ? `<div class="bank-examples">
+                    ${record.officialExamples
+                      .map(
+                        (example, index) => `
+                          <div class="bank-example">
+                            <span>示例 ${index + 1}</span>
+                            <pre><code>输入：${escapeHtml(example.input || "")}\n输出：${escapeHtml(example.output || "")}${
+                              example.explanation ? `\n解释：${escapeHtml(example.explanation)}` : ""
+                            }</code></pre>
+                          </div>
+                        `
+                      )
+                      .join("")}
+                  </div>`
+                : `<p class="bank-muted">当前快照没有结构化示例。</p>`
+            }
+          </section>
+
+          <section class="bank-fact-section">
+            <div class="bank-section-heading">
+              <span>04</span>
+              <div>
+                <h2>约束、预算与候选</h2>
+                <p>先抄官方约束，再单独估算慢过程的操作量。范围只排除复杂度家族，不替人点名算法。</p>
+              </div>
+            </div>
+            <div class="bank-constraint-block">
+              <h3>官方约束</h3>
+              ${
+                record.constraints?.length
+                  ? `<ul>${record.constraints.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+                  : `<p class="bank-muted">当前快照没有结构化提示。</p>`
+              }
+            </div>
+            <div class="bank-complexity-grid">
+              <div>
+                <h3>题面明确要求</h3>
+                ${
+                  requiredComplexity.length
+                    ? `<ul>${requiredComplexity.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+                    : `<p class="bank-muted">题面无明确复杂度要求。</p>`
+                }
+              </div>
+              <div>
+                <h3>官方“进阶”建议</h3>
+                ${
+                  advancedComplexity.length
+                    ? `<ul>${advancedComplexity.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+                    : `<p class="bank-muted">题面无额外进阶复杂度建议。</p>`
+                }
+              </div>
+            </div>
+            <div class="bank-budget-prompt">
+              <strong>接下来由你补上的三层</strong>
+              <p>官方事实：上面已经列出。操作预算：最慢的人工过程大约重复多少次？候选池：这些操作和预算允许哪些方向，哪些方向已经因题面关系失效？</p>
+            </div>
+          </section>
+
+          <section class="bank-fact-section">
+            <div class="bank-section-heading">
+              <span>05</span>
+              <div>
+                <h2>第二次捕捉变化，再确认方向</h2>
+                <p>只有找到重复查询、候选失效、子问题复用或递归结构中的主要证据，才能进入下一步。</p>
+              </div>
+            </div>
+            <ol class="bank-question-list">
+              <li>哪份工作被反复做，保留什么历史才能不再重扫？</li>
+              <li>哪批候选会在同一个事件后一起失效，为什么可以安全丢掉？</li>
+              <li>同一个子问题会不会从多条路径重复到达，需要复用吗？</li>
+              <li>至少一个未选方向在当前题目的哪个条件下失效或代价过高？</li>
+            </ol>
+            ${
+              solution
+                ? `<div class="bank-solution-gate">
+                    <strong>方向确认以后再打开正式文档</strong>
+                    <p>这里的链接进入现有题解，不另存第二份答案。若还说不清“为什么需要这些操作”，先留在上面。</p>
+                    <div class="bank-reading-links">
+                      <a href="${docHref(solution.path, solution.reasoningAnchor)}"><i data-lucide="git-branch"></i>人的推导</a>
+                      <a href="${docHref(solution.path, solution.answerAnchor)}"><i data-lucide="shield-check"></i>答案与不变量</a>
+                      <a href="${docHref(solution.path, solution.codeAnchor)}"><i data-lucide="code-2"></i>Java 实现</a>
+                    </div>
+                  </div>`
+                : `<p class="bank-muted">当前快照没有关联到本地标准题解。</p>`
+            }
+          </section>
+
+          <details class="bank-code-gate">
+            <summary>
+              <span>
+                <strong>我已经完成方向确认，展开签名与 Java 模板</strong>
+                <small>如果还说不清主方向、所需操作和未选候选，先不要展开。</small>
+              </span>
+              <i data-lucide="chevron-down"></i>
+            </summary>
+            <div class="bank-code-body">
+              <p>${escapeHtml(renderSignatureText(record.signature))}</p>
+              <pre><code class="language-java">${escapeHtml(record.javaTemplate || "当前快照没有 Java 模板。")}</code></pre>
+            </div>
+          </details>
+
+          <details class="bank-official-hints">
+            <summary>
+              <span>
+                <strong>查看平台提示（可能提前泄露思考方向）</strong>
+                <small>${record.officialHints?.length || 0} 条官方提示，阅读前先写下自己的当前困惑。</small>
+              </span>
+              <i data-lucide="chevron-down"></i>
+            </summary>
+            <ol>
+              ${
+                record.officialHints?.length
+                  ? record.officialHints.map((hint) => `<li>${sanitizeHtml(hint)}</li>`).join("")
+                  : "<li>当前快照没有官方提示。</li>"
+              }
+            </ol>
+          </details>
+        </div>
+
+        <aside class="bank-detail-aside">
+          <section>
+            <span class="bank-aside-label">事实源</span>
+            <a href="${escapeAttribute(record.sourceUrl || "#")}" target="_blank" rel="noreferrer">
+              打开 LeetCode 原题<i data-lucide="external-link"></i>
+            </a>
+            <dl class="bank-source-facts">
+              <div><dt>核验日期</dt><dd>${escapeHtml(record.sourceCheckedAt || "未记录")}</dd></div>
+              <div><dt>快照摘要</dt><dd><code>${escapeHtml(sourceSha)}</code></dd></div>
+              <div><dt>主分类</dt><dd>${escapeHtml(record.primaryPattern || "未分类")}</dd></div>
+            </dl>
+          </section>
+          <section>
+            <span class="bank-aside-label">怎样区分</span>
+            <p><strong>官方事实</strong>来自题面快照。</p>
+            <p><strong>P0 与体系形态</strong>来自本地策展，不冒充平台评级或推荐解法。</p>
+            <p><strong>Java 模板</strong>只是函数签名，不证明算法方向。</p>
+          </section>
+          <section>
+            <span class="bank-aside-label">当前断点</span>
+            <p>如果第二次变化还说不清，就把最早缺失的问题写在单题工作台，不要用打开题解替代推导。</p>
+            <a href="${docHref("学习看板/单题复习工作台.md")}">记录本题断点<i data-lucide="arrow-right"></i></a>
+          </section>
+        </aside>
+      </div>
+    </section>
+  `;
+}
+
+function renderSignatureText(signature) {
+  if (!signature?.name) {
+    return "当前快照没有结构化函数签名。";
+  }
+  const params = (signature.params || [])
+    .map((param) => `${param.type || "unknown"} ${param.name || ""}`.trim())
+    .join(", ");
+  const returnType = signature.return?.type || "unknown";
+  return `${signature.name}(${params}) -> ${returnType}`;
+}
+
+function sanitizeHtml(fragment) {
+  if (!window.DOMPurify) {
+    return "";
+  }
+  return DOMPurify.sanitize(fragment || "", {
+    ADD_ATTR: ["target", "rel"],
+  });
+}
+
+function stripHtmlText(fragment) {
+  if (!fragment) {
+    return "";
+  }
+  const documentFragment = new DOMParser().parseFromString(String(fragment), "text/html");
+  return documentFragment.body?.textContent || "";
+}
+
+function renderBankError(error) {
+  return `
+    <div class="error-state">
+      <i data-lucide="database-zap"></i>
+      <h1>官方事实题库暂时无法读取</h1>
+      <p>${escapeHtml(error.message)}</p>
+      <p>请先运行 <code>python3 site/build.py</code>，确认生成了 <code>_site/assets/fact-bank.json</code>。</p>
+      <a class="primary-button" href="#/">返回学习首页</a>
+    </div>
+  `;
+}
+
+function handleContentControls(event) {
+  handleReviewControls(event);
+  handleBankControls(event);
+}
+
+function handleBankControls(event) {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement)) {
+    return;
+  }
+  if (target.id === "bank-query") {
+    state.bankQuery = target.value;
+  } else if (target.id === "bank-group-filter") {
+    state.bankGroup = target.value;
+  } else if (target.id === "bank-difficulty-filter") {
+    state.bankDifficulty = normalizeBankDifficulty(target.value);
+  } else {
+    return;
+  }
+  const results = document.querySelector("#bank-results");
+  if (results) {
+    results.innerHTML = renderBankResults();
+    refreshIcons();
+  }
+}
+
 function handleReviewControls(event) {
   const target = event.target;
   if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement)) {
@@ -1430,10 +2070,20 @@ function scrollToRequestedAnchor(anchor) {
   if (!anchor) {
     return;
   }
-  const target = document.getElementById(anchor);
+  const target = document.getElementById(anchor) || document.getElementById(slugify(anchor));
   if (target) {
     target.scrollIntoView({ block: "start" });
+    return;
   }
+  const normalizedAnchor = normalizeText(anchor);
+  const matchingHeading = Array.from(
+    elements.content.querySelectorAll(".markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4")
+  ).find((heading) => {
+    const copy = heading.cloneNode(true);
+    copy.querySelector(".heading-anchor")?.remove();
+    return normalizeText(copy.textContent) === normalizedAnchor;
+  });
+  matchingHeading?.scrollIntoView({ block: "start" });
 }
 
 function openSearch() {
@@ -1552,7 +2202,7 @@ function renderSearchResults(query = "") {
     .map((doc, index) => {
       const snippet = buildSnippet(doc, query);
       return `
-        <a class="search-result ${index === state.activeSearchIndex ? "active" : ""}" href="${docHref(doc.path)}" data-result-index="${index}">
+        <a class="search-result ${index === state.activeSearchIndex ? "active" : ""}" href="${searchResultHref(doc)}" data-result-index="${index}">
           <span class="search-result-main">
             <span class="search-result-title">${highlightText(doc.title, query)}</span>
             <span class="search-result-snippet">${snippet}</span>
@@ -1643,9 +2293,13 @@ function handleGlobalKeydown(event) {
     updateActiveSearchResult();
   } else if (event.key === "Enter" && state.activeSearchIndex >= 0) {
     event.preventDefault();
-    window.location.hash = docHref(state.searchResults[state.activeSearchIndex].path).slice(1);
+    window.location.hash = searchResultHref(state.searchResults[state.activeSearchIndex]).slice(1);
     closeSearch();
   }
+}
+
+function searchResultHref(doc) {
+  return doc.href || docHref(doc.path);
 }
 
 function isTypingTarget(target) {

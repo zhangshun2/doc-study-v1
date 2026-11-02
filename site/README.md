@@ -16,9 +16,23 @@ python3 -m http.server 8000 -d _site
 - `_site/content/`：从正式算法库复制的 Markdown 和辅助文件。
 - `_site/assets/manifest.json`：导航、统计、文档属性与复习状态。
 - `_site/assets/search.json`：按需加载的全文检索索引。
+- `_site/assets/fact-bank.json`：从 `学习文库/算法学习/problems.json` 构建的官方题面事实快照。
 - `_site/assets/app.js`、`app.css`：阅读站点界面。
 
 `site/assets/vendor/` 保存固定版本的浏览器依赖，避免运行时依赖外部 CDN。
+
+## 官方事实题库
+
+`学习文库/算法学习/problems.json` 是官方题面、约束、示例、提示和 Java 签名的唯一事实源。`fact-bank.json` 只是构建产物，不在 Markdown 里手抄第二份题面，避免原文和笔记页面对不上。
+
+首页的“官方事实题库”入口按四种正交方式浏览：
+
+- `官方事实`：直接投影题面快照，按 LeetCode 难度排列。
+- `面试高频`：本地清单中标记为 P0 的策展视图，不是 LeetCode 官方评级。
+- `体系形态`：按问题本身的计算形态重排，一道题只归入一个主要形态。
+- `官方标签`：保留 LeetCode 标签，用于原样检索；标签不证明某个算法方向。
+
+题目详情先呈现原题事实、约束、示例和复杂度要求。签名与 Java 模板默认收起，必须先完成自己的读题、对象过程、范围分析和方向确认，再打开代码。题解链接指向正式文档中的推导、答案和代码锚点，不另存一套答案。
 
 ## 发布方式
 
