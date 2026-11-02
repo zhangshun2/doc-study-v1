@@ -18,6 +18,10 @@ def main() -> int:
             "Human reading contract",
             [sys.executable, str(TOOLS_ROOT / "validate_human_reading.py")],
         ),
+        (
+            "Analysis experiment contract",
+            [sys.executable, str(TOOLS_ROOT / "validate_analysis_experiment.py")],
+        ),
         ("Library contract", [sys.executable, str(TOOLS_ROOT / "validate_library.py")]),
         (
             "Java blocks and official examples",

@@ -60,6 +60,9 @@ const HUMAN_READING_STEPS = [
     frame: "题目已经明确给出……；题目要求返回……；题目明确保证……；题目禁止……；我暂时还不知道……。",
     reject: "把“应该用哈希表”或“这是滑动窗口”写在读题笔记里，却还不能复述原题条件。",
     returnTo: "原句读错、把示例当全部规则或提前补条件，回到第 1 段重读。",
+    entry: "已打开原题，并关闭题解、标签和讨论区。",
+    allowed: "有来源的输入、输出、保证、禁止、未知，以及真实初始理解。",
+    blocked: "方法名、结构名、复杂度结论，或题目没有写出的条件。",
   },
   {
     index: "02",
@@ -67,29 +70,37 @@ const HUMAN_READING_STEPS = [
     question: "每个字都懂，可一个普通人在纸上第一步做什么？",
     novice: "小白常觉得每个字都懂，却复述不出具体动作。这时不是再找一个标签，而是先抓会改变动作、限制和停止时机的句子，再把它们补成人在现实中会经历的过程。",
     must: [
-      "先逐句写“原句新增了什么动作、身份、顺序或限制”，再把片段合成完整过程。",
+      "先逐句填四列：“原句、新增了什么动作/身份/顺序/停止条件、忽略后具体会错在哪、事实/推导/推测”，再把片段合成完整过程。",
       "每一条扩写都能指回原句并标成事实、推导或推测；指不回去又未标推测，就是脑补。",
       "解释一个条件实际阻止了什么错误操作或错误结果，而不是只把它抄一遍。",
+      "扩写只写到人能按时间执行为止；答案在哪一类事件后成为确定结果，留到阶段 3 走完最小例子再判断。",
     ],
     frame: "我手里有……；我从……开始；我反复做……；当……时停止；题目要交出的不是……，而是……；条件“……”意味着我不能……。",
     reject: "把题面换成几个抽象名词，却没有补出动作顺序、停止条件或条件的实际作用。",
     returnTo: "只会换同义词或补了题面没有的规则，退回第 2 段；如果原句仍然读错，再退回第 1 段。",
+    entry: "阶段 1 的输入、输出、保证、禁止和未知已经分开，且每条能指回来源。",
+    allowed: "逐句动作、对象替换、顺序、停止条件、条件防止的具体错误，以及完整人话过程。",
+    blocked: "优化理由、最终方法名、复杂度目标，或原题没有保证的规则。",
   },
   {
     index: "03",
     title: "对象、过程与第一次变化（问题 3 -> 问题 4）",
     question: "先问：这个任务里有哪些对象，谁和谁有关系？再问：照着最笨的办法走一遍，哪一刻什么变了，答案什么时候定下来？",
-    novice: "小白容易把数组、Map 当成题目对象，也容易觉得例子走完就等于看懂。先分清身份，再一步一步演算，最后只记录过程里真实发生的变化。",
+    novice: "小白这时通常只会说“我还分不清”，还没有现成对象表。先指出具体卡在哪句，再做一个能多出证据的纸面动作；证据出现后才分清身份，随后一步一步演算，最后只记录过程里真实发生的变化。",
     must: [
-      "先列业务对象、身份、关系和最终结果，不把 Map、Queue 等代码容器提前混入。",
-      "用最小但完整的例子，按时间顺序走最直接、可能很慢的人工过程。",
+      "先写下当前困惑和准备做的实际纸面动作，再记录做完后新增的证据；没有新增证据，不填对象表。",
+      "用六列对象表写清业务对象、值和状态、身份由什么决定、位置、关系和最终结果，不把 Map、Queue 等代码容器提前混入。",
+      "用最小但完整的例子，按“看见什么 -> 处理谁 -> 做什么 -> 什么变了 -> 为什么继续”逐步走最直接、可能很慢的人工过程。",
       "只写“变化前 -> 触发事件 -> 变化后”和答案产生时刻；第一次变化禁止提前写结构或优化结论。",
-      "能在另一个最小例子上重走，并能分开值、位置和身份。",
+      "能在另一个最小例子上重走，并能说明哪条新增证据让值、位置和身份分开。",
       "记录“我现在还不知道什么”和“下一个最小问题”，只跨一个认知台阶。",
     ],
-    frame: "题目对象是……；以……为例，我先……，接着……；当……发生时，……从……变成……；答案在……时产生。",
-    reject: "只报实现名词；例子只有输入输出；或在第一次变化里就宣布优化和结构。",
-    returnTo: "说不清对象或动作，退回第 2 段；能走过程但说不清变化和答案时机，留在第 3 段。",
+    frame: "我此刻卡在……；我先做……；做完以后新增的证据是……；题目对象是……；以……为例，我先……，接着……；当……发生时，……从……变成……；答案在……时产生。",
+    reject: "没有新增证据就直接列对象；只报实现名词；例子只有输入输出；或在第一次变化里就宣布优化和结构。",
+    returnTo: "没有实际纸面动作或新增证据，退回本段起点；对象说不清回到新增证据；能走过程但说不清变化和答案时机，留在第 3 段。",
+    entry: "阶段 2 的人话过程能让另一个人照着演完。",
+    allowed: "先得到当前困惑、实际动作和新增证据，再得到对象身份与关系、完整人工过程、第一次变化和答案产生时刻。",
+    blocked: "没有新增证据就填对象表；问题 3 未分清就进入问题 4；第一次变化里出现结构名或优化结论。",
   },
   {
     index: "04",
@@ -104,6 +115,9 @@ const HUMAN_READING_STEPS = [
     frame: "官方约束是……；如果每一步都重新检查全部对象，我推导大约会做……次操作；因此不能依赖……；由过程的……操作，候选池里有……；此刻仍不能决定……。",
     reject: "完全不看约束；只看 n 的大小；或范围分析结束后只会说“用 O(n)”，却没有产生可比较的候选。",
     returnTo: "没数过慢过程就谈复杂度，退回第 3 段；数过但把范围当算法暗号，留在第 4 段。",
+    entry: "已有完整人工过程、第一次变化和答案产生时刻。",
+    allowed: "官方约束、操作预算、被排除的复杂度家族和功能候选。",
+    blocked: "具体算法名、结构名、“看到 n 就选某方法”，或把候选池当结论。",
   },
   {
     index: "05",
@@ -119,6 +133,9 @@ const HUMAN_READING_STEPS = [
     frame: "最浪费的重复动作是……，它属于……；未来第……步会回来问……；为了回答它，我必须能快速……；真正需要留下的信息是……；旧候选在……后可以丢弃。",
     reject: "还没找到重复劳动或候选寿命，就因为题目标签、候选池或数据规模直接点名某个算法。",
     returnTo: "没有具体例子证明重复或失效，退回第 3 段补过程；没有操作预算，退回第 4 段。",
+    entry: "已有操作预算和至少一个由过程产生的功能候选。",
+    allowed: "重复查询、候选失效、子问题复用或顺序约束的最小证据，以及所需操作。",
+    blocked: "具体容器、完整伪代码、尚未比较就宣布的最终方向。",
   },
   {
     index: "06",
@@ -135,6 +152,203 @@ const HUMAN_READING_STEPS = [
     frame: "当前过程反复需要……；直接重复会做……次操作；因此必须支持……操作；候选 A 提供……；我检查过的替代方向……在……时失效或代价过高；所以选择 A。",
     reject: "只知道一个方法名，却说不出它替掉了哪份重复劳动、依赖哪些条件以及为什么不选更简单的方案。",
     returnTo: "候选没有从操作长出来，退回第 5 段；只能报方法名却说不出取舍，留在第 6 段。",
+    entry: "已经有可复核的操作需求和待比较候选。",
+    allowed: "候选取舍、代价、失效条件和完整方向确认句。",
+    blocked: "完整 Java、状态转移细节，或只报方法名。",
+  },
+];
+
+const BEGINNER_ACTION_STEPS = [
+  {
+    gap: "只知道题面文字",
+    action: "圈出返回要求，分开写“题目给我什么”和“要我交回什么”。",
+    evidence: "输入、输出、边界和还不知道的部分。",
+    blocked: "猜方法，或把示例当完整规则。",
+  },
+  {
+    gap: "知道要求但不会动",
+    action: "把代词换成具体对象，写谁拿着什么、下一步做什么、何时停止。",
+    evidence: "一条普通人能照着执行的人话过程。",
+    blocked: "只换同义词，或提前优化。",
+  },
+  {
+    gap: "能复述过程，但还分不清值、位置和身份",
+    action: "先写当前卡点，圈一句原句或写出两个候选位置；新增证据成立后，再填六列对象表。",
+    evidence: "一条可核对的新增证据，以及对象身份、位置和关系。",
+    blocked: "没有新增证据就填对象表；先列 Map、Queue 或 Stack。",
+  },
+  {
+    gap: "能说过程但不会走",
+    action: "用一个最小但完整的例子，逐步写读谁、比较谁、写什么。",
+    evidence: "完整人工过程和第一次变化。",
+    blocked: "用输入输出摘要代替演算。",
+  },
+  {
+    gap: "看见变化但不知道是否值得处理",
+    action: "在最坏输入上数重复动作，再把每一轮和总轮数相加。",
+    evidence: "操作预算和不能稳定依赖的规模。",
+    blocked: "从 n 的大小直接点名算法。",
+  },
+  {
+    gap: "知道贵但不知道留下什么",
+    action: "标出哪份历史会被第二次读取、何时失效、未来需要什么操作。",
+    evidence: "重复、寿命和操作需求。",
+    blocked: "把候选池当成最终结构。",
+  },
+  {
+    gap: "已经能说出操作",
+    action: "把操作写成加入、查询、删除、取极值、恢复现场等动词，再比较候选。",
+    evidence: "候选取舍依据和完整方向确认句。",
+    blocked: "只报方法名，或把熟悉当证明。",
+  },
+  {
+    gap: "方向已经确认",
+    action: "把对象、人工动作、状态、伪代码、Java 代码位置和反例逐段接起来。",
+    evidence: "推导链、更新顺序和对应反例。",
+    blocked: "让运行通过反过来补缺失的推导。",
+  },
+];
+
+const BEGINNER_LIVE_STANDARD = [
+  {
+    stage: "阶段 1 · 读题",
+    gap: "只抓到名词，分不清题目给了什么、要交回什么。",
+    ask: "我刚读完题，题目到底给了我什么，要我交回什么？",
+    action: "圈出返回要求，另写“输入”和“输出”两栏，每条都抄回原句。",
+    evidence: "有来源的输入、输出、保证、禁止和未知。",
+    blocked: "方法名、结构名、复杂度结论、题面没有保证的条件。",
+    next: "这些仍是静态事实，没有人能按时间执行；因此自然要问谁先动、按什么顺序做、何时停。",
+  },
+  {
+    stage: "阶段 2 · 扩写",
+    gap: "事实已有来源，但不知道普通人从哪里开始、下一步做什么、何时停止。",
+    ask: "每个字都懂，可一个普通人在纸上第一步做什么？",
+    action: "选第一句承载动作或判断的原句，把代词换成具体对象，写出“谁拿什么 -> 做什么 -> 何时停”。",
+    evidence: "一句可执行动作和它防止的错误；逐句完成后得到别人能照着演完的人话过程。",
+    blocked: "答案确定时刻、优化理由、重复与复用、等待或批量处理、容器和方法名。",
+    next: "过程能演，但值、位置和身份还可能混在一起，也没有最小例子；因此自然进入对象和第一次变化。",
+  },
+  {
+    stage: "阶段 3 · 对象、过程与第一次变化",
+    gap: "对象混在一起，过程能演，却可能把值和位置当成同一个对象；我还说不清现在该核对哪一句，也还没有事实说明哪一刻状态改变。",
+    ask: "我先卡在哪句、做什么纸面动作能多出证据？对象分清后，再照着最笨的办法走一遍，看哪一刻什么变了、答案何时定下来。",
+    action: "先写当前困惑，圈一句原句或写出两个候选位置并记录新增证据；再填六列对象表，最后用最小完整例子逐行写“看到谁 -> 处理谁 -> 做什么 -> 什么变了 -> 为什么继续”。",
+    evidence: "当前困惑、实际纸面动作、新增证据、对象身份与关系、一条完整人工过程、第一次变化和答案产生时刻。",
+    blocked: "没有新增证据就填对象表；问题 3 未完成就跳问题 4；在过程里写结构名或优化结论；用输入输出摘要代替演算。",
+    next: "已经有完整过程和第一次变化，还不知道这份慢是否超预算；因此自然要数最坏重复并读范围。",
+  },
+  {
+    stage: "阶段 4 · 范围与候选",
+    gap: "知道发生了什么、答案何时确定，却不知道慢过程是否值得处理。",
+    ask: "这个笨办法最坏会重复多少，数据范围先排除哪些方向？",
+    action: "抄下完整约束，再选最坏输入，数一轮核心动作并乘上轮数。",
+    evidence: "官方约束、自己的操作预算、被排除的复杂度家族和功能候选。",
+    blocked: "算法名、结构名、“看到 n 就选某方法”、把候选当成结论。",
+    next: "预算说明某些重复可能太贵，但未来保存什么、何时失效、需要哪些操作仍不知道；因此自然做第二次变化。",
+  },
+  {
+    stage: "阶段 5 · 第二次变化",
+    gap: "知道可能慢，却不知道哪份信息会被再次读取、哪批对象会失效、需要什么操作。",
+    ask: "带着这个代价重看，哪份信息还会被再次问起，哪批候选会过期，哪个子问题会复用，哪条顺序不能乱？",
+    action: "回到同一条人工过程，用最小例子标出重复查询、失效、复用或顺序，再把所需操作写成动词。",
+    evidence: "变化真实发生的最小证据，以及查询、加入、删除、取极值、恢复现场等操作需求。",
+    blocked: "具体容器、完整伪代码、尚未比较就宣布的最终方向。",
+    next: "操作需求已经具体，但还没有比较哪个候选能承担它；因此自然进入候选取舍。",
+  },
+  {
+    stage: "阶段 6 · 方向确认",
+    gap: "操作需求已经具体，但候选的代价、依赖和失效条件还没有逐项对应。",
+    ask: "这些操作需要什么方向来承担，另一个方向为什么不够？",
+    action: "先列操作和预算，再对每个真实候选写“支持什么、缺少什么、何时失效”；最后写完整方向确认句。",
+    evidence: "候选取舍证据、失效条件和完整方向确认句。",
+    blocked: "完整 Java、状态转移细节、只报方法名、没有比较就宣布结论。",
+    next: "方向已经确认，但变量、更新顺序、不变量和代码还没有接回人工过程；因此才进入最终推导链。",
+  },
+  {
+    stage: "阶段 7 · 推导链",
+    gap: "方向有了，却不知道每个变量代表哪个题目对象，先更新谁、为什么不会漏。",
+    ask: "方向已经定了，状态、更新顺序、不变量和代码怎样逐段对应？",
+    action: "逐行填“对象 -> 动作 -> 操作需求 -> 状态 -> 伪代码 -> Java 代码位置 -> 更新顺序或不变量 -> 反例”。",
+    evidence: "可验证的状态模型、更新顺序、不变量、代码映射、反例和闭卷重建。",
+    blocked: "更换算法方向、用模板顺序冒充证明、用运行通过补缺失推导。",
+    next: "不再生成新的算法问题；只有某个映射说不通时退回最早缺口，不能靠换一个熟悉方法逃避。",
+  },
+];
+
+const HUMAN_ACCEPTANCE_STANDARD = [
+  {
+    stage: "1. 读题",
+    firstLook: "原句给了什么、要交回什么，初始理解是否有来源。",
+    action: "圈返回要求，分栏抄输入、输出、保证、禁止和未知。",
+    evidence: "每项可指回原句；无候选时写“没有形成候选”。",
+    forbidden: "方法名、结构名、复杂度结论、脑补条件。",
+    returnTo: "原句；记忆只能标成“记忆候选，不是题目事实”。",
+  },
+  {
+    stage: "2. 扩写",
+    firstLook: "哪句话改变动作、身份、顺序或停止条件。",
+    action: "替换代词，写“谁拿着什么 -> 做什么 -> 何时停止”。",
+    evidence: "别人能按时间执行；每个条件能说出防住什么错误。",
+    forbidden: "答案时刻、优化理由、重复与复用、容器。",
+    returnTo: "只会换同义词留在扩写；补规则退回读题。",
+  },
+  {
+    stage: "3. 对象、过程与第一次变化",
+    firstLook: "当前卡在哪句，做完什么纸面动作后多出了哪项证据，值、位置、身份是否分开。",
+    action: "先留当前困惑、实际纸面动作和新增证据，再填六列对象表，随后逐行走“看见谁 -> 做什么 -> 什么变了 -> 为什么继续”。",
+    evidence: "新增证据、对象关系、完整过程、变化前/触发/变化后、答案时刻。",
+    forbidden: "没有新增证据就填对象表；问题 3 未完成就跳问题 4；结构名、优化结论。",
+    returnTo: "没有现场动作退回本段起点；对象退回新增证据；过程退回扩写；变化留在问题 4。",
+  },
+  {
+    stage: "4. 范围与候选",
+    firstLook: "慢过程最坏重复什么，约束允许什么量级。",
+    action: "抄全约束，选最坏输入，数一轮并乘轮数。",
+    evidence: "约束、预算、被排除的复杂度家族和功能候选分开。",
+    forbidden: "算法名、结构名、“看到 n 就选某方法”。",
+    returnTo: "没有过程退回第一次变化；范围当暗号留在本段。",
+  },
+  {
+    stage: "5. 第二次变化",
+    firstLook: "哪里重复、失效、复用或必须保序。",
+    action: "用最小例子标出变化，把需求写成操作动词。",
+    evidence: "最小证据、未来读取什么、何时失效、需要哪些操作。",
+    forbidden: "容器、完整伪代码、未比较的最终方向。",
+    returnTo: "没有重复或失效退回人工过程；没有预算退回范围。",
+  },
+  {
+    stage: "6. 方向确认",
+    firstLook: "候选支持什么、缺什么、何时失效。",
+    action: "列操作和预算，逐项比较后写完整方向确认句。",
+    evidence: "取舍、代价、依赖、失效条件都有证据。",
+    forbidden: "完整 Java、状态细节、只报方法名。",
+    returnTo: "候选不是从操作长出来退回第二次变化。",
+  },
+  {
+    stage: "7. 推导链",
+    firstLook: "变量对应哪个对象，先更新谁，为何不漏。",
+    action: "逐段接“对象 -> 动作 -> 操作 -> 状态 -> 代码 -> 顺序/不变量 -> 反例”。",
+    evidence: "全链可接回人工过程，闭卷可重新生成。",
+    forbidden: "换方向、模板冒充证明、运行通过补推导。",
+    returnTo: "最早断链；方向无依据退回方向确认。",
+  },
+];
+
+const HUMAN_ACCEPTANCE_RULES = [
+  {
+    index: "01",
+    title: "题目事实错误一票否决",
+    text: "原句、输入输出或约束读错时，后续过程、预算和方向全部失效，不能靠更长的解释补偿。",
+  },
+  {
+    index: "02",
+    title: "流畅解释、知道方法名和代码跑通都不等于理解",
+    text: "它们只说明表达、记忆或运行结果，不能替代对象过程、操作预算、候选比较和代码映射。",
+  },
+  {
+    index: "03",
+    title: "闭卷后必须重新生成判断",
+    text: "要重建题目事实、人工过程和方向确认；只复述最终答案或默写代码，不算通过。",
   },
 ];
 
@@ -143,7 +357,7 @@ const BEGINNER_QUESTION_CARD = [
     index: "01",
     stage: "阶段 1 · 刚读完题",
     ask: "我刚读完题，题目到底给了我什么，要我交回什么？",
-    gap: "题目事实、未知和脑中的方法名还没有分开。",
+    gap: "我刚读完，只能抓住一些名词；题目事实、未知和脑中的方法名还没有分开，所以现在只能先问这一句。",
     evidence: "输入、输出、示例、保证、禁止和未知能分开，且每条都有原题来源。",
     unlock: "答完只得到有来源的题目事实；仍然不能选择算法。",
     blocked: "算法名、结构名、复杂度结论、题目没有保证的条件。",
@@ -152,25 +366,25 @@ const BEGINNER_QUESTION_CARD = [
     index: "02",
     stage: "阶段 2 · 能复述，但不会动手",
     ask: "每个字都懂，可一个普通人在纸上第一步做什么？",
-    gap: "题目里的对象之间存在动作，但人还无法按时间演完。",
+    gap: "我能复述事实，却想不出谁拿着什么、先碰哪里、下一步做什么，所以现在自然要问这一句。",
     evidence: "别人只看扩写就能按时间演完；每个条件能说出它防止的具体错误。",
     unlock: "答完得到一个普通人能照着执行的完整过程；仍然没有优化依据。",
     blocked: "优化理由、最终方法名、没有来源的规则。",
   },
   {
     index: "03",
-    stage: "阶段 3 · 先看题目世界",
+    stage: "阶段 3 · 先留证据再分对象",
     ask: "这个任务里有哪些对象，谁和谁有关系？",
-    gap: "还分不清值、位置、身份和关系，容易直接把代码容器当成题目对象。",
-    evidence: "元素、位置、身份、关系、目标和结果能分开；相同的值不会误当成同一个对象。",
-    unlock: "答完得到题目对象和关系；此时还没有走人工过程，也没有第一次变化。",
-    blocked: "代码容器、结构选择、优化结论、尚未手算就宣布的变化。",
+    gap: "我能讲一个大概过程，却还分不清值、位置、身份和关系。此刻只能先写具体卡点，再做一个纸面动作并记录新增证据；证据出现后才问对象，不能先选代码容器。",
+    evidence: "先有实际纸面动作和新增证据；随后元素、位置、身份、关系、目标和结果能分开，相同的值不会误当成同一个对象。",
+    unlock: "答完得到有证据支持的题目对象和关系；此时还没有走人工过程，也没有第一次变化。",
+    blocked: "没有新增证据就列对象；代码容器、结构选择、优化结论、尚未手算就宣布的变化。",
   },
   {
     index: "04",
     stage: "阶段 3 · 再走最笨的过程",
     ask: "照着最笨的办法走一遍，哪一刻什么变了，答案什么时候定下来？",
-    gap: "对象已经知道，但还不能在最小完整例子上按时间顺序走到答案。",
+    gap: "对象已经分清，但还没有一条能在最小完整例子上按时间走到答案的人工过程；所以现在只走最笨的过程，并从中找第一次变化和答案产生时刻。",
     evidence: "人工过程能复走；能说出变化前、触发事件、变化后和答案产生时刻。",
     unlock: "答完得到第一次变化；仍然不能判断哪份工作值得优化。",
     blocked: "优化结论、最终容器、用输入输出摘要替代完整演算。",
@@ -179,7 +393,7 @@ const BEGINNER_QUESTION_CARD = [
     index: "05",
     stage: "阶段 4 · 看见变化，但不知道是否值得优化",
     ask: "这个笨办法最坏会重复多少，数据范围先排除哪些方向？",
-    gap: "只知道过程可能慢，还没有从慢过程估算代价，也没排除不合适的复杂度家族。",
+    gap: "我第一次变化已经说清，但还不知道这份慢是否值得处理，所以现在只问操作预算和范围排除。",
     evidence: "官方约束、自己的操作预算和功能候选分开；核心动作重复量有估算。",
     unlock: "答完只排除复杂度家族并留下待验证方向；范围不能点名算法。",
     blocked: "从 n 的大小直接点名算法，或把候选池当成结论。",
@@ -188,7 +402,7 @@ const BEGINNER_QUESTION_CARD = [
     index: "06",
     stage: "阶段 5 · 知道代价，但不知道该留下什么",
     ask: "带着这个代价重看，哪份信息还会被再次问起，哪批候选会过期，哪个子问题会复用，哪条顺序不能乱？",
-    gap: "知道有代价，却还没有指出重复、失效、复用或顺序的最小证据。",
+    gap: "预算已经算清，却还不知道未来留下什么、何时丢掉、需要哪些操作，所以现在只做第二次变化。",
     evidence: "有最小例子证明重复、失效、复用或顺序约束；说清未来读取什么、何时失效、必须支持哪些操作。",
     unlock: "答完才形成操作需求；候选池不是结论，仍然不能把某个容器当成答案。",
     blocked: "具体容器、完整伪代码、尚未比较就宣布的最终方向。",
@@ -197,7 +411,7 @@ const BEGINNER_QUESTION_CARD = [
     index: "07",
     stage: "阶段 6 · 已经有几个模糊方向",
     ask: "这些操作需要什么方向来承担，另一个方向为什么不够？",
-    gap: "候选还没有和操作、寿命、预算及失效条件逐项比较。",
+    gap: "操作需求已经具体，但候选还没有和操作、寿命、预算及失效条件逐项比较，所以现在才轮到这一句。",
     evidence: "完整方向确认句；真实候选都有取舍证据；不为了凑数制造假候选。",
     unlock: "答完才允许进入状态、更新顺序和代码推导。",
     blocked: "只有方法名、没有拒绝证据、直接写完整 Java。",
@@ -206,7 +420,7 @@ const BEGINNER_QUESTION_CARD = [
     index: "08",
     stage: "阶段 7 · 方向已经确认",
     ask: "方向已经定了，状态、更新顺序、不变量和代码怎样逐段对应？",
-    gap: "方向已经有了，但状态、顺序、不变量和代码还没有逐项对应。",
+    gap: "人工方向和操作需求已经确认，但变量、顺序和代码还没有逐段接上过程，所以现在才进入推导链。",
     evidence: "状态、转移、更新顺序、不变量、代码和反例都能回到题目对象与第二次变化。",
     unlock: "答完可以闭卷重建判断路径、伪代码、Java 和测试。",
     blocked: "新的算法方向、未经验证的模板顺序、用“显然”代替证明。",
@@ -325,10 +539,11 @@ const ALGORITHM_CHAIN_STEPS = [
     novice: "小白常让代码跑通就算理解。逐段对齐是在确认每一行是否真的对应一个题目对象、动作或状态变化。",
     must: [
       "先写与状态定义一致的伪代码，再写清晰 Java 基准实现。",
-      "逐个解释初始化、循环、关键判断、状态写入和返回语句。",
+      "先填“题目对象 -> 人工动作 -> 第二次变化提出的操作要求 -> 状态变量 -> 伪代码 -> Java 代码位置 -> 更新顺序或不变量 -> 对应反例”。",
+      "逐个解释初始化、循环、判断、读取、写入和返回；任何一行接不上都回到最早缺口。",
       "保留能说明过程的中间变量，不以短代码替代尚未展开的推理。",
     ],
-    frame: "伪代码中的……对应 Java 的……；这一行完成的是……；它必须位于……之后，因为……。",
+    frame: "题目对象……在人工过程里……；它要求……操作；因此状态变量是……；伪代码步骤……对应 Java 代码位置……；它必须位于……之后，因为……；如果反过来，反例……会出错。",
     reject: "代码能运行，但换一个变量名或改变一行位置后，无法解释行为为什么变化。",
   },
   {
@@ -849,6 +1064,7 @@ function renderHome() {
     "LeetCode-系统复习/00-总入口.md",
     "LeetCode-系统复习/01-复习计划/16周弹性计划.md",
     "LeetCode-系统复习/05-单题流程/单题时间切片.md",
+    "LeetCode-系统复习/07-分析法实验/README.md",
     "LeetCode-系统复习/06-学习记录/单题复习记录模板.md",
   ]
     .map((path) => state.manifest.docs[path])
@@ -873,7 +1089,7 @@ function renderHome() {
       <p class="home-kicker">${escapeHtml(state.manifest.sourceLabel)}</p>
       <h1>先像人一样读懂题，再像计算机一样验证模型</h1>
       <p>
-        先读原题、扩写成人话、清点对象、手工走例子，再用数据范围排除方向；
+        先读原题、扩写成人话、留下当前困惑和纸面动作、再填对象表并手工走例子，最后用数据范围排除方向；
         确认算法以后，才进入状态、更新、不变量、代码和反例。不能反过来用方法名替代读题过程。
       </p>
       <div class="home-actions">
@@ -1105,6 +1321,9 @@ function renderReviewCenter(query = null) {
           <a class="secondary-button" href="${docHref("LeetCode-系统复习/05-单题流程/人类推导样板与评分.md")}">
             <i data-lucide="notebook-tabs"></i>四题推导验收
           </a>
+          <a class="secondary-button" href="${docHref("LeetCode-系统复习/07-分析法实验/README.md")}">
+            <i data-lucide="split"></i>分析路径选择
+          </a>
           <a class="secondary-button" href="${docHref("03-资料/高效理解与回忆方法.md")}">
             <i data-lucide="brain"></i>理解与回忆方法
           </a>
@@ -1114,13 +1333,20 @@ function renderReviewCenter(query = null) {
       <section class="review-chain-section review-beginner-card" aria-label="小白现场提问卡">
         <div class="review-section-head">
           <div>
-            <h2>八个自然问题 · 小白现场提问卡</h2>
+            <h2>现场交接表 · 八个自然问题</h2>
             <p>
-              八问嵌在七段里，问题 3 和问题 4 同属第三阶段。每一问都要从上一段还没闭合的证据里长出来；
-              前一问没有产生空缺，就不提前回答下一问。
+              八问嵌在七段里，问题 3 和问题 4 同属第三阶段。每次换问先写清“我刚得到什么、为什么它还不能停、所以为什么现在轮到这一问”；
+              前一问没有产生这个空缺，就不提前回答下一问。
             </p>
           </div>
-          <span class="review-chain-count">8 个自然问题 · 7 个阶段</span>
+          <span class="review-chain-count">3 句交接 · 8 个自然问题</span>
+        </div>
+        <div class="review-chain-frame">
+          <span>每次换问前先接上这三句</span>
+          <p>
+            我刚得到：______；但它还不能说明：______；所以现在只问：______。
+            回答它至少需要一条原句、一个最小例子、一次手算、一次预算或一项候选比较。
+          </p>
         </div>
         ${renderBeginnerQuestionCard()}
         <div class="review-chain-frame">
@@ -1130,6 +1356,73 @@ function renderReviewCenter(query = null) {
             把它变成“谁、何时、对谁、做什么” -> 用最小例子观察变化 -> 数清重复 ->
             追问未来要记住什么、何时可以丢掉 -> 从操作需求比较候选 -> 最后才写状态和代码。
           </p>
+        </div>
+      </section>
+
+      <section class="review-chain-section review-beginner-actions" aria-label="小白起步动作表">
+        <div class="review-section-head">
+          <div>
+            <h2>新手的起步动作表：没有灵感时，先做哪一个纸面动作</h2>
+            <p>
+              零起点不是失败。不要等“想明白”再动笔，也不要为了显得真实补写一个事后候选；先完成一个当前能做的动作，
+              让题目多出证据，下一问再由这份证据产生。没有形成候选就写“没有形成候选”，没有发生转折就写“没有发生转折”。
+            </p>
+          </div>
+          <span class="review-chain-count">8 个最早卡点 · 1 个纸面动作</span>
+        </div>
+        ${renderBeginnerActionTable()}
+        <div class="review-chain-frame">
+          <span>每一步都留下这五格</span>
+          <p>
+            当前最早空缺：______；第一件实际做的纸面动作：______；做完后多出的证据：______；
+            此刻真实候选：______（没有形成候选就写“没有形成候选”）；下一步只问：______。
+          </p>
+        </div>
+        <div class="review-chain-frame beginner-transition-frame">
+          <span>真实出现转折时，只修正一个判断</span>
+          <p>
+            我原来看到或以为：______；当时支持它的证据是：______；后来哪个最小例子、原句或约束让它不能继续：______；
+            因此我现在只修正：______；我接下来做的纸面动作是：______；做完以后，哪项证据能告诉我可以继续：______。
+          </p>
+        </div>
+      </section>
+
+      <section class="review-chain-section review-beginner-standard" aria-label="小白现场统一标准">
+        <div class="review-section-head">
+          <div>
+            <h2>小白现场统一标准</h2>
+            <p>
+              每一行只说明当前证据留下的最早空缺、此刻唯一该问的问题、第一件实际纸面动作，
+              以及做完后只允许多出的证据。禁止提前出现的内容没有证明资格；下一问只能由新增证据自然产生。
+            </p>
+          </div>
+          <span class="review-chain-count">7 个阶段 · 1 条证据链</span>
+        </div>
+        ${renderBeginnerLiveStandard()}
+      </section>
+
+      <section class="review-chain-section review-beginner-acceptance" aria-label="人类解题验收标准">
+        <div class="review-section-head">
+          <div>
+            <h2>人类解题验收标准</h2>
+            <p>
+              发布题解、保存复习记录或判断“是否真的懂了”时，逐行检查这一阶段先看什么、做了什么、能拿出什么证据；
+              它不替代现场顺序，只决定当前证据是否已经允许继续。
+            </p>
+          </div>
+          <span class="review-chain-count">7 个阶段 · 3 条硬规则</span>
+        </div>
+        ${renderHumanAcceptanceStandard()}
+        <div class="review-live-gates" aria-label="人类解题验收三条硬规则">
+          ${HUMAN_ACCEPTANCE_RULES.map(
+            (rule) => `
+              <div>
+                <span>${escapeHtml(rule.index)}</span>
+                <strong>${escapeHtml(rule.title)}</strong>
+                <p>${escapeHtml(rule.text)}</p>
+              </div>
+            `,
+          ).join("")}
         </div>
       </section>
 
@@ -1168,7 +1461,7 @@ function renderReviewCenter(query = null) {
         <ul class="review-chain-must">
           <li>如果写不出“这个空缺正在阻碍什么”，当前通常还不是推导断点，而是还没有认真读题或手算。</li>
           <li>下一问要小到能当场用原句、例子或一次演算回答，不能直接问“完整算法是什么”。</li>
-          <li>换问时至少还原“刚刚确认什么 -> 最早缺什么 -> 下一问只问什么”；第三句说不出来，就说明这一问跳过了证据。</li>
+          <li>换问时至少还原“我刚得到什么 -> 但它还不能说明什么 -> 所以现在只问什么”；第三句说不出来，就说明这一问跳过了证据。</li>
           <li>回答以后先复述判断改变了什么，再问下一问；不要因为已经知道答案就跳过后面的证据。</li>
         </ul>
       </section>
@@ -1178,7 +1471,7 @@ function renderReviewCenter(query = null) {
           <div>
             <h2>第一层：从题面走到算法方向</h2>
             <p>
-              七段现场中，前六段负责从题面走到算法方向，第七段才进入推导链。这六段不是六个待办项，而是六个连续判断阶段。第三段先回答问题 3 的对象和关系，再回答问题 4 的笨过程和第一次变化；
+              七段现场中，前六段负责从题面走到算法方向，第七段才进入推导链。这六段不是六个待办项，而是六个连续判断阶段。第三段先留下当前困惑、实际纸面动作和新增证据，再填写六列对象表，随后回答人工过程和第一次变化；
               第四段把约束、操作预算和候选方向分开，第五段才找重复、失效和复用。每段都有退出条件；
               候选池不是结论，范围也不直接替你选算法。没有真实歧义时，不为了“至少两个候选”编造假方案。
             </p>
@@ -1314,7 +1607,7 @@ function renderBeginnerQuestionCard() {
               <p>“${escapeHtml(item.ask)}”</p>
             </div>
             <div class="beginner-question-gap">
-              <strong><i data-lucide="scan-search"></i>最早缺口</strong>
+              <strong><i data-lucide="scan-search"></i>为什么现在只问这一问</strong>
               <p>${escapeHtml(item.gap)}</p>
             </div>
             <div class="beginner-question-contract">
@@ -1323,12 +1616,123 @@ function renderBeginnerQuestionCard() {
                 <p>${escapeHtml(item.evidence)}</p>
               </div>
               <div class="beginner-question-unlock">
-                <strong><i data-lucide="lock-open"></i>答完才允许</strong>
+                <strong><i data-lucide="lock-open"></i>答完只多出</strong>
                 <p>${escapeHtml(item.unlock)}</p>
               </div>
               <div class="beginner-question-blocked">
                 <strong><i data-lucide="circle-slash-2"></i>仍不能出现</strong>
                 <p>${escapeHtml(item.blocked)}</p>
+              </div>
+            </div>
+          </li>
+        `,
+      ).join("")}
+    </ol>
+  `;
+}
+
+function renderBeginnerActionTable() {
+  return `
+    <ol class="beginner-action-list">
+      ${BEGINNER_ACTION_STEPS.map(
+        (item, index) => `
+          <li>
+            <div class="beginner-action-gap">
+              <span>${String(index + 1).padStart(2, "0")}</span>
+              <strong>${escapeHtml(item.gap)}</strong>
+            </div>
+            <div>
+              <strong>现在先做</strong>
+              <p>${escapeHtml(item.action)}</p>
+            </div>
+            <div>
+              <strong>做完多出的证据</strong>
+              <p>${escapeHtml(item.evidence)}</p>
+            </div>
+            <div>
+              <strong>仍然不能做</strong>
+              <p>${escapeHtml(item.blocked)}</p>
+            </div>
+          </li>
+        `,
+      ).join("")}
+    </ol>
+  `;
+}
+
+function renderBeginnerLiveStandard() {
+  return `
+    <ol class="beginner-live-list">
+      ${BEGINNER_LIVE_STANDARD.map(
+        (item, index) => `
+          <li>
+            <div class="beginner-live-head">
+              <span>${String(index + 1).padStart(2, "0")}</span>
+              <strong>${escapeHtml(item.stage)}</strong>
+            </div>
+            <div class="beginner-live-grid">
+              <div class="beginner-live-cell beginner-live-gap">
+                <strong>当前最早空缺</strong>
+                <p>${escapeHtml(item.gap)}</p>
+              </div>
+              <div class="beginner-live-cell beginner-live-ask">
+                <strong>此刻唯一该问的问题</strong>
+                <p>“${escapeHtml(item.ask)}”</p>
+              </div>
+              <div class="beginner-live-cell">
+                <strong>第一件实际纸面动作</strong>
+                <p>${escapeHtml(item.action)}</p>
+              </div>
+              <div class="beginner-live-cell beginner-live-evidence">
+                <strong>做完后只多出的证据</strong>
+                <p>${escapeHtml(item.evidence)}</p>
+              </div>
+              <div class="beginner-live-cell beginner-live-blocked">
+                <strong>禁止提前出现</strong>
+                <p>${escapeHtml(item.blocked)}</p>
+              </div>
+              <div class="beginner-live-cell beginner-live-next">
+                <strong>下一问如何自然产生</strong>
+                <p>${escapeHtml(item.next)}</p>
+              </div>
+            </div>
+          </li>
+        `,
+      ).join("")}
+    </ol>
+  `;
+}
+
+function renderHumanAcceptanceStandard() {
+  return `
+    <ol class="beginner-live-list beginner-acceptance-list">
+      ${HUMAN_ACCEPTANCE_STANDARD.map(
+        (item, index) => `
+          <li>
+            <div class="beginner-live-head">
+              <span>${String(index + 1).padStart(2, "0")}</span>
+              <strong>${escapeHtml(item.stage)}</strong>
+            </div>
+            <div class="beginner-live-grid beginner-acceptance-grid">
+              <div class="beginner-live-cell beginner-acceptance-cell">
+                <strong>先看什么</strong>
+                <p>${escapeHtml(item.firstLook)}</p>
+              </div>
+              <div class="beginner-live-cell beginner-acceptance-cell">
+                <strong>下一件纸面动作</strong>
+                <p>${escapeHtml(item.action)}</p>
+              </div>
+              <div class="beginner-live-cell beginner-live-evidence beginner-acceptance-cell">
+                <strong>允许继续的证据</strong>
+                <p>${escapeHtml(item.evidence)}</p>
+              </div>
+              <div class="beginner-live-cell beginner-live-blocked beginner-acceptance-cell">
+                <strong>仍禁止出现</strong>
+                <p>${escapeHtml(item.forbidden)}</p>
+              </div>
+              <div class="beginner-live-cell beginner-live-next beginner-acceptance-cell">
+                <strong>说不通退回</strong>
+                <p>${escapeHtml(item.returnTo)}</p>
               </div>
             </div>
           </li>
@@ -1370,6 +1774,8 @@ function renderReadingHardGates() {
 }
 
 function renderReviewChainStep(step) {
+  const allowed = Array.isArray(step.allowed) ? step.allowed.join("；") : step.allowed;
+  const hasStageContract = Boolean(step.entry || allowed || step.blocked);
   return `
     <li>
       <span class="review-chain-index">${escapeHtml(step.index)}</span>
@@ -1387,6 +1793,24 @@ function renderReviewChainStep(step) {
           <span>这一段至少能完整说出</span>
           <p>${escapeHtml(step.frame)}</p>
         </div>
+        ${
+          hasStageContract
+            ? `<div class="review-chain-contract">
+                <div>
+                  <strong>进入条件</strong>
+                  <span>${escapeHtml(step.entry || "先完成上一段留下的证据门槛。")}</span>
+                </div>
+                <div>
+                  <strong>允许产物</strong>
+                  <span>${escapeHtml(allowed || "只留下当前这一段能产生的证据。")}</span>
+                </div>
+                <div>
+                  <strong>禁止产物</strong>
+                  <span>${escapeHtml(step.blocked || step.reject)}</span>
+                </div>
+              </div>`
+            : ""
+        }
         <div class="review-chain-reject">
           <strong><i data-lucide="circle-x"></i>没有通过</strong>
           <span>${escapeHtml(step.reject)}</span>
@@ -1394,7 +1818,7 @@ function renderReviewChainStep(step) {
         ${
           step.returnTo
             ? `<div class="review-chain-return">
-                <strong><i data-lucide="arrow-left"></i>退回到这里</strong>
+                <strong><i data-lucide="arrow-left"></i>说不清就退回</strong>
                 <span>${escapeHtml(step.returnTo)}</span>
               </div>`
             : ""
@@ -1601,7 +2025,7 @@ function renderFactBankPage(selectedRecord) {
         <h1>先读原题，再让推导长出来</h1>
         <p>
           这里只负责给出题面已经写了什么、明确约束了什么，以及哪些内容仍未知。
-          不从标签直接宣布算法，也不把本地题解伪装成平台事实。先完成扩写、对象过程、范围缩小和第二次变化，再打开推导与代码。
+          不从标签直接宣布算法，也不把本地题解伪装成平台事实。先完成扩写，留下当前困惑、纸面动作和新增证据，再填对象表、走人工过程、读范围并做第二次变化。
         </p>
         <div class="bank-stat-line">
           <span><strong>${stats.records}</strong> 道原题事实</span>
@@ -1781,16 +2205,20 @@ function renderBankProblemRow(record) {
 }
 
 function renderHumanStageContract(step) {
+  const allowed = Array.isArray(step.allowed) ? step.allowed.join("；") : step.allowed;
   return `
     <div class="bank-human-contract">
       <p class="bank-human-question">
         <span>小白此刻只问</span>
         ${escapeHtml(step.question)}
       </p>
+      <p><span>进入条件</span>${escapeHtml(step.entry || "先完成上一段留下的证据门槛。")}</p>
+      <p><span>允许产物</span>${escapeHtml(allowed || "只留下当前这一段能产生的证据。")}</p>
       <div class="bank-human-evidence">
         <strong>这一段要交出的证据</strong>
         <ul>${step.must.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
       </div>
+      <p><span>禁止产物</span>${escapeHtml(step.blocked || step.reject)}</p>
       <p><span>不能提前出现</span>${escapeHtml(step.reject)}</p>
       <p><span>说不清就退回</span>${escapeHtml(step.returnTo)}</p>
     </div>
@@ -1834,7 +2262,7 @@ function renderBankDetail(record) {
         ${[
           ["01", "原题事实"],
           ["02", "人话扩写"],
-          ["03", "对象、过程与第一次变化 · Q3 -> Q4"],
+          ["03", "当前困惑、对象、过程与第一次变化 · Q3 -> Q4"],
           ["04", "范围与候选"],
           ["05", "第二次变化"],
           ["06", "确认方向"],
@@ -1895,12 +2323,13 @@ function renderBankDetail(record) {
             <div class="bank-section-heading">
               <span>03</span>
               <div>
-                <h2>先回答问题 3，再回答问题 4：对象、过程与第一次变化</h2>
-                <p>现在才从扩写进入具体例子。先用问题 3 分清对象身份和关系，再用问题 4 走最慢但正确的过程，最后只记录发生了什么，不提前写结构或优化结论。</p>
+                <h2>先留当前困惑和新增证据，再回答问题 3 和问题 4</h2>
+                <p>现在才从扩写进入具体例子。先写下卡在哪句以及准备做的纸面动作，做完后记录新增证据；证据成立才填六列对象表，再用问题 4 走最慢但正确的过程，最后只记录发生了什么。</p>
               </div>
             </div>
             ${renderHumanStageContract(HUMAN_READING_STEPS[2])}
             <ol class="bank-question-list">
+              <li><strong>进入阶段 3：</strong>我此刻具体卡在哪一句？做什么纸面动作以后，多出了哪条可核对的新证据？</li>
               <li><strong>问题 3：</strong>题目世界里的对象有哪些？哪些值相同但位置或身份不同，不能合并？</li>
               <li><strong>问题 4：</strong>在最小但完整的例子里，我第一个拿起谁，下一步看哪里，按什么顺序做？</li>
               <li><strong>问题 4：</strong>哪个事件让哪个对象从什么状态变成什么状态？答案在哪一刻成为确定结果？</li>
@@ -2025,6 +2454,9 @@ function renderBankDetail(record) {
             </div>
             ${renderHumanStageContract({
               ...ALGORITHM_CHAIN_STEPS[0],
+              entry: "完整方向确认句已经写成。",
+              allowed: "状态、初始、转移、更新顺序、不变量、结构、代码、反例和闭卷重建。",
+              blocked: "新换算法方向、用模板顺序冒充证明，或用运行通过补缺失推导。",
               returnTo: "状态或更新说不清，留在第 7 段；发现主方向本身没有依据，退回第 6 段。",
             })}
             <ol class="bank-question-list">

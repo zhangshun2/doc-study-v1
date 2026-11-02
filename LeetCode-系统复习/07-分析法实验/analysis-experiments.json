@@ -1,0 +1,302 @@
+{
+  "schemaVersion": 1,
+  "experimentDate": "2026-11-03",
+  "mode": "post-hoc-verification",
+  "dimensions": [
+    "absorb",
+    "recall",
+    "systems",
+    "chain",
+    "debug",
+    "transfer"
+  ],
+  "gates": [
+    "factGate",
+    "naturalReachability",
+    "causalClosure",
+    "codeTraceability",
+    "closedBookRegeneration"
+  ],
+  "problems": [
+    {
+      "id": 1,
+      "titleCn": "两数之和",
+      "sourceUrl": "https://leetcode.cn/problems/two-sum/",
+      "paths": [
+        {
+          "id": "label-first",
+          "label": "看到哈希标签后直接写历史表",
+          "status": "rejected",
+          "factGate": true,
+          "naturalReachability": false,
+          "causalClosure": false,
+          "codeTraceability": true,
+          "closedBookRegeneration": false,
+          "scores": {
+            "absorb": 1,
+            "recall": 1,
+            "systems": 1,
+            "chain": 1,
+            "debug": 1,
+            "transfer": 1
+          },
+          "earliestFailure": "逐句扩写与第二次变化",
+          "evidence": "标签不是题目事实；没有从人工枚举产生补数查询和历史保留的操作需求。"
+        },
+        {
+          "id": "enumeration-to-history",
+          "label": "枚举数对到补数查询与历史保留",
+          "status": "main",
+          "factGate": true,
+          "naturalReachability": true,
+          "causalClosure": true,
+          "codeTraceability": true,
+          "closedBookRegeneration": true,
+          "scores": {
+            "absorb": 4,
+            "recall": 3,
+            "systems": 3,
+            "chain": 4,
+            "debug": 4,
+            "transfer": 3
+          },
+          "earliestFailure": null,
+          "evidence": "当前数反复查询左侧补数；输出要求原下标；先查后写保证不使用当前元素两次。"
+        }
+      ],
+      "selectedPath": "enumeration-to-history",
+      "selectedReason": "完整人工过程能自然产生历史查询，且更新顺序有直接反例。",
+      "checkedAlternative": "排序加双指针合法，但需要额外维护排序前的位置关系。"
+    },
+    {
+      "id": 739,
+      "titleCn": "每日温度",
+      "sourceUrl": "https://leetcode.cn/problems/daily-temperatures/",
+      "paths": [
+        {
+          "id": "daily-rescan",
+          "label": "每天向右重新扫描",
+          "status": "superseded",
+          "factGate": true,
+          "naturalReachability": true,
+          "causalClosure": true,
+          "codeTraceability": true,
+          "closedBookRegeneration": true,
+          "scores": {
+            "absorb": 3,
+            "recall": 2,
+            "systems": 2,
+            "chain": 2,
+            "debug": 2,
+            "transfer": 1
+          },
+          "earliestFailure": "数据范围与操作预算",
+          "evidence": "最坏约 n(n-1)/2 次比较，n 为 10^5 时不适合作最终方案。"
+        },
+        {
+          "id": "value-range-nearest",
+          "label": "按温度值域查询右侧最近位置",
+          "status": "alternative",
+          "factGate": true,
+          "naturalReachability": true,
+          "causalClosure": true,
+          "codeTraceability": true,
+          "closedBookRegeneration": true,
+          "scores": {
+            "absorb": 3,
+            "recall": 3,
+            "systems": 3,
+            "chain": 4,
+            "debug": 3,
+            "transfer": 3
+          },
+          "earliestFailure": null,
+          "evidence": "从右向左保存每个温度最近下标，对当前温度查询 v+1 到 100 的最小下标。"
+        },
+        {
+          "id": "waiting-lifecycle-stack",
+          "label": "等待日期产生、结算与单调栈",
+          "status": "main",
+          "factGate": true,
+          "naturalReachability": true,
+          "causalClosure": true,
+          "codeTraceability": true,
+          "closedBookRegeneration": true,
+          "scores": {
+            "absorb": 4,
+            "recall": 4,
+            "systems": 4,
+            "chain": 4,
+            "debug": 4,
+            "transfer": 4
+          },
+          "earliestFailure": null,
+          "evidence": "等待日期按时间进入，新温度连续结算更低日期，严格更高和原始日期顺序共同决定栈操作。"
+        }
+      ],
+      "selectedPath": "waiting-lifecycle-stack",
+      "selectedReason": "路径直接对应等待、结算和过期，每个日期只入栈和出栈一次，且不依赖小值域。",
+      "checkedAlternative": "值域最近位置法合法，但依赖温度只有 30 到 100。"
+    },
+    {
+      "id": 11,
+      "titleCn": "盛最多水的容器",
+      "sourceUrl": "https://leetcode.cn/problems/container-with-most-water/",
+      "paths": [
+        {
+          "id": "enumerate-pairs",
+          "label": "枚举所有线对",
+          "status": "superseded",
+          "factGate": true,
+          "naturalReachability": true,
+          "causalClosure": true,
+          "codeTraceability": true,
+          "closedBookRegeneration": true,
+          "scores": {
+            "absorb": 4,
+            "recall": 3,
+            "systems": 2,
+            "chain": 3,
+            "debug": 3,
+            "transfer": 2
+          },
+          "earliestFailure": "数据范围与操作预算",
+          "evidence": "最坏约 n(n-1)/2 对，n 为 10^5 时超预算。"
+        },
+        {
+          "id": "label-first",
+          "label": "看到双指针标签后移动短板",
+          "status": "rejected",
+          "factGate": true,
+          "naturalReachability": false,
+          "causalClosure": false,
+          "codeTraceability": true,
+          "closedBookRegeneration": false,
+          "scores": {
+            "absorb": 2,
+            "recall": 2,
+            "systems": 2,
+            "chain": 1,
+            "debug": 2,
+            "transfer": 2
+          },
+          "earliestFailure": "第二次变化与方向确认",
+          "evidence": "没有说明哪一批候选被当前短板支配，也没有证明移动后不会漏掉更优面积。"
+        },
+        {
+          "id": "widest-to-domination",
+          "label": "最宽区间到短板支配与安全淘汰",
+          "status": "main",
+          "factGate": true,
+          "naturalReachability": true,
+          "causalClosure": true,
+          "codeTraceability": true,
+          "closedBookRegeneration": true,
+          "scores": {
+            "absorb": 4,
+            "recall": 3,
+            "systems": 4,
+            "chain": 4,
+            "debug": 4,
+            "transfer": 4
+          },
+          "earliestFailure": null,
+          "evidence": "保持较矮端点并向内收缩只会减小宽度且不能提高水位上限，因此整批候选被支配。"
+        }
+      ],
+      "selectedPath": "widest-to-domination",
+      "selectedReason": "支配证明能解释整批淘汰，更新顺序和移动错误都有最小反例。",
+      "checkedAlternative": "枚举全量线对正确但超预算；标签倒推无法替代支配证明。"
+    },
+    {
+      "id": 322,
+      "titleCn": "零钱兑换",
+      "sourceUrl": "https://leetcode.cn/problems/coin-change/",
+      "paths": [
+        {
+          "id": "greedy-largest",
+          "label": "每次选择最大面额",
+          "status": "rejected",
+          "factGate": true,
+          "naturalReachability": true,
+          "causalClosure": false,
+          "codeTraceability": true,
+          "closedBookRegeneration": false,
+          "scores": {
+            "absorb": 2,
+            "recall": 2,
+            "systems": 2,
+            "chain": 1,
+            "debug": 1,
+            "transfer": 1
+          },
+          "earliestFailure": "候选比较",
+          "evidence": "coins 为 [1,3,4]、amount 为 6 时，贪心得到 3 枚，最优为 2 枚。"
+        },
+        {
+          "id": "unmemoized-dfs",
+          "label": "无记忆递归枚举",
+          "status": "superseded",
+          "factGate": true,
+          "naturalReachability": true,
+          "causalClosure": true,
+          "codeTraceability": false,
+          "closedBookRegeneration": true,
+          "scores": {
+            "absorb": 3,
+            "recall": 2,
+            "systems": 3,
+            "chain": 3,
+            "debug": 2,
+            "transfer": 2
+          },
+          "earliestFailure": "第二次变化",
+          "evidence": "同一剩余金额会从不同选择顺序重复到达，未保存结果会造成重复计算。"
+        },
+        {
+          "id": "bfs-shortest-path",
+          "label": "金额图上的 BFS",
+          "status": "alternative",
+          "factGate": true,
+          "naturalReachability": true,
+          "causalClosure": true,
+          "codeTraceability": true,
+          "closedBookRegeneration": true,
+          "scores": {
+            "absorb": 3,
+            "recall": 3,
+            "systems": 4,
+            "chain": 4,
+            "debug": 3,
+            "transfer": 3
+          },
+          "earliestFailure": null,
+          "evidence": "每枚硬币是一条无权边，首次到达目标金额时的层数就是最少硬币数。"
+        },
+        {
+          "id": "subproblem-dp",
+          "label": "子问题复用与按金额递增 DP",
+          "status": "main",
+          "factGate": true,
+          "naturalReachability": true,
+          "causalClosure": true,
+          "codeTraceability": true,
+          "closedBookRegeneration": true,
+          "scores": {
+            "absorb": 3,
+            "recall": 3,
+            "systems": 4,
+            "chain": 4,
+            "debug": 4,
+            "transfer": 4
+          },
+          "earliestFailure": null,
+          "evidence": "当前金额由更小金额加最后一枚硬币构造，金额依赖关系允许从小到大复用。"
+        }
+      ],
+      "selectedPath": "subproblem-dp",
+      "selectedReason": "状态、依赖顺序和最后一枚硬币解释可直接映射到代码，并保留 BFS 作为图模型查漏。",
+      "checkedAlternative": "BFS 合法并给出无权图解释；无记忆递归保留重复状态证据。"
+    }
+  ]
+}
