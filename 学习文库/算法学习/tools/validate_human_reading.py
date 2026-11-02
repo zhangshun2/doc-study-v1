@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Validate that the human-first reading standard stays executable and aligned."""
+"""Validate the human-first LeetCode derivation contract across all entry points."""
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -11,7 +12,6 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 STANDARD = REPO_ROOT / "LeetCode-系统复习" / "05-单题流程" / "单题推导标准卡.md"
 TEMPLATE = REPO_ROOT / "LeetCode-系统复习" / "99-Skill" / "非压缩题解模板.md"
 DEMO = REPO_ROOT / "LeetCode-系统复习" / "05-单题流程" / "小白读题现场示范.md"
-SAMPLE = REPO_ROOT / "LeetCode-系统复习" / "05-单题流程" / "人类推导样板与评分.md"
 HUMAN_GUIDE = (
     REPO_ROOT / "LeetCode-系统复习" / "05-单题流程" / "人类读题与算法确认.md"
 )
@@ -21,6 +21,8 @@ REPO_SKILL = (
     / "99-Skill"
     / "leetcode-steady-java-SKILL.md"
 )
+INSTALLED_SKILL = Path("/Users/a123456/.codex/skills/leetcode-steady-java/SKILL.md")
+AGENTS = REPO_ROOT / "学习文库" / "算法学习" / "AGENTS.md"
 WORKBENCH = (
     REPO_ROOT
     / "学习文库"
@@ -31,391 +33,376 @@ WORKBENCH = (
 SITE_APP = REPO_ROOT / "site" / "assets" / "app.js"
 
 
-CHECKS = [
-    (
-        STANDARD,
-        [
-            "单屏现场卡：第一次拿到题只做这些",
-            "下一问只能由当前最早缺口产生",
-            "数据范围只缩小候选，不点名算法",
-            "第二次变化后才允许确认方向",
-            "没有来源的结论不能进入下一步",
-            "原句事实",
-            "手算推导",
-            "操作预算",
-            "候选假设",
-            "设计选择",
-            "扩写句自身的来源等级只有三条",
-            "真实失败候选",
-            "真实初始理解",
-            "没有形成候选",
-            "事后校验",
-            "标准确认：十二句连续现场链",
-            "我只从原题确认",
-            "我暂时不能确认",
-            "把这些原句合起来，普通人会这样行动",
-            "条件“______”实际阻止的错误是",
-            "题目对象是 ______；其中值、位置和身份的关系是",
-            "答案是在 ______ 之后产生",
-            "第一次变化是：变化前 ______；触发事件 ______",
-            "最坏大约重复 ______ 次核心操作",
-            "仍待验证的功能候选是 ______",
-            "未来会回来读取 ______",
-            "没有完整因果句，不能进入代码",
-            "交换更新顺序会被 ______ 这个反例推翻",
-            "人类现场的下一问怎样产生",
-            "小白现场提问卡",
-            "第一个不能变成具体动作的题面句子",
-            "把它变成“谁、何时、对谁、做什么”",
-            "我刚刚已经确认：______",
-            "这个空缺正在阻碍",
-            "小白为什么会想到下一问",
-            "专家倒写的识别与纠正",
-            "七段现场判断门",
-            "进入下一段前必须能说出什么（退出条件）",
-            "提前出现结论时怎样撤回",
-            "哪条事实让它成立、失效或暂时保留",
-            "什么证据会改变判断",
-            "逐句扩写不能从结论倒写",
-            "第一次变化",
-            "第二次变化",
-            "候选池不是结论；范围只负责排除和保留方向",
-            "方向确认的完整句",
-            "最早缺口",
-            "不能为了满足“至少两个候选”",
-        ],
-    ),
-    (
-        TEMPLATE,
-        [
-            "单屏执行顺序",
-            "下一问只能由当前最早缺口产生",
-            "范围只缩小候选，不点名算法",
-            "第二次变化出现之前不确认方向",
-            "没有来源的结论不能进入下一步",
-            "原句事实",
-            "手算推导",
-            "操作预算",
-            "候选假设",
-            "设计选择",
-            "真实失败候选",
-            "真实初始理解",
-            "没有形成候选",
-            "事后校验",
-            "连续现场句链",
-            "我只从原题确认",
-            "第一次变化是：变化前 ______",
-            "最坏大约重复 ______ 次核心操作",
-            "未来会读取 ______",
-            "交换更新顺序会被 ______ 这个反例推翻",
-            "这个空缺正在阻碍",
-            "下一问必须来自上一段留下的具体空缺",
-            "七段退出条件",
-            "原句",
-            "事实 / 推导 / 推测",
-            "对象、直接过程和第一次变化",
-            "数据范围、操作预算与功能候选",
-            "第二次变化：重复劳动和所需操作",
-            "候选方向与选择理由",
-            "候选 B（仅在存在真实替代方向时填写）",
-            "不能为了满足“至少两个候选”",
-            "没有这句话，不进入完整实现",
-            "状态、初始条件、转移和更新顺序",
-        ],
-    ),
-    (
-        DEMO,
-        [
-            "这份现场里真实出现过的失败候选",
-            "没有真实产生过的候选不要补写",
-            "真实示范里出现过的心理现场",
-            "事后校验",
-            "哪条事实让我保留疑问",
-            "下一个最小问题",
-            "什么证据会改变判断",
-            "原句",
-            "来源",
-            "第一次变化",
-            "第二次观察变化",
-            "方向确认句",
-            "十二句回放",
-            "只补最早断掉的那一句",
-        ],
-    ),
-    (
-        SAMPLE,
-        [
-            "真实替代方向",
-            "没有形成真实歧义",
-            "不为了满足这一条临时编造候选",
-            "熟悉替代方向",
-            "真实存在的其他候选只用于查漏",
-        ],
-    ),
-    (
-        HUMAN_GUIDE,
-        [
-            "没有形成额外假设",
-            "小白现场提问卡",
-            "第一个不能变成具体动作的题面句子",
-            "下一问为什么只能这样长出来",
-            "这个空缺正在阻碍",
-            "每个真实候选回答四项",
-            "候选 B（仅在存在真实替代方向时填写）",
-            "不要编造没有认真考虑过的候选",
-            "第一次变化",
-            "第二次变化",
-        ],
-    ),
-    (
-        REPO_SKILL,
-        [
-            "小白现场必须留下的五件事",
-            "真实初始理解",
-            "没有形成候选",
-            "事后校验",
-            "下一问必须从当前缺口长出来",
-            "小白现场提问卡",
-            "第一个不能变成具体动作的题面句子",
-            "这个空缺阻碍什么",
-            "七段现场判断门",
-            "提前出现结论时怎样撤回",
-            "事实 / 推导 / 推测",
-            "题目事实写错是一票否决",
-            "第一次变化只说明",
-            "第二次变化必须归入",
-            "方向确认",
-            "最早缺口",
-        ],
-    ),
-    (
-        WORKBENCH,
-        [
-            "真实出现过额外假设就指出来",
-            "没有形成额外假设",
-            "有真实歧义时比较多个方向",
-            "不制造假候选",
-            "事后校验",
-        ],
-    ),
-    (
-        SITE_APP,
-        [
-            "const READING_HARD_GATES",
-            "const READING_SOURCE_RULES",
-            "下一问只能由当前最早缺口产生",
-            "范围只缩小候选",
-            "第二次变化后才确认方向",
-            "没有来源不能进入下一步",
-            "renderReadingHardGates",
-            "最早缺口",
-            "答完才允许",
-            "只读原题事实",
-            "先逐句扩写，再合成一个人能执行的过程",
-            "清点对象，手走过程，第一次捕捉变化",
-            "第一次捕捉变化",
-            "读范围，缩小候选方向",
-            "带着预算第二次捕捉变化",
-            "比较候选，确认算法方向",
-            "方向确认后，才进入推导链",
-            "不知道下一步时，不要先问“这题用什么算法”",
-            "小白现场提问卡",
-            "小白心里最自然的原话",
-            "renderBeginnerQuestionCard",
-            "这个空缺正在阻碍",
-            "刚刚确认什么 -> 最早缺什么 -> 下一问只问什么",
-            "定义状态的真实含义",
-            "没有形成候选",
-            "事后校验",
-            "小白此刻只问",
-            "这一段要交出的证据",
-            "不能提前出现",
-            "说不清就退回",
-            "renderHumanStageContract",
-            "退回到这里",
-            "第 7 段进入推导链",
-        ],
-    ),
+# These are the canonical user-facing questions. Whitespace is normalized before
+# comparison so a table cell or wrapped code block may break a line without
+# creating a second version of the standard.
+QUESTIONS = [
+    "我刚读完题，题目到底给了我什么，要我交回什么？",
+    "每个字都懂，可一个普通人在纸上第一步做什么？",
+    "这个任务里有哪些对象，谁和谁有关系？",
+    "照着最笨的办法走一遍，哪一刻什么变了，答案什么时候定下来？",
+    "这个笨办法最坏会重复多少，数据范围先排除哪些方向？",
+    "带着这个代价重看，哪份信息还会被再次问起，哪批候选会过期，"
+    "哪个子问题会复用，哪条顺序不能乱？",
+    "这些操作需要什么方向来承担，另一个方向为什么不够？",
+    "方向已经定了，状态、更新顺序、不变量和代码怎样逐段对应？",
 ]
 
-ORDERED_CHECKS = [
-    (
-        STANDARD,
-        [
-            "单屏现场卡：第一次拿到题只做这些",
-            "每一步的结论必须有来源",
-            "三条现场硬门槛",
-            "第一次使用：从现场开始，不先背十二句",
-            "标准确认：十二句连续现场链",
-            "七段现场判断门",
-        ],
-    ),
-    (
-        STANDARD,
-        [
-            "数据范围只缩小候选，不点名算法",
-            "第二次变化后才允许确认方向",
-            "真实失败候选必须保留，但不能补写",
-        ],
-    ),
-    (
-        TEMPLATE,
-        [
-            "单屏执行顺序",
-            "连续现场句链",
-            "开始前：我现在的真实状态",
-            "七段退出条件",
-            "只读原题事实",
-            "扩写成完整人话过程",
-            "对象、直接过程和第一次变化",
-            "数据范围、操作预算与功能候选",
-            "第二次变化：重复劳动和所需操作",
-            "候选方向与选择理由",
-            "状态、初始条件、转移和更新顺序",
-        ],
-    ),
-    (
-        STANDARD,
-        [
-            "我只从原题确认",
-            "我暂时不能确认",
-            "把这些原句合起来，普通人会这样行动",
-            "条件“______”实际阻止的错误是",
-            "题目对象是 ______；其中值、位置和身份的关系是",
-            "答案是在 ______ 之后产生",
-            "第一次变化是：变化前 ______；触发事件 ______",
-            "最坏大约重复 ______ 次核心操作",
-            "仍待验证的功能候选是 ______",
-            "未来会回来读取 ______",
-            "没有完整因果句，不能进入代码",
-            "交换更新顺序会被 ______ 这个反例推翻",
-        ],
-    ),
-    (
-        TEMPLATE,
-        [
-            "我只从原题确认",
-            "我暂时不能确认",
-            "把这些原句合起来，普通人会这样行动",
-            "条件“______”实际阻止的错误是",
-            "题目对象是 ______；值、位置和身份的关系是",
-            "答案是在 ______ 之后产生",
-            "第一次变化是：变化前 ______",
-            "最坏大约重复 ______ 次核心操作",
-            "仍待验证的功能候选是 ______",
-            "未来会读取 ______",
-            "候选 B 在 ______ 条件下失效或代价更高",
-            "交换更新顺序会被 ______ 这个反例推翻",
-        ],
-    ),
-    (
-        STANDARD,
-        [
-            "| 1. 读题 |",
-            "| 2. 扩写 |",
-            "| 3. 对象、过程与第一次变化 |",
-            "| 4. 范围与候选 |",
-            "| 5. 第二次变化 |",
-            "| 6. 方向确认 |",
-            "| 7. 推导链 |",
-        ],
-    ),
-    (
-        STANDARD,
-        [
-            "| 1. 刚读完题 |",
-            "| 2. 能复述，但不会动手 |",
-            "| 3. 会走例子，但看不出重点 |",
-            "| 4. 看见变化，但不知道是否值得优化 |",
-            "| 5. 知道可能慢，但不知道该留下什么 |",
-            "| 6. 已经有几个模糊方向 |",
-            "| 7. 方向已经确认 |",
-        ],
-    ),
-    (
-        TEMPLATE,
-        [
-            "## 只读原题事实",
-            "## 扩写成完整人话过程",
-            "## 对象、直接过程和第一次变化",
-            "## 数据范围、操作预算与功能候选",
-            "## 第二次变化：重复劳动和所需操作",
-            "## 候选方向与选择理由",
-            "## 状态、初始条件、转移和更新顺序",
-        ],
-    ),
-    (
-        DEMO,
-        [
-            "## 1. 先只读题",
-            "## 2. 把题干扩写成一个人能看见的过程",
-            "## 3. 清点对象、走人工过程、第一次观察变化",
-            "## 4. 读数据范围，只用来缩小候选",
-            "## 5. 第二次观察变化",
-            "## 6. 比较候选并确认算法方向",
-            "## 7. 方向确认后的思维链",
-        ],
-    ),
-    (
-        SITE_APP,
-        [
-            'title: "只读原题事实"',
-            'title: "逐句扩写题干，合成可执行过程"',
-            'title: "对象、过程与第一次捕捉变化"',
-            'title: "读范围，缩小候选方向"',
-            'title: "第二次捕捉变化，寻找重复劳动"',
-            'title: "确认算法方向，再进入推导链"',
-            'title: "定义状态的真实含义"',
-        ],
-    ),
-    (
-        SITE_APP,
-        [
-            'stage: "刚读完题"',
-            'stage: "能复述，但不会动手"',
-            'stage: "会走例子，但看不出重点"',
-            'stage: "看见变化，但不知道是否值得优化"',
-            'stage: "知道可能慢，但不知道该留下什么"',
-            'stage: "已经有几个模糊方向"',
-            'stage: "方向已经确认"',
-        ],
-    ),
+QUESTION_SOURCES = [
+    STANDARD,
+    TEMPLATE,
+    DEMO,
+    HUMAN_GUIDE,
+    REPO_SKILL,
+    INSTALLED_SKILL,
+    AGENTS,
+    WORKBENCH,
+    SITE_APP,
 ]
+
+STAGE_MAP = [
+    "阶段 1：问题 1",
+    "阶段 2：问题 2",
+    "阶段 3：问题 3 -> 问题 4",
+    "阶段 4：问题 5",
+    "阶段 5：问题 6",
+    "阶段 6：问题 7",
+    "阶段 7：问题 8",
+]
+
+STAGE_MAP_SOURCES = [STANDARD, TEMPLATE, AGENTS]
+
+STANDARD_HEADINGS = [
+    "## 第一阶段：问题 1",
+    "## 第二阶段：问题 2",
+    "## 第三阶段：问题 3 -> 问题 4",
+    "## 第四阶段：问题 5",
+    "## 第五阶段：问题 6",
+    "## 第六阶段：问题 7",
+    "## 第七阶段：问题 8",
+]
+
+TEMPLATE_HEADINGS = [
+    "## 问题 1：",
+    "## 问题 2：",
+    "## 问题 3 -> 问题 4：",
+    "## 问题 5：",
+    "## 问题 6：",
+    "## 问题 7：",
+    "## 问题 8：",
+]
+
+DEMO_HEADINGS = [
+    "## 1. 先只读题",
+    "## 2. 把题干扩写成一个人能看见的过程",
+    "## 3. 清点对象、走人工过程、第一次观察变化",
+    "## 4. 读数据范围，只用来缩小候选",
+    "## 5. 第二次观察变化",
+    "## 6. 比较候选并确认算法方向",
+    "## 7. 方向确认后的思维链",
+]
+
+REQUIRED_PHRASES = {
+    STANDARD: [
+        "八个自然问题",
+        "下一问必须由上一段留下的空缺产生",
+        "照着最笨的办法走一遍",
+        "带着这个代价重看",
+        "数据范围能做的事情只有两件",
+        "候选池不是结论，范围也不是算法暗号",
+        "最近端加入、读取和连续删除",
+        "完整方向确认句",
+        "没有来源的结论不能进入下一步",
+        "记忆候选，不是题目事实",
+        "没有形成额外假设",
+        "没有形成候选",
+        "题目事实读错是一票否决",
+        "卡住时只留五句",
+    ],
+    TEMPLATE: [
+        "八个自然问题",
+        "下一问只能由当前最早缺口产生",
+        "范围只缩小候选，不点名算法",
+        "第二次变化出现之前不确认方向",
+        "没有来源的结论不能进入下一步",
+        "记忆候选，不是题目事实",
+        "没有形成额外假设",
+        "没有形成候选",
+        "完整方向确认句",
+    ],
+    DEMO: [
+        "八个自然问题嵌在七个阶段里",
+        "没有形成候选",
+        "事后校验",
+        "第一次变化",
+        "第二次变化",
+    ],
+    HUMAN_GUIDE: [
+        "八个自然问题与七个阶段的对应",
+        "问题 3 和问题 4 都属于第三阶段",
+        "没有形成额外假设",
+        "完整方向确认句",
+        "卡住时",
+    ],
+    REPO_SKILL: [
+        "八个自然问题",
+        "问题 3 和问题 4 不能压成一句“分析题意”",
+        "题目事实写错是一票否决",
+        "记忆候选，不是题目事实",
+        "没有形成额外假设",
+        "没有形成候选",
+        "完整方向确认句",
+    ],
+    INSTALLED_SKILL: [
+        "八个自然问题",
+        "Questions 3 and 4 both belong to stage 3",
+        "题目事实写错是一票否决",
+        "记忆候选，不是题目事实",
+        "没有形成额外假设",
+        "没有形成候选",
+        "direction-confirmation sentence",
+    ],
+    AGENTS: [
+        "八个自然问题",
+        "阶段 3：问题 3 -> 问题 4",
+        "不能压缩成一句“分析题意”",
+    ],
+    WORKBENCH: [
+        "八个自然问题",
+        "先回答问题 3",
+        "再回答问题 4",
+        "没有形成额外假设",
+        "完整因果句",
+    ],
+    SITE_APP: [
+        "const BEGINNER_QUESTION_CARD",
+        "八个自然问题 · 小白现场提问卡",
+        "问题 3 和问题 4 同属第三阶段",
+        "对象、过程与第一次变化（问题 3 -> 问题 4）",
+        "候选池不是结论",
+        "完整方向确认句",
+        "没有形成候选",
+        "renderHumanStageContract",
+    ],
+}
+
+LEGACY_TERMS = [
+    "单屏现场卡",
+    "十二句",
+    "七个自然问题",
+    "七问清单",
+    "七项待办",
+    "标准确认：十二句连续现场链",
+]
+
+FORBIDDEN_IN_RANGE_STAGE = [
+    "哈希",
+    "双指针",
+    "动态规划",
+    "单调栈",
+    "滑动窗口",
+    "二分查找",
+    "优先队列",
+]
+
+
+def display_path(path: Path) -> str:
+    try:
+        return str(path.relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
+
+
+def normalize(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def compact(text: str) -> str:
+    return re.sub(r"\s+", "", text)
+
+
+def read_text(path: Path, errors: list[str]) -> str | None:
+    if not path.is_file():
+        errors.append(f"{display_path(path)}: file is missing")
+        return None
+    return path.read_text(encoding="utf-8")
+
+
+def check_required_phrases(errors: list[str]) -> None:
+    for path, phrases in REQUIRED_PHRASES.items():
+        text = read_text(path, errors)
+        if text is None:
+            continue
+        normalized = normalize(text)
+        for phrase in phrases:
+            if normalize(phrase) not in normalized:
+                errors.append(f"{display_path(path)}: missing {phrase}")
+
+
+def check_question_sequence(errors: list[str]) -> None:
+    for path in QUESTION_SOURCES:
+        text = read_text(path, errors)
+        if text is None:
+            continue
+        normalized = compact(text)
+        positions: list[int] = []
+        for index, question in enumerate(QUESTIONS, start=1):
+            position = normalized.find(compact(question))
+            if position < 0:
+                errors.append(
+                    f"{display_path(path)}: question {index} is missing or differs "
+                    f"from the canonical wording: {question}"
+                )
+                continue
+            positions.append(position)
+        if len(positions) == len(QUESTIONS) and positions != sorted(positions):
+            errors.append(
+                f"{display_path(path)}: the eight questions are not in canonical order"
+            )
+
+
+def check_ordered_markers(
+    path: Path, markers: list[str], label: str, errors: list[str]
+) -> None:
+    text = read_text(path, errors)
+    if text is None:
+        return
+    cursor = 0
+    for marker in markers:
+        position = text.find(marker, cursor)
+        if position < 0:
+            errors.append(
+                f"{display_path(path)}: {label} marker is out of order or missing: "
+                f"{marker}"
+            )
+            return
+        cursor = position + len(marker)
+
+
+def check_stage_structure(errors: list[str]) -> None:
+    check_ordered_markers(STANDARD, STANDARD_HEADINGS, "stage", errors)
+    check_ordered_markers(TEMPLATE, TEMPLATE_HEADINGS, "stage", errors)
+    check_ordered_markers(DEMO, DEMO_HEADINGS, "stage", errors)
+
+    for path in STAGE_MAP_SOURCES:
+        check_ordered_markers(path, STAGE_MAP, "stage map", errors)
+
+    for path in [REPO_SKILL, HUMAN_GUIDE, WORKBENCH]:
+        text = read_text(path, errors)
+        if text is None:
+            continue
+        if text.count("| 阶段 3 |") < 2:
+            errors.append(
+                f"{display_path(path)}: question 3 and question 4 must both be in stage 3"
+            )
+
+    site = read_text(SITE_APP, errors)
+    if site is not None:
+        card_start = site.find("const BEGINNER_QUESTION_CARD = [")
+        card_end = site.find("const READING_HARD_GATES", card_start)
+        if card_start < 0 or card_end < 0:
+            errors.append(
+                f"{display_path(SITE_APP)}: cannot isolate BEGINNER_QUESTION_CARD"
+            )
+        else:
+            card = site[card_start:card_end]
+            if card.count('index: "') != 8:
+                errors.append(
+                    f"{display_path(SITE_APP)}: beginner question card must contain "
+                    "exactly eight entries"
+                )
+            if card.count('stage: "阶段 3') != 2:
+                errors.append(
+                    f"{display_path(SITE_APP)}: question 3 and question 4 must both "
+                    "carry stage 3"
+                )
+            for stage in [4, 5, 6, 7]:
+                if f'stage: "阶段 {stage}' not in card:
+                    errors.append(
+                        f"{display_path(SITE_APP)}: missing stage {stage} question card"
+                    )
+
+
+def check_range_before_second_change(errors: list[str]) -> None:
+    standard = read_text(STANDARD, errors)
+    if standard is None:
+        return
+
+    stage_4_start = standard.find("## 第四阶段：问题 5")
+    stage_5_start = standard.find("## 第五阶段：问题 6")
+    if stage_4_start < 0 or stage_5_start <= stage_4_start:
+        errors.append(
+            f"{display_path(STANDARD)}: range stage must precede the second-change stage"
+        )
+        return
+
+    range_stage = standard[stage_4_start:stage_5_start]
+    for term in FORBIDDEN_IN_RANGE_STAGE:
+        if term in range_stage:
+            errors.append(
+                f"{display_path(STANDARD)}: range stage names {term}; it may only "
+                "exclude complexity families and leave functional candidates"
+            )
+
+    range_evidence = [
+        "最坏可以取单调不升的温度",
+        "n(n - 1) / 2",
+        "不能稳定依赖",
+        "候选池不是结论",
+    ]
+    for phrase in range_evidence:
+        if phrase not in range_stage:
+            errors.append(
+                f"{display_path(STANDARD)}: range stage is missing evidence: {phrase}"
+            )
+
+    stage_5_start = standard.find("## 第五阶段：问题 6")
+    stage_6_start = standard.find("## 第六阶段：问题 7")
+    if stage_6_start <= stage_5_start:
+        errors.append(
+            f"{display_path(STANDARD)}: second-change stage must precede direction"
+        )
+        return
+    second_change = standard[stage_5_start:stage_6_start]
+    for phrase in [
+        "重复查询",
+        "候选失效",
+        "子问题复用",
+        "顺序约束",
+        "最近端加入、读取、连续删除",
+    ]:
+        if phrase not in second_change:
+            errors.append(
+                f"{display_path(STANDARD)}: second-change stage is missing {phrase}"
+            )
+
+
+def check_legacy_language(errors: list[str]) -> None:
+    for path in QUESTION_SOURCES:
+        text = read_text(path, errors)
+        if text is None:
+            continue
+        for term in LEGACY_TERMS:
+            if term in text:
+                errors.append(
+                    f"{display_path(path)}: legacy competing framework remains: {term}"
+                )
 
 
 def main() -> int:
     errors: list[str] = []
-    for path, required_phrases in CHECKS:
-        if not path.is_file():
-            errors.append(f"{path.relative_to(REPO_ROOT)}: file is missing")
-            continue
-        text = path.read_text(encoding="utf-8")
-        missing = [phrase for phrase in required_phrases if phrase not in text]
-        if missing:
-            joined = "、".join(missing)
-            errors.append(f"{path.relative_to(REPO_ROOT)}: missing {joined}")
-
-    for path, ordered_phrases in ORDERED_CHECKS:
-        if not path.is_file():
-            errors.append(f"{path.relative_to(REPO_ROOT)}: file is missing")
-            continue
-        text = path.read_text(encoding="utf-8")
-        cursor = 0
-        for phrase in ordered_phrases:
-            position = text.find(phrase, cursor)
-            if position < 0:
-                errors.append(
-                    f"{path.relative_to(REPO_ROOT)}: out of order or missing {phrase}"
-                )
-                break
-            cursor = position + len(phrase)
+    check_required_phrases(errors)
+    check_question_sequence(errors)
+    check_stage_structure(errors)
+    check_range_before_second_change(errors)
+    check_legacy_language(errors)
 
     if errors:
         for error in errors:
             print(f"ERROR: {error}", file=sys.stderr)
         return 1
 
-    print("Human reading contract passed.")
+    print("Human reading contract passed: 8 questions, 7 ordered stages.")
     return 0
 
 
