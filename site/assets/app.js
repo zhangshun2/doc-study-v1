@@ -928,6 +928,7 @@ function renderReviewCenter(query = null) {
         <p class="review-eyebrow"><i data-lucide="git-branch"></i>人类读题与算法确认</p>
         <h1>先走完一个人会怎么想，再验证机器会怎么做</h1>
         <p>
+          每一段先记录“我现在确定什么、还不确定什么、下一个最小问题是什么”，不直接展示整理好的专家路径。
           拿到题先只读事实，再把压缩题面扩写成完整生活过程；随后清点对象、手工做例子、
           第一次捕捉变化、读范围并生成候选池、第二次寻找重复劳动。只有说清“为什么需要这些操作”并比较候选确认方向，
           才进入状态、不变量、代码和反例。方法名不能替代这条人类判断路径。
@@ -949,6 +950,9 @@ function renderReviewCenter(query = null) {
           </a>
           <a class="secondary-button" href="${docHref("LeetCode-系统复习/05-单题流程/人类读题与算法确认.md")}">
             <i data-lucide="route"></i>完整标准与示例
+          </a>
+          <a class="secondary-button" href="${docHref("LeetCode-系统复习/05-单题流程/小白读题现场示范.md")}">
+            <i data-lucide="message-circle-more"></i>小白现场示范
           </a>
           <a class="secondary-button" href="${docHref("LeetCode-系统复习/05-单题流程/人类推导样板与评分.md")}">
             <i data-lucide="notebook-tabs"></i>四题推导验收
