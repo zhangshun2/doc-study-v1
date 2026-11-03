@@ -96,8 +96,25 @@ CANDIDATE_PATTERNS = [
         r"动态规划",
         r"滑动窗口",
         r"回溯",
+        r"二分查找",
+        r"二分搜索",
         r"堆",
     ]
+]
+
+CANDIDATE_ZONE_FIELDS = [
+    "范围后想到的方向：",
+    "它可能消除的重复或失效工作：",
+    "它依赖的题目条件：",
+    "最坏预算是否允许：",
+    "目前仍缺少什么过程证据：",
+    "它还不能被选为主方向，因为：",
+]
+
+EARLY_SELECTION_PATTERNS = [
+    re.compile(r"(?:所以|因此|于是).{0,10}(?:选择|采用|使用|就用)"),
+    re.compile(r"(?:决定|确定).{0,6}(?:选择|采用|使用)"),
+    re.compile(r"(?:最终方向|主方向)(?:就)?(?:是|选)"),
 ]
 
 STALE_APP_PATTERNS = [
@@ -106,6 +123,10 @@ STALE_APP_PATTERNS = [
     "问题 4",
     "问题 3 -> 问题 4",
     "7 个阶段 · 3 条硬规则",
+    "八问",
+    "8 个问题",
+    "范围不能直接点名任何具体方法或结构",
+    "不能出现具体方法或结构名称",
 ]
 
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
@@ -233,6 +254,60 @@ def candidate_hits(text: str) -> list[str]:
     return sorted(set(hits))
 
 
+def extract_candidate_zone(block: str) -> tuple[int, int, str] | None:
+    """Return the marked candidate-zone span and body inside handoff 6."""
+    lines = block.splitlines(keepends=True)
+    offset = 0
+    for position, line in enumerate(lines):
+        heading = HEADING_RE.match(line.rstrip("\r\n"))
+        if not heading or "待验证方向" not in heading.group(2):
+            offset += len(line)
+            continue
+
+        start = offset
+        heading_level = len(heading.group(1))
+        end = len(block)
+        nested_offset = offset + len(line)
+        for nested_line in lines[position + 1 :]:
+            nested_heading = HEADING_RE.match(nested_line.rstrip("\r\n"))
+            if nested_heading and len(nested_heading.group(1)) <= heading_level:
+                end = nested_offset
+                break
+            nested_offset += len(nested_line)
+        return start, end, block[start:end]
+    return None
+
+
+def validate_candidate_zone(handoff: Handoff) -> str | None:
+    hits = candidate_hits(handoff.block)
+    zone = extract_candidate_zone(handoff.block)
+
+    if hits and zone is None:
+        raise ValidationError(
+            f"{handoff.location} 交接 6 的候选没有放进"
+            "“范围后的待验证方向（未获证明资格）”："
+            + "、".join(hits)
+        )
+    if zone is None:
+        return None
+
+    start, end, body = zone
+    outside_hits = candidate_hits(handoff.block[:start] + handoff.block[end:])
+    if outside_hits:
+        raise ValidationError(
+            f"{handoff.location} 交接 6 的待验证区之外泄漏候选："
+            + "、".join(outside_hits)
+        )
+
+    missing = [field for field in CANDIDATE_ZONE_FIELDS if field not in body]
+    if missing:
+        raise ValidationError(
+            f"{handoff.location} 待验证方向缺少证据字段："
+            + "、".join(missing)
+        )
+    return body
+
+
 def validate_data_range_zone(handoff: Handoff) -> None:
     if handoff.index != 6:
         return
@@ -243,22 +318,36 @@ def validate_data_range_zone(handoff: Handoff) -> None:
             f"{handoff.location} 交接 6 没有留下范围或预算证据"
         )
 
-    hits = candidate_hits(handoff.block)
-    if hits:
-        raise ValidationError(
-            f"{handoff.location} 交接 6 提前出现具体方法或结构："
-            + "、".join(hits)
-        )
+    validate_candidate_zone(handoff)
 
 
 def validate_candidate_gate(chain: list[Handoff]) -> None:
-    for handoff in chain[:7]:
+    for handoff in chain[:5]:
         hits = candidate_hits(handoff.block)
         if hits:
             raise ValidationError(
                 f"{handoff.location} 交接 {handoff.index} 在交接 8 前泄漏候选："
                 + "、".join(hits)
             )
+
+    validate_data_range_zone(chain[5])
+
+    handoff_seven = chain[6]
+    hits = candidate_hits(handoff_seven.block)
+    if hits:
+        raise ValidationError(
+            f"{handoff_seven.location} 交接 7 还没回到过程取证就泄漏候选："
+            + "、".join(hits)
+        )
+
+    for handoff in chain[:6]:
+        for pattern in EARLY_SELECTION_PATTERNS:
+            match = pattern.search(handoff.block)
+            if match:
+                raise ValidationError(
+                    f"{handoff.location} 交接 {handoff.index} 提前出现选择语气："
+                    f"{match.group(0)}"
+                )
 
     handoff_eight = chain[7]
     if "候选" not in handoff_eight.block:
@@ -314,6 +403,34 @@ def extract_js_handoff_blocks(script: str) -> list[tuple[int, str]]:
     return blocks
 
 
+def extract_js_array(script: str, name: str) -> str:
+    start = script.find(f"const {name} = [")
+    if start < 0:
+        raise ValidationError(f"site/assets/app.js 找不到 {name}")
+    end = script.find("\n];", start)
+    if end < 0:
+        raise ValidationError(f"site/assets/app.js 的 {name} 没有结束")
+    return script[start : end + len("\n];")]
+
+
+def count_top_level_js_objects(array_source: str) -> int:
+    return len(re.findall(r"^\s{2}\{\s*$", array_source, flags=re.MULTILINE))
+
+
+def validate_beginner_question_structure(source: str, label: str) -> None:
+    count = count_top_level_js_objects(source)
+    if count != 9:
+        raise ValidationError(f"{label} 必须正好有 9 项，实际 {count} 项")
+
+    required_order = ["对象", "最笨", "第一次变化", "数据范围", "重复"]
+    positions = [source.find(word) for word in required_order]
+    if any(position < 0 for position in positions) or positions != sorted(positions):
+        raise ValidationError(
+            f"{label} 必须按“读题 → 扩写 → 对象 → 笨过程 → "
+            "第一次变化 → 数据范围 → 重复取证”展开"
+        )
+
+
 def validate_site_app(path: Path) -> None:
     script = read_text(path)
 
@@ -333,17 +450,26 @@ def validate_site_app(path: Path) -> None:
                 f"site/assets/app.js 交接 {index} 缺少字段："
                 + "、".join(missing)
             )
-        if index < 8:
+        if index < 8 and index != 6:
             hits = candidate_hits(block)
             if hits:
                 raise ValidationError(
                     f"site/assets/app.js 交接 {index} 在交接 8 前泄漏候选："
                     + "、".join(hits)
                 )
-        if index == 6 and not any(
-            idea in block for idea in ("约束", "范围", "预算", "复杂度", "最坏")
-        ):
-            raise ValidationError("site/assets/app.js 交接 6 没有范围或预算证据")
+        if index == 6:
+            validate_data_range_zone(
+                Handoff(path=path, index=6, line=0, block=block)
+            )
+
+    question_source = extract_js_array(script, "BEGINNER_QUESTION_CARD")
+    action_source = extract_js_array(script, "BEGINNER_ACTION_STEPS")
+    validate_beginner_question_structure(question_source, "九问卡")
+    validate_beginner_question_structure(action_source, "起步动作表")
+    if "rangeBlocked" in script:
+        raise ValidationError("site/assets/app.js 仍保留旧的范围段候选禁区字段")
+    if "待验证方向" not in question_source or "六项" not in question_source:
+        raise ValidationError("九问卡没有说明交接 6 的六项待验证方向")
 
     acceptance_start = script.find("function renderHumanAcceptanceStandard()")
     if acceptance_start < 0:
@@ -403,16 +529,41 @@ def run_fixture_checks() -> None:
         lambda: validate_handoff_fields(missing_field[2]),
     )
 
-    concrete_range = fixture_chain(list(range(1, 10)))
-    concrete_range[5] = Handoff(
-        path=concrete_range[5].path,
+    legal_candidate = fixture_chain(list(range(1, 10)))
+    legal_candidate[5] = Handoff(
+        path=legal_candidate[5].path,
         index=6,
-        line=concrete_range[5].line,
-        block=concrete_range[5].block + "\n这里应该使用 HashMap。",
+        line=legal_candidate[5].line,
+        block=legal_candidate[5].block
+        + "\n### 范围后的待验证方向（未获证明资格）\n"
+        + "\n".join(CANDIDATE_ZONE_FIELDS),
+    )
+    validate_data_range_zone(legal_candidate[5])
+
+    concrete_outside_zone = fixture_chain(list(range(1, 10)))
+    concrete_outside_zone[5] = Handoff(
+        path=concrete_outside_zone[5].path,
+        index=6,
+        line=concrete_outside_zone[5].line,
+        block=concrete_outside_zone[5].block + "\n这里应该使用 HashMap。",
     )
     expect_failure(
-        "交接 6 出现具体结构",
-        lambda: validate_data_range_zone(concrete_range[5]),
+        "交接 6 的候选写在待验证区外",
+        lambda: validate_data_range_zone(concrete_outside_zone[5]),
+    )
+
+    missing_candidate_field = fixture_chain(list(range(1, 10)))
+    missing_candidate_field[5] = Handoff(
+        path=missing_candidate_field[5].path,
+        index=6,
+        line=missing_candidate_field[5].line,
+        block=missing_candidate_field[5].block
+        + "\n### 范围后的待验证方向（未获证明资格）\n"
+        + "\n".join(CANDIDATE_ZONE_FIELDS[:-1]),
+    )
+    expect_failure(
+        "待验证方向缺少六字段之一",
+        lambda: validate_data_range_zone(missing_candidate_field[5]),
     )
 
     early_leak = fixture_chain(list(range(1, 10)))
@@ -423,8 +574,68 @@ def run_fixture_checks() -> None:
         block=early_leak[2].block + "\n下一步使用栈。",
     )
     expect_failure(
-        "交接 8 前泄漏具体候选",
+        "交接 3 提前泄漏具体候选",
         lambda: validate_candidate_gate(early_leak),
+    )
+
+    handoff_seven_leak = fixture_chain(list(range(1, 10)))
+    handoff_seven_leak[6] = Handoff(
+        path=handoff_seven_leak[6].path,
+        index=7,
+        line=handoff_seven_leak[6].line,
+        block=handoff_seven_leak[6].block + "\n这里使用单调栈。",
+    )
+    expect_failure(
+        "交接 7 提前泄漏候选",
+        lambda: validate_candidate_gate(handoff_seven_leak),
+    )
+
+    early_selection = fixture_chain(list(range(1, 10)))
+    early_selection[4] = Handoff(
+        path=early_selection[4].path,
+        index=5,
+        line=early_selection[4].line,
+        block=early_selection[4].block + "\n所以选择这个方向。",
+    )
+    expect_failure(
+        "交接 1 至 6 提前出现选择语气",
+        lambda: validate_candidate_gate(early_selection),
+    )
+
+    duplicate_questions = (
+        "const BEGINNER_QUESTION_CARD = [\n"
+        + '  {\n    stage: "对象",\n  },\n'
+        + '  {\n    stage: "最笨过程",\n  },\n'
+        + '  {\n    stage: "第一次变化",\n  },\n'
+        + '  {\n    stage: "数据范围",\n  },\n'
+        + '  {\n    stage: "重复",\n  },\n'
+        + '  {\n    stage: "多余",\n  },\n'
+        + '  {\n    stage: "多余",\n  },\n'
+        + '  {\n    stage: "多余",\n  },\n'
+        + '  {\n    stage: "多余",\n  },\n'
+        + '  {\n    stage: "多余",\n  },\n'
+        + "];\n"
+    )
+    expect_failure(
+        "九问卡重复成十项",
+        lambda: validate_beginner_question_structure(
+            duplicate_questions, "九问卡"
+        ),
+    )
+
+    validate_beginner_question_structure(
+        "const BEGINNER_ACTION_STEPS = [\n"
+        + '  {\n    action: "对象",\n  },\n'
+        + '  {\n    action: "最笨",\n  },\n'
+        + '  {\n    action: "第一次变化",\n  },\n'
+        + '  {\n    action: "数据范围",\n  },\n'
+        + '  {\n    action: "重复",\n  },\n'
+        + '  {\n    action: "候选",\n  },\n'
+        + '  {\n    action: "方向",\n  },\n'
+        + '  {\n    action: "状态",\n  },\n'
+        + '  {\n    action: "反例",\n  },\n'
+        + "];\n",
+        "正向起步动作表",
     )
 
     if extract_handoffs("```md\n## 交接 1\n```\n", Path("fenced.md")):
@@ -445,7 +656,8 @@ def main() -> int:
         return 1
 
     print(
-        "OK: 九次交接、九字段、数据范围禁区、候选门槛和页面验收均已通过"
+        "OK: 九次交接、九字段、待验证方向六字段、九问结构"
+        "和页面验收均已通过"
         f"（{total_chains} 条完整现场链）"
     )
     return 0
