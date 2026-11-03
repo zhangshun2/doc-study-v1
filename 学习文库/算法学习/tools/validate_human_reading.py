@@ -36,6 +36,13 @@ REPO_SKILL = (
 )
 SITE_APP = REPO_ROOT / "site" / "assets" / "app.js"
 AGENTS = REPO_ROOT / "学习文库" / "算法学习" / "AGENTS.md"
+WORKBENCH = (
+    REPO_ROOT
+    / "学习文库"
+    / "算法学习"
+    / "学习看板"
+    / "单题复习工作台.md"
+)
 ALGORITHM_README = REPO_ROOT / "学习文库" / "算法学习" / "README.md"
 
 CHECKED_DOCUMENTS = [
@@ -79,6 +86,60 @@ HANDOFF_FIELD_KEYS = [
     "nextQuestion",
     "nextEvidence",
     "returnTo",
+]
+
+LIVE_GENERATION_FIELDS = [
+    "我现在只能确认：",
+    "它还不够回答：",
+    "因此现在只做：",
+    "做完必须多出的证据：",
+    "证据不足就退回：",
+]
+
+OBJECT_TABLE_FIELDS = [
+    "题目对象",
+    "值和状态",
+    "身份由什么决定",
+    "位置或时间",
+    "从何时有效到何时失效",
+    "和谁发生关系",
+    "最终要得到什么",
+]
+
+FIRST_CHANGE_FIELDS = [
+    "谁发生变化：",
+    "触发事件：",
+    "变化前：",
+    "变化后：",
+    "答案确定时刻：",
+    "为什么不是更早或更晚：",
+]
+
+SHARED_CONTRACT_DOCUMENTS = [
+    STANDARD,
+    TEMPLATE,
+    REAL_PROBLEM_TEMPLATE,
+    REPO_SKILL,
+    AGENTS,
+    WORKBENCH,
+]
+
+STRUCTURED_CONTRACT_DOCUMENTS = [
+    STANDARD,
+    TEMPLATE,
+    REAL_PROBLEM_TEMPLATE,
+    REPO_SKILL,
+]
+
+STALE_CONTRACT_PHRASES = [
+    "每个结论只回答四件事",
+    "只写四行",
+    "我刚得到：",
+    "答案产生时刻",
+    "六列对象表",
+    "三句话现场交接",
+    "题目凭什么允许此刻停止",
+    "它还不能说明：",
 ]
 
 CANDIDATE_PATTERNS = [
@@ -244,6 +305,54 @@ def validate_handoff_fields(handoff: Handoff) -> None:
         raise ValidationError(
             f"{handoff.location} 交接 {handoff.index} 缺少字段："
             + "、".join(missing)
+        )
+
+
+def missing_markers(text: str, markers: list[str]) -> list[str]:
+    return [marker for marker in markers if marker not in text]
+
+
+def validate_live_generation_contract(text: str, label: str) -> None:
+    missing = missing_markers(text, LIVE_GENERATION_FIELDS)
+    if missing:
+        raise ValidationError(
+            f"{label} 缺少现场五句：" + "、".join(missing)
+        )
+    if "它还不能说明：" in text:
+        raise ValidationError(f"{label} 仍残留旧九字段笔误：它还不能说明：")
+
+
+def validate_nine_field_contract(text: str, label: str) -> None:
+    missing = missing_markers(text, [f"{field}：" for field in HANDOFF_FIELDS])
+    if missing:
+        raise ValidationError(
+            f"{label} 缺少完整九字段：" + "、".join(missing)
+        )
+    if "它还不能说明：" in text:
+        raise ValidationError(f"{label} 的九字段名称不完整：它还不能说明：")
+
+
+def validate_object_table_contract(text: str, label: str) -> None:
+    missing = missing_markers(text, OBJECT_TABLE_FIELDS)
+    if missing:
+        raise ValidationError(
+            f"{label} 的对象表缺少列：" + "、".join(missing)
+        )
+
+
+def validate_first_change_contract(text: str, label: str) -> None:
+    missing = missing_markers(text, FIRST_CHANGE_FIELDS)
+    if missing:
+        raise ValidationError(
+            f"{label} 的第一次变化缺少字段：" + "、".join(missing)
+        )
+
+
+def validate_candidate_contract(text: str, label: str) -> None:
+    missing = missing_markers(text, CANDIDATE_ZONE_FIELDS)
+    if missing:
+        raise ValidationError(
+            f"{label} 的待验证方向缺少字段：" + "、".join(missing)
         )
 
 
@@ -419,7 +528,11 @@ def count_top_level_js_objects(array_source: str) -> int:
     return len(re.findall(r"^\s{2}\{\s*$", array_source, flags=re.MULTILINE))
 
 
-def validate_beginner_question_structure(source: str, label: str) -> None:
+def validate_beginner_question_structure(
+    source: str,
+    label: str,
+    expected_terms: list[str] | None = None,
+) -> None:
     count = count_top_level_js_objects(source)
     if count != 9:
         raise ValidationError(f"{label} 必须正好有 9 项，实际 {count} 项")
@@ -431,6 +544,47 @@ def validate_beginner_question_structure(source: str, label: str) -> None:
             f"{label} 必须按“读题 → 扩写 → 对象 → 笨过程 → "
             "第一次变化 → 数据范围 → 重复取证”展开"
         )
+
+    if expected_terms:
+        positions = [source.find(term) for term in expected_terms]
+        if any(position < 0 for position in positions) or positions != sorted(positions):
+            raise ValidationError(
+                f"{label} 必须按九问顺序排列，实际缺少或错序："
+                + "、".join(expected_terms)
+            )
+
+
+def extract_js_function_source(script: str, name: str) -> str:
+    marker = f"function {name}("
+    start = script.find(marker)
+    if start < 0:
+        raise ValidationError(f"site/assets/app.js 找不到函数 {name}")
+    end = script.find("\nfunction ", start + len(marker))
+    if end < 0:
+        end = len(script)
+    return script[start:end]
+
+
+def validate_site_handoff_placement(script: str) -> None:
+    live_call = "HANDOFFS.map((handoff) => renderLiveHandoffCard(handoff)).join(\"\")"
+    complete_call = (
+        "HANDOFFS.map((handoff) => renderCompleteHandoffCard(handoff, "
+        "{ compact: true, idPrefix: \"handoff-complete\" })).join(\"\")"
+    )
+    diagnostics_start = script.find('<details class="review-diagnostics">')
+    diagnostics_end = script.find("</details>", diagnostics_start)
+    if script.count(live_call) != 1:
+        raise ValidationError("主现场必须且只能从五句现场卡渲染九次交接")
+    if script.count(complete_call) != 1:
+        raise ValidationError("完整九字段必须且只能出现一次完成复盘卡")
+    if diagnostics_start < 0 or diagnostics_end <= diagnostics_start:
+        raise ValidationError("site/assets/app.js 找不到完成后诊断折叠区")
+    complete_position = script.find(complete_call)
+    if not diagnostics_start < complete_position < diagnostics_end:
+        raise ValidationError("九字段完整卡被放在现场区，而不是完成后诊断区")
+    live_position = script.find(live_call)
+    if not 0 <= live_position < diagnostics_start:
+        raise ValidationError("现场五句卡没有出现在完成后诊断区之前")
 
 
 def validate_site_app(path: Path) -> None:
@@ -466,12 +620,70 @@ def validate_site_app(path: Path) -> None:
 
     question_source = extract_js_array(script, "BEGINNER_QUESTION_CARD")
     action_source = extract_js_array(script, "BEGINNER_ACTION_STEPS")
-    validate_beginner_question_structure(question_source, "九问卡")
-    validate_beginner_question_structure(action_source, "起步动作表")
+    validate_beginner_question_structure(
+        question_source,
+        "九问卡",
+        [
+            "阶段 1",
+            "阶段 2",
+            "阶段 3 · 先分清对象",
+            "阶段 3 · 再走最笨",
+            "阶段 3 · 捕捉第一次变化",
+            "阶段 4",
+            "阶段 5",
+            "阶段 6",
+            "阶段 7",
+        ],
+    )
+    validate_beginner_question_structure(
+        action_source,
+        "起步动作表",
+        [
+            "刚打开题",
+            "题干扩写成动作",
+            "对象混在一起",
+            "最笨但正确",
+            "第一次变化",
+            "数据范围",
+            "留下什么",
+            "哪个候选",
+            "状态和代码",
+        ],
+    )
     if "rangeBlocked" in script:
         raise ValidationError("site/assets/app.js 仍保留旧的范围段候选禁区字段")
     if "待验证方向" not in question_source or "六项" not in question_source:
         raise ValidationError("九问卡没有说明交接 6 的六项待验证方向")
+
+    validate_live_generation_contract(script, "site/assets/app.js")
+    for pattern in STALE_CONTRACT_PHRASES:
+        if pattern in script:
+            raise ValidationError(f"site/assets/app.js 仍残留旧标准：{pattern}")
+
+    live_function = extract_js_function_source(script, "renderLiveHandoffCard")
+    complete_function = extract_js_function_source(
+        script, "renderCompleteHandoffCard"
+    )
+    leaked_fields = [field for field in HANDOFF_FIELDS if field in live_function]
+    if leaked_fields:
+        raise ValidationError(
+            "现场交接卡又渲染了九字段："
+            + "、".join(leaked_fields)
+        )
+    missing_complete_fields = missing_markers(
+        complete_function, [f"{field}" for field in HANDOFF_FIELDS]
+    )
+    if missing_complete_fields:
+        raise ValidationError(
+            "完成后的九字段卡缺少："
+            + "、".join(missing_complete_fields)
+        )
+    if "data-live-handoff=\"true\"" not in live_function:
+        raise ValidationError("现场交接卡没有 data-live-handoff 标记")
+    if "data-retrospective-handoff=\"true\"" not in complete_function:
+        raise ValidationError("完成后九字段卡没有 data-retrospective-handoff 标记")
+
+    validate_site_handoff_placement(script)
 
     acceptance_start = script.find("function renderHumanAcceptanceStandard()")
     if acceptance_start < 0:
@@ -491,6 +703,22 @@ def validate_maintained_guides() -> None:
         raise ValidationError("标准卡缺少小白逐步产生下一问的现场因果表")
     if "数据范围必须放在第一次变化之后" not in standard:
         raise ValidationError("标准卡没有锁定数据范围与第一次变化的先后关系")
+
+    for path in SHARED_CONTRACT_DOCUMENTS:
+        text = read_text(path)
+        label = str(display_path(path))
+        validate_live_generation_contract(text, label)
+        validate_nine_field_contract(text, label)
+        for stale in STALE_CONTRACT_PHRASES:
+            if stale in text:
+                raise ValidationError(f"{label} 仍残留旧标准：{stale}")
+
+    for path in STRUCTURED_CONTRACT_DOCUMENTS:
+        text = read_text(path)
+        label = str(display_path(path))
+        validate_object_table_contract(text, label)
+        validate_first_change_contract(text, label)
+        validate_candidate_contract(text, label)
 
     agents = read_text(AGENTS)
     required_agents_questions = [
@@ -552,6 +780,90 @@ def expect_failure(label: str, action) -> None:
 
 def run_fixture_checks() -> None:
     ordered = fixture_chain(list(range(1, 10)))
+
+    validate_live_generation_contract(
+        "\n".join(LIVE_GENERATION_FIELDS),
+        "正向现场五句",
+    )
+    expect_failure(
+        "现场五句缺少退回条件",
+        lambda: validate_live_generation_contract(
+            "\n".join(LIVE_GENERATION_FIELDS[:-1]),
+            "缺句夹具",
+        ),
+    )
+
+    validate_nine_field_contract(
+        "\n".join(f"{field}：" for field in HANDOFF_FIELDS),
+        "正向九字段",
+    )
+    expect_failure(
+        "九字段名称被截短",
+        lambda: validate_nine_field_contract(
+            "\n".join(
+                f"{field}：" for field in HANDOFF_FIELDS
+            ).replace("它还不能说明什么：", "它还不能说明："),
+            "错名夹具",
+        ),
+    )
+
+    validate_object_table_contract(
+        "| " + " | ".join(OBJECT_TABLE_FIELDS) + " |",
+        "正向七列对象表",
+    )
+    expect_failure(
+        "对象表退回六列",
+        lambda: validate_object_table_contract(
+            "| " + " | ".join(OBJECT_TABLE_FIELDS[:-1]) + " |",
+            "六列夹具",
+        ),
+    )
+
+    validate_first_change_contract(
+        "\n".join(FIRST_CHANGE_FIELDS),
+        "正向第一次变化六项",
+    )
+    expect_failure(
+        "第一次变化缺少时间边界",
+        lambda: validate_first_change_contract(
+            "\n".join(FIRST_CHANGE_FIELDS[:-1]),
+            "缺第六项夹具",
+        ),
+    )
+
+    validate_candidate_contract(
+        "\n".join(CANDIDATE_ZONE_FIELDS),
+        "正向待验证方向六项",
+    )
+    expect_failure(
+        "待验证方向缺少不能选择的理由",
+        lambda: validate_candidate_contract(
+            "\n".join(CANDIDATE_ZONE_FIELDS[:-1]),
+            "缺候选证据夹具",
+        ),
+    )
+
+    live_call = (
+        "HANDOFFS.map((handoff) => renderLiveHandoffCard(handoff)).join(\"\")"
+    )
+    complete_call = (
+        "HANDOFFS.map((handoff) => renderCompleteHandoffCard(handoff, "
+        "{ compact: true, idPrefix: \"handoff-complete\" })).join(\"\")"
+    )
+    valid_site = (
+        f"{live_call}\n<details class=\"review-diagnostics\">"
+        f"{complete_call}</details>"
+    )
+    validate_site_handoff_placement(valid_site)
+
+    retrospective_in_live = (
+        f"<details class=\"review-diagnostics\">{complete_call}</details>"
+        f"\n{complete_call}"
+    )
+    expect_failure(
+        "九字段完整卡又被放回现场区",
+        lambda: validate_site_handoff_placement(retrospective_in_live),
+    )
 
     reversed_middle = fixture_chain([1, 2, 3, 4, 5, 7, 6, 8, 9])
     expect_failure(

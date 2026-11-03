@@ -1491,6 +1491,86 @@ button {
   padding: 12px 16px;
 }
 
+.handoff-card-live .handoff-card-head {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--accent-soft) 82%, transparent), transparent 62%);
+}
+
+.handoff-live-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.handoff-live-question,
+.handoff-live-why,
+.handoff-live-do,
+.handoff-live-return {
+  min-width: 0;
+  padding: 15px 18px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.handoff-live-question {
+  background: color-mix(in srgb, var(--accent-soft) 46%, var(--surface));
+}
+
+.handoff-live-do {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0;
+}
+
+.handoff-live-do > div {
+  min-width: 0;
+  padding: 15px 18px 16px;
+}
+
+.handoff-live-do > div + div {
+  border-left: 1px solid var(--border);
+}
+
+.handoff-live-question > span,
+.handoff-live-why > span,
+.handoff-live-do span,
+.handoff-live-return > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 760;
+}
+
+.handoff-live-question > span svg,
+.handoff-live-why > span svg,
+.handoff-live-do span svg,
+.handoff-live-return > span svg {
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+}
+
+.handoff-live-question p,
+.handoff-live-why p,
+.handoff-live-do p,
+.handoff-live-return p {
+  margin: 7px 0 0;
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+
+.handoff-live-question p {
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.handoff-live-return {
+  background: color-mix(in srgb, var(--surface-soft) 58%, transparent);
+}
+
 .handoff-demo,
 .review-diagnostics {
   margin-top: 20px;
@@ -1992,8 +2072,8 @@ button {
   border-bottom: 1px solid var(--border);
 }
 
-.review-live-gates-four {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+.review-live-gates-five {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .review-live-gates > div {
@@ -3895,6 +3975,20 @@ pre:hover .copy-code,
   .toc-panel {
     display: none;
   }
+
+  .review-live-gates-five {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .review-live-gates-five > div,
+  .review-live-gates-five > div:first-child {
+    padding: 16px 0;
+  }
+
+  .review-live-gates-five > div + div {
+    border-top: 1px solid var(--border);
+    border-left: 0;
+  }
 }
 
 @media (max-width: 920px) {
@@ -4118,6 +4212,25 @@ pre:hover .copy-code,
 
   .handoff-fields {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .handoff-live-do {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .handoff-live-do > div {
+    padding: 12px 14px 13px;
+  }
+
+  .handoff-live-do > div + div {
+    border-top: 1px solid var(--border);
+    border-left: 0;
+  }
+
+  .handoff-live-question,
+  .handoff-live-why,
+  .handoff-live-return {
+    padding: 12px 14px 13px;
   }
 
   .handoff-field,

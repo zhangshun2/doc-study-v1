@@ -85,8 +85,8 @@ const HANDOFFS = [
     title: "先分清谁有独立身份",
     question: "两个看起来一样的值，到底算同一个东西，还是两个不同位置上的对象？",
     whyNow: "人话过程已经能执行，但里面同时出现值和位置；如果身份混在一起，后面就无法保留正确答案。",
-    paper: "把两个相同的值分别写在两个位置或时间下，再填对象表：对象、值和状态、身份依据、位置、关系、最终结果。",
-    evidence: "每个对象的身份、位置、关系和结果归属，并且相同值不会被误合并。",
+    paper: "把两个相同的值分别写在两个位置或时间下，再填七列对象表：对象、值和状态、身份依据、位置或时间、从何时有效到何时失效、关系、最终结果。",
+    evidence: "每个对象的身份、位置、有效期、关系和结果归属，并且相同值不会被误合并。",
     only: "哪些信息必须跟着对象一起保留，哪些值可以相同但身份不同。",
     cannot: "一个普通人按什么顺序把对象走完，也不知道答案在何时确定。",
     nextQuestion: "照最直接的人类办法，第一眼先处理谁，接着处理谁？",
@@ -106,7 +106,7 @@ const HANDOFFS = [
     only: "最直接的办法怎样得到正确答案，以及哪些对象在过程中参与。",
     cannot: "哪份工作重复得太多，也不知道答案在哪一刻成为确定结果。",
     nextQuestion: "过程里第一次真正变化的是谁，答案什么时候确定？",
-    nextEvidence: "变化前、触发事件、变化后和写下答案的具体动作。",
+    nextEvidence: "谁发生变化、触发事件、变化前、变化后、答案确定时刻，以及为什么不是更早或更晚。",
     returnTo: "对象表和最小例子；例子太大就缩小，看不到关系就补一个会触发关系的对象。",
     blocked: "优化理由、最终结构、用输入输出摘要代替演算，或用“然后算法会……”补步骤。",
   },
@@ -117,7 +117,7 @@ const HANDOFFS = [
     title: "找出第一次变化与答案确定时刻",
     question: "哪一刻哪个对象从什么状态变成什么状态，答案为什么从这一刻开始确定？",
     whyNow: "完整过程刚走完，第一次停止、写入或候选成立的动作现在才真实可见。",
-    paper: "在过程记录里圈出第一次变化，写清变化前、触发事件、变化后，以及题目凭什么允许此刻停止。",
+    paper: "在过程记录里圈出第一次变化，写清谁发生变化、触发事件、变化前、变化后、答案确定时刻，以及为什么不是更早或更晚。",
     evidence: "第一次状态变化和答案确定时刻，并且能指回原题保证。",
     only: "过程里第一次发生了什么，哪个事件让答案成为确定结果。",
     cannot: "这份慢是否超预算，也不能回答应该保存什么或采用什么结构。",
@@ -255,8 +255,8 @@ const BEGINNER_ACTION_STEPS = [
   },
   {
     gap: "能讲大概过程，但对象混在一起",
-    action: "先写当前卡点，圈一句原句或把相同值写在两个位置上；新增证据成立后，再填六列对象表。",
-    evidence: "值、位置、身份、关系和结果归属能够分开。",
+    action: "先写当前卡点，圈一句原句或把相同值写在两个位置上；新增证据成立后，再填七列对象表。",
+    evidence: "值、位置、身份、有效期、关系和结果归属能够分开。",
     blocked: "没有身份证据就填对象表，或先列代码容器。",
   },
   {
@@ -267,8 +267,8 @@ const BEGINNER_ACTION_STEPS = [
   },
   {
     gap: "过程走通，但说不清第一次变化和答案时机",
-    action: "在过程记录里圈出第一次状态变化，写清变化前、触发事件、变化后和答案确定时刻。",
-    evidence: "第一次变化和答案为什么此刻确定。",
+    action: "在过程记录里圈出第一次状态变化，写清谁发生变化、触发事件、变化前、变化后、答案确定时刻，以及为什么不是更早或更晚。",
+    evidence: "第一次变化的六个字段，以及答案为什么恰好在这一刻确定。",
     blocked: "回答应该保存什么，或提前出现最终结构。",
   },
   {
@@ -420,23 +420,28 @@ const READING_HARD_GATES = [
 const LIVE_GENERATION_RULES = [
   {
     index: "01",
-    title: "我刚得到",
+    title: "我现在只能确认：",
     text: "只写刚才由一条原句、一个最小例子、一次手算、一次预算或一项候选比较真正得到的证据。没有新增证据，就留在原处。",
   },
   {
     index: "02",
-    title: "它只能说明",
-    text: "限定这份证据当前能证明的最小范围。不要把“数值不同”扩成“身份不同”，也不要把一个例子的结果扩成全部输入。",
+    title: "它还不够回答：",
+    text: "指出这份证据留下的最早空缺，限定它当前不能证明什么。不要把“数值不同”扩成“身份不同”，也不要把一个例子的结果扩成全部输入。",
   },
   {
     index: "03",
-    title: "它还不能说明",
-    text: "指出它留下的最早空缺：对象、过程、变化、预算、操作需求或候选取舍中的哪一项仍未确定。",
+    title: "因此现在只做：",
+    text: "下一步只能处理那个最早空缺，动作要小到能当场用一条原句、最小例子、手算、预算或候选比较完成。",
   },
   {
     index: "04",
-    title: "因此现在只允许问",
-    text: "下一问只能用当前空缺回答，并且小到能当场用一条原句、最小例子、手算、预算或候选比较处理；回答并留下证据后，才允许再问下一句。",
+    title: "做完必须多出的证据：",
+    text: "先说清这次纸面动作完成以后，纸上必须新增哪一份可核对证据。没有新增证据，就不算跨过当前台阶。",
+  },
+  {
+    index: "05",
+    title: "证据不足就退回：",
+    text: "如果新增证据仍不足以回答当前空缺，就退回最早缺失的交接；不能靠后面的方法名、结构或代码把缺口盖过去。",
   },
 ];
 
@@ -1251,8 +1256,8 @@ function renderHomeLink(item, index) {
   `;
 }
 
-function handoffAnchorId(handoff) {
-  return `handoff-${handoff.index}`;
+function handoffAnchorId(handoff, prefix = "handoff") {
+  return `${prefix}-${handoff.index}`;
 }
 
 function renderHandoffField(label, text, className, icon) {
@@ -1264,10 +1269,10 @@ function renderHandoffField(label, text, className, icon) {
   `;
 }
 
-function renderHandoffCard(handoff, options = {}) {
+function renderLiveHandoffCard(handoff, options = {}) {
   const compact = options.compact === true;
   return `
-    <article class="handoff-card${compact ? " handoff-card-compact" : ""}" id="${handoffAnchorId(handoff)}">
+    <article class="handoff-card handoff-card-live${compact ? " handoff-card-compact" : ""}" id="${handoffAnchorId(handoff)}" data-live-handoff="true">
       <header class="handoff-card-head">
         <span class="handoff-index">${escapeHtml(handoff.index)}</span>
         <div>
@@ -1275,7 +1280,51 @@ function renderHandoffCard(handoff, options = {}) {
           <h3>${escapeHtml(handoff.title)}</h3>
         </div>
       </header>
-      <div class="handoff-fields">
+      <div class="handoff-live-body">
+        <div class="handoff-live-question">
+          <span><i data-lucide="message-circle-question"></i>此刻自然只能问</span>
+          <p>${escapeHtml(handoff.question)}</p>
+        </div>
+        <div class="handoff-live-why">
+          <span><i data-lucide="clock-3"></i>为什么现在才轮到它</span>
+          <p>${escapeHtml(handoff.whyNow)}</p>
+        </div>
+        <div class="handoff-live-do">
+          <div>
+            <span><i data-lucide="pencil-line"></i>因此现场只做什么</span>
+            <p>${escapeHtml(handoff.paper)}</p>
+          </div>
+          <div>
+            <span><i data-lucide="file-check-2"></i>做完必须多出什么</span>
+            <p>${escapeHtml(handoff.evidence)}</p>
+          </div>
+        </div>
+        <div class="handoff-live-return">
+          <span><i data-lucide="corner-up-left"></i>证据不足退回到哪里</span>
+          <p>${escapeHtml(handoff.returnTo)}</p>
+        </div>
+      </div>
+      <p class="handoff-blocked">
+        <i data-lucide="shield-x"></i>
+        <span><strong>这一段仍不能提前出现：</strong>${escapeHtml(handoff.blocked)}</span>
+      </p>
+    </article>
+  `;
+}
+
+function renderCompleteHandoffCard(handoff, options = {}) {
+  const compact = options.compact === true;
+  const idPrefix = options.idPrefix || "handoff-complete";
+  return `
+    <article class="handoff-card handoff-card-complete${compact ? " handoff-card-compact" : ""}" id="${handoffAnchorId(handoff, idPrefix)}" data-retrospective-handoff="true">
+      <header class="handoff-card-head">
+        <span class="handoff-index">${escapeHtml(handoff.index)}</span>
+        <div>
+          <p class="handoff-stage">${escapeHtml(handoff.stage)} · ${escapeHtml(handoff.stageTitle)}</p>
+          <h3>${escapeHtml(handoff.title)}</h3>
+        </div>
+      </header>
+      <div class="handoff-fields handoff-retrospective-fields">
         ${renderHandoffField("小白此刻真正的原话疑问", handoff.question, "handoff-field-question", "message-circle-question")}
         ${renderHandoffField("为什么这个疑问现在才出现", handoff.whyNow, "handoff-field-why", "clock-3")}
         ${renderHandoffField("纸上实际做了什么", handoff.paper, "handoff-field-paper", "pencil-line")}
@@ -1292,10 +1341,6 @@ function renderHandoffCard(handoff, options = {}) {
       </p>
     </article>
   `;
-}
-
-function renderHandoffContract(handoff) {
-  return renderHandoffCard(handoff, { compact: true });
 }
 
 function renderReviewCenter(query = null) {
@@ -1377,6 +1422,20 @@ function renderReviewCenter(query = null) {
         </div>
       </header>
 
+      <section class="review-chain-section review-live-main" aria-label="现场五句证据边界">
+        <div class="review-section-head">
+          <div>
+            <h2>每次换动作，现场只写这五句</h2>
+            <p>
+              五句负责决定这一步能不能继续。每做完一次纸面动作，只增加一份可核对证据；
+              九字段等到整题完成后再用于复盘，不在开始前逐项背诵。
+            </p>
+          </div>
+          <span class="review-chain-count">现场 · 5 句</span>
+        </div>
+        ${renderLiveGenerationRules()}
+      </section>
+
       <section class="review-chain-section review-handoff-main" aria-label="七阶段九次交接唯一主线">
         <div class="review-section-head">
           <div>
@@ -1389,7 +1448,7 @@ function renderReviewCenter(query = null) {
           <span class="review-chain-count">9 次交接 · 1 条证据链</span>
         </div>
         <div class="handoff-list">
-          ${HANDOFFS.map((handoff) => renderHandoffCard(handoff)).join("")}
+          ${HANDOFFS.map((handoff) => renderLiveHandoffCard(handoff)).join("")}
         </div>
       </section>
 
@@ -1422,18 +1481,34 @@ function renderReviewCenter(query = null) {
         <summary>
           <span>
             <strong>完成后诊断工具</strong>
-            <small>九问、动作表、验收、来源和反写检查只用来定位最早断点，不是第二条解题主线。</small>
+            <small>九字段留痕、九问、动作表、验收、来源和反写检查只用来定位最早断点，不是第二条解题主线。</small>
           </span>
           <i data-lucide="chevron-down"></i>
         </summary>
         <div class="review-diagnostics-body">
+          <section class="review-chain-section" aria-label="完成后的九字段留痕">
+            <div class="review-section-head">
+              <div>
+                <h2>完成后九字段留痕：逐次交接复盘</h2>
+                <p>
+                  只有整题走完，才把每次现场记录提取成这九项。它检查的是“下一问为什么现在才出现”，
+                  不是开始前照着填写的任务清单。
+                </p>
+              </div>
+              <span class="review-chain-count">复盘 · 9 字段 × 9 交接</span>
+            </div>
+            <div class="handoff-list handoff-complete-list">
+              ${HANDOFFS.map((handoff) => renderCompleteHandoffCard(handoff, { compact: true, idPrefix: "handoff-complete" })).join("")}
+            </div>
+          </section>
+
           <section class="review-chain-section" aria-label="完成后的九问复核">
             <div class="review-section-head">
               <div>
                 <h2>完成后的九问复核</h2>
                 <p>
-                  回答时先写清“我刚得到什么、它还不能说明什么、因此现在只检查哪一问”，
-                  再把问题对回最早缺失的那次交接。问题本身不推进现场。
+                  先从已经留下的现场证据定位最早空缺，再把问题对回那次交接。
+                  这里只做事后查漏，问题本身不推进现场。
                 </p>
               </div>
               <span class="review-chain-count">事后查漏 · 9 个问题</span>
@@ -1488,16 +1563,13 @@ function renderReviewCenter(query = null) {
               <span class="review-chain-count">来源边界 · 反写检查</span>
             </div>
             ${renderReadingHardGates()}
-            <div class="review-diagnostic-split">
-              <div>${renderLiveGenerationRules()}</div>
-              <div class="review-chain-frame">
-                <span>写完后再反写一次</span>
-                <p>
-                  1. 隐藏最终方法名后，整条推导是否仍然成立？
-                  2. 删掉当前证据后，下一问是否自然消失？
-                  如果证据没了，下一问还照常存在，说明它来自答案而不是现场。
-                </p>
-              </div>
+            <div class="review-chain-frame">
+              <span>写完后再反写一次</span>
+              <p>
+                1. 隐藏最终方法名后，整条推导是否仍然成立？
+                2. 删掉当前证据后，下一问是否自然消失？
+                如果证据没了，下一问还照常存在，说明它来自答案而不是现场。
+              </p>
             </div>
           </section>
 
@@ -1746,7 +1818,7 @@ function renderReadingHardGates() {
 
 function renderLiveGenerationRules() {
   return `
-    <div class="review-live-gates review-live-gates-four">
+    <div class="review-live-gates review-live-gates-five">
       ${LIVE_GENERATION_RULES.map(
         (rule) => `
           <div>
@@ -2255,7 +2327,7 @@ function renderBankDetail(record) {
                 <p>下面保持题面原样。先把事实、由事实推出的结论和你的猜测分开。</p>
               </div>
             </div>
-            ${renderHandoffContract(HANDOFFS[0])}
+            ${renderLiveHandoffCard(HANDOFFS[0], { compact: true })}
             <div class="markdown-body bank-statement">${statement}</div>
           </section>
 
@@ -2267,7 +2339,7 @@ function renderBankDetail(record) {
                 <p>还不要想对象清单或算法。先确认每个原句新增了谁、什么动作、什么顺序、什么限制，以及忽略它会犯什么具体错误。</p>
               </div>
             </div>
-            ${renderHandoffContract(HANDOFFS[1])}
+            ${renderLiveHandoffCard(HANDOFFS[1], { compact: true })}
             <ol class="bank-question-list">
               <li>这句话新增了哪个对象、动作、身份、顺序或停止条件？</li>
               <li>如果忽略这句话，我会在过程里做错哪一个具体动作或交回什么错误结果？</li>
@@ -2290,13 +2362,13 @@ function renderBankDetail(record) {
               <span>03</span>
               <div>
                 <h2>先分对象，再走慢过程，最后只记录第一次变化</h2>
-                <p>阶段 3 是三次独立交接。交接 3 先产生身份证据并填对象表；交接 4 才能用最小完整例子走最笨但正确的过程；交接 5 只记录变化前、触发事件、变化后和答案确定时刻。</p>
+                <p>阶段 3 是三次独立交接。交接 3 先产生身份证据并填七列对象表；交接 4 才能用最小完整例子走最笨但正确的过程；交接 5 只记录谁发生变化、触发事件、变化前、变化后、答案确定时刻，以及为什么不是更早或更晚。</p>
               </div>
             </div>
             <div class="bank-handoff-stack">
-              ${renderHandoffContract(HANDOFFS[2])}
-              ${renderHandoffContract(HANDOFFS[3])}
-              ${renderHandoffContract(HANDOFFS[4])}
+              ${renderLiveHandoffCard(HANDOFFS[2], { compact: true })}
+              ${renderLiveHandoffCard(HANDOFFS[3], { compact: true })}
+              ${renderLiveHandoffCard(HANDOFFS[4], { compact: true })}
             </div>
             ${
               record.officialExamples?.length
@@ -2327,7 +2399,7 @@ function renderBankDetail(record) {
                 <p>先抄官方约束，再单独估算慢过程在最坏输入上的操作量并排除复杂度家族。冒出的方法记忆只能放进“待验证方向”，写全六项证据，仍然不能直接成为结论。</p>
               </div>
             </div>
-            ${renderHandoffContract(HANDOFFS[5])}
+            ${renderLiveHandoffCard(HANDOFFS[5], { compact: true })}
             <div class="bank-constraint-block">
               <h3>官方约束</h3>
               ${
@@ -2368,7 +2440,7 @@ function renderBankDetail(record) {
                 <p>第一次变化只说明过程里发生了什么。现在带着操作预算重看，找出真正重复、会失效或可复用的工作，再写清未来需要哪些操作。</p>
               </div>
             </div>
-            ${renderHandoffContract(HANDOFFS[6])}
+            ${renderLiveHandoffCard(HANDOFFS[6], { compact: true })}
             <ol class="bank-question-list">
               <li>哪份工作被反复做，保留什么历史才能不再重扫？</li>
               <li>哪批候选会在同一个事件后一起失效，为什么可以安全丢掉？</li>
@@ -2384,7 +2456,7 @@ function renderBankDetail(record) {
                 <p>现在才允许具体方法名进入比较。候选必须能承担交接 7 的查询、插入、删除、取极值或恢复现场，并通过交接 6 的预算。</p>
               </div>
             </div>
-            ${renderHandoffContract(HANDOFFS[7])}
+            ${renderLiveHandoffCard(HANDOFFS[7], { compact: true })}
             <ol class="bank-question-list">
               <li>这个候选消除了第二次变化里的哪份重复劳动或失效扫描？</li>
               <li>它需要哪些操作，时间和额外空间在当前范围里是否允许？</li>
@@ -2415,7 +2487,7 @@ function renderBankDetail(record) {
                 <p>从这里开始只讨论实现。任何一项都必须能回到交接 3 的对象、交接 5 的第一次变化和交接 7 的第二次变化。</p>
               </div>
             </div>
-            ${renderHandoffContract(HANDOFFS[8])}
+            ${renderLiveHandoffCard(HANDOFFS[8], { compact: true })}
             <ol class="bank-question-list">
               <li>每个状态在题目世界里代表什么，覆盖哪段对象，何时被读取和更新？</li>
               <li>初始值、停止条件和答案时机分别对应现实过程中的哪一刻？</li>
