@@ -17,6 +17,8 @@ const state = {
   factBank: null,
   factBankPromise: null,
   factBankRequest: 0,
+  analysisExperiments: null,
+  analysisExperimentsPromise: null,
   bankActive: false,
   bankView: "official",
   bankGroup: "all",
@@ -245,6 +247,30 @@ const BANK_STAGES = [
     next: "回到题目列表",
   },
 ];
+
+const EXPERIMENT_STATUS_LABELS = {
+  main: "主方向",
+  alternative: "合法替代",
+  superseded: "正确但被预算淘汰",
+  rejected: "门槛或反例淘汰",
+};
+
+const EXPERIMENT_DIMENSION_LABELS = {
+  absorb: "易吸收",
+  recall: "便于回忆",
+  systems: "体系关联",
+  chain: "大脑串联",
+  debug: "编码定位",
+  transfer: "迁移价值",
+};
+
+const EXPERIMENT_GATE_LABELS = {
+  factGate: "事实保真",
+  naturalReachability: "自然可达",
+  causalClosure: "因果闭包",
+  codeTraceability: "代码可定位",
+  closedBookRegeneration: "闭卷可再生",
+};
 
 const TWO_SUM_NINE_HANDOFF_DEMO = [
   {
@@ -2205,7 +2231,15 @@ async function renderFactBank(query = new URLSearchParams()) {
       "bank-stage-focus",
       state.bankDetailActive && state.bankStage < 6
     );
-    elements.content.innerHTML = renderFactBankPage(selected);
+    let experiment = null;
+    if (selected && state.bankStage === 6) {
+      elements.content.innerHTML = loadingMarkup("正在读取候选比较与方向确认证据...");
+      experiment = await loadAnalysisExperiment(selected.id);
+      if (requestId !== state.factBankRequest || !state.bankActive) {
+        return;
+      }
+    }
+    elements.content.innerHTML = renderFactBankPage(selected, experiment);
     addCopyButtons(elements.content);
     elements.content.querySelectorAll("pre code").forEach((block) => {
       if (window.hljs) {
@@ -2251,6 +2285,39 @@ async function loadFactBank() {
   return state.factBankPromise;
 }
 
+async function loadAnalysisExperiments() {
+  if (state.analysisExperiments) {
+    return state.analysisExperiments;
+  }
+  if (!state.analysisExperimentsPromise) {
+    const revision = encodeURIComponent(state.manifest.revision || "local");
+    state.analysisExperimentsPromise = fetch(
+      `assets/analysis-experiments.json?v=${revision}`,
+      { cache: "no-cache" }
+    )
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`分析实验数据读取失败：HTTP ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((experiments) => {
+        state.analysisExperiments = experiments;
+        return experiments;
+      })
+      .catch((error) => {
+        state.analysisExperimentsPromise = null;
+        throw error;
+      });
+  }
+  return state.analysisExperimentsPromise;
+}
+
+async function loadAnalysisExperiment(problemId) {
+  const experiments = await loadAnalysisExperiments();
+  return experiments.problemById?.[String(problemId)] || null;
+}
+
 function normalizeBankView(value) {
   return ["official", "interview", "system", "tags"].includes(value) ? value : "official";
 }
@@ -2292,7 +2359,7 @@ function bankHref({
   return `#/bank?${params.toString()}`;
 }
 
-function renderFactBankPage(selectedRecord) {
+function renderFactBankPage(selectedRecord, experiment = null) {
   const factBank = state.factBank;
   const stats = factBank.stats;
   const views = factBank.views;
@@ -2333,7 +2400,7 @@ function renderFactBankPage(selectedRecord) {
         <p>${escapeHtml(currentView.description)}</p>
       </section>
 
-      ${selectedRecord ? renderBankDetail(selectedRecord) : renderBankBrowser()}
+      ${selectedRecord ? renderBankDetail(selectedRecord, state.bankStage, experiment) : renderBankBrowser()}
     </section>
   `;
 }
@@ -2492,8 +2559,8 @@ function renderBankProblemRow(record) {
   `;
 }
 
-function renderBankDetail(record) {
-  const stage = normalizeBankStage(state.bankStage);
+function renderBankDetail(record, stage, experiment = null) {
+  stage = normalizeBankStage(stage);
   return `
     <section class="bank-detail" data-bank-stage="${stage}">
       <div class="bank-detail-top">
@@ -2511,7 +2578,7 @@ function renderBankDetail(record) {
       ${renderBankStageNavigation(record, stage)}
       <div class="bank-detail-layout">
         <div class="bank-detail-main">
-          ${renderBankStageContent(record, stage)}
+          ${renderBankStageContent(record, stage, experiment)}
           ${renderBankStageGate(record, stage)}
         </div>
         ${renderBankDetailAside(record, stage)}
@@ -2581,7 +2648,7 @@ function renderBankStageNavigation(record, stage) {
   `;
 }
 
-function renderBankStageContent(record, stage) {
+function renderBankStageContent(record, stage, experiment = null) {
   switch (stage) {
     case 2:
       return renderBankStageTwo();
@@ -2592,7 +2659,7 @@ function renderBankStageContent(record, stage) {
     case 5:
       return renderBankStageFive();
     case 6:
-      return renderBankStageSix(record);
+      return renderBankStageSix(record, experiment);
     case 7:
       return renderBankStageSeven(record);
     default:
@@ -2758,7 +2825,7 @@ function renderBankStageFive() {
   `;
 }
 
-function renderBankStageSix(record) {
+function renderBankStageSix(record, experiment = null) {
   const solution = record.solution;
   return `
     <section class="bank-fact-section" data-stage-panel="6">
@@ -2777,6 +2844,18 @@ function renderBankStageSix(record) {
         <li>没有形成真实歧义时，我检查过的熟悉替代方向为什么不能承担当前操作？</li>
         <li>我能不能不报方法名，先用完整因果句说清“为什么必须是这类操作”？</li>
       </ol>
+      <div class="experiment-order-warning">
+        <strong>先写自己的方向确认句，再往下比较</strong>
+        <p>下面的记录是事后校验，不是替你生成结论。先回答支撑操作、失效条件和代价；还答不出，就退回交接 7。</p>
+      </div>
+      ${
+        experiment
+          ? renderAnalysisExperiment(experiment)
+          : `<div class="bank-solution-gate">
+              <strong>本题还没有 v2 实验记录</strong>
+              <p>这里不补造候选，也不把旧题解的结论伪装成现场推导。继续使用上面的问题写自己的比较；已有题解只能作为事后校验入口。</p>
+            </div>`
+      }
       ${
         solution
           ? `<div class="bank-solution-gate">
@@ -2790,6 +2869,217 @@ function renderBankStageSix(record) {
           : `<p class="bank-muted">当前快照没有关联到本地标准题解。</p>`
       }
     </section>
+  `;
+}
+
+function renderAnalysisExperiment(experiment) {
+  const paths = Array.isArray(experiment.paths) ? experiment.paths : [];
+  const selected = paths.find((path) => path.id === experiment.selectedPath) || null;
+  const migrationLabel = {
+    "complete-human-chain": "已迁移为完整人类现场链",
+    "post-hoc-pending-migration": "结论可用，人类推导链待迁移",
+  }[experiment.migrationStatus] || "迁移状态未记录";
+  const groups = [
+    { status: "main", title: "主方向", description: "通过五项门槛，并能在当前预算内承担操作需求。" },
+    { status: "alternative", title: "合法替代", description: "方案本身合法，保留下来用于查漏和比较适用边界。" },
+    { status: "superseded", title: "被预算淘汰", description: "最笨过程本身正确，但最坏代价不能稳定承受。" },
+    { status: "rejected", title: "被门槛或反例淘汰", description: "留下最早失败位置，避免只记结果而忘记为什么失效。" },
+  ];
+  return `
+    <section class="bank-experiment" aria-label="候选比较与方向确认实验">
+      <div class="bank-experiment-head">
+        <div>
+          <span class="bank-aside-label">事后校验记录</span>
+          <h3>${escapeHtml(experiment.selectedMethod || "未记录主方向")}</h3>
+          <p>${escapeHtml(experiment.selectedReason || "未记录选择理由")}</p>
+        </div>
+        <span class="experiment-migration">${escapeHtml(migrationLabel)}</span>
+      </div>
+      <div class="experiment-checked-alternative">
+        <strong>已经实际检查过的替代方向</strong>
+        <p>${escapeHtml(experiment.checkedAlternative || "没有记录已检查的替代方向")}</p>
+      </div>
+      ${groups
+        .map((group) => {
+          const groupPaths = paths.filter((path) => path.status === group.status);
+          if (!groupPaths.length) {
+            return "";
+          }
+          return `
+            <section class="experiment-group">
+              <div class="experiment-group-head">
+                <span class="experiment-status experiment-status-${escapeAttribute(group.status)}">${escapeHtml(group.title)}</span>
+                <strong>${groupPaths.length} 条</strong>
+                <p>${escapeHtml(group.description)}</p>
+              </div>
+              <div class="experiment-path-list">
+                ${groupPaths
+                  .map((path) => renderExperimentPath(path, selected?.id === path.id))
+                  .join("")}
+              </div>
+            </section>
+          `;
+        })
+        .join("")}
+      <p class="experiment-score-disclaimer">
+        六维评分和总分只用于同一道题内部比较候选，不能证明已经理解。事实错误仍是一票否决；闭卷回忆第一次卡住的位置才是复习断点。
+      </p>
+      ${selected ? renderExperimentCodeMappings(selected, experiment) : ""}
+      ${renderExperimentReferences(experiment)}
+    </section>
+  `;
+}
+
+function renderExperimentPath(path, isSelected) {
+  const gates = Object.entries(EXPERIMENT_GATE_LABELS)
+    .map(
+      ([key, label]) => `
+        <span class="experiment-gate ${path[key] ? "is-pass" : "is-fail"}">
+          <i data-lucide="${path[key] ? "check" : "x"}"></i>${escapeHtml(label)}
+        </span>
+      `
+    )
+    .join("");
+  const scores = Object.entries(EXPERIMENT_DIMENSION_LABELS)
+    .map(
+      ([key, label]) => `
+        <span class="experiment-score">
+          <small>${escapeHtml(label)}</small>
+          <strong>${Number(path.scores?.[key] ?? 0)}</strong>
+          <span>/4</span>
+        </span>
+      `
+    )
+    .join("");
+  const total = Object.keys(EXPERIMENT_DIMENSION_LABELS).reduce(
+    (sum, key) => sum + Number(path.scores?.[key] ?? 0),
+    0
+  );
+  return `
+    <article class="experiment-path ${isSelected ? "is-selected" : ""}">
+      <header class="experiment-path-head">
+        <span class="experiment-path-index">${isSelected ? "SELECTED" : escapeHtml(path.status.toUpperCase())}</span>
+        <div>
+          <h4>${escapeHtml(path.label || path.id)}</h4>
+          <p>${escapeHtml(path.evidence || "没有记录证据")}</p>
+        </div>
+        <span class="experiment-total"><strong>${total}</strong><small>/24</small></span>
+      </header>
+      <div class="experiment-stage-evidence">
+        <div>
+          <span>最早出现</span>
+          <strong>${escapeHtml(formatExperimentStage(path.firstSeenStage))}</strong>
+        </div>
+        <div>
+          <span>最早失败</span>
+          <strong>${escapeHtml(formatExperimentStage(path.earliestFailure))}</strong>
+        </div>
+      </div>
+      <div class="experiment-gates" aria-label="五项准入门槛">${gates}</div>
+      <div class="experiment-scores" aria-label="六维候选择分">${scores}</div>
+    </article>
+  `;
+}
+
+function formatExperimentStage(stage) {
+  if (!Number.isInteger(stage)) {
+    return "没有形成失败";
+  }
+  const bankStage = BANK_STAGES[stage - 1];
+  return bankStage ? `阶段 ${stage} · ${bankStage.label}` : `阶段 ${stage}`;
+}
+
+function renderExperimentCodeMappings(selected, experiment) {
+  const mappings = Array.isArray(selected.codeMappings) ? selected.codeMappings : [];
+  if (!mappings.length) {
+    return `
+      <div class="experiment-code-empty">
+        <strong>代码映射尚未迁移</strong>
+        <p>这条方向仍可比较，但不能声称已经能从对象一路闭卷走到代码。迁移完成前只作为事后校验。</p>
+      </div>
+    `;
+  }
+  const solutionPath = experiment.references?.solutionPath;
+  return `
+    <section class="experiment-code-section">
+      <div class="experiment-code-head">
+        <div>
+          <span class="bank-aside-label">交接 9 的代码定位</span>
+          <h3>对象、动作、状态和反例逐行对应</h3>
+        </div>
+        ${
+          solutionPath
+            ? `<a href="${docHref(solutionPath, experiment.references.codeAnchor)}">代码锚点<i data-lucide="arrow-up-right"></i></a>`
+            : ""
+        }
+      </div>
+      <div class="bank-table-scroll">
+        <table class="experiment-code-table">
+          <thead>
+            <tr>
+              <th>题目对象</th>
+              <th>人工动作</th>
+              <th>操作要求</th>
+              <th>状态变量</th>
+              <th>Java 代码位置</th>
+              <th>更新顺序或不变量</th>
+              <th>对应反例</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${mappings
+              .map(
+                (mapping) => `
+                  <tr>
+                    <td data-label="题目对象">${escapeHtml(mapping.object || "")}</td>
+                    <td data-label="人工动作">${escapeHtml(mapping.action || "")}</td>
+                    <td data-label="操作要求">${escapeHtml(mapping.operation || "")}</td>
+                    <td data-label="状态变量"><code>${escapeHtml(mapping.state || "")}</code></td>
+                    <td data-label="Java 代码位置"><code>${escapeHtml(mapping.codeAnchor || "")}</code></td>
+                    <td data-label="更新顺序或不变量">${escapeHtml(mapping.invariant || "")}</td>
+                    <td data-label="对应反例">${escapeHtml(mapping.counterexample || "")}</td>
+                  </tr>
+                `
+              )
+              .join("")}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
+function renderExperimentReferences(experiment) {
+  const references = experiment.references || {};
+  const links = [
+    references.solutionPath && references.reasoningAnchor
+      ? { path: references.solutionPath, anchor: references.reasoningAnchor, icon: "git-branch", label: "标准题解推导" }
+      : null,
+    references.solutionPath && references.answerAnchor
+      ? { path: references.solutionPath, anchor: references.answerAnchor, icon: "shield-check", label: "答案与不变量" }
+      : null,
+    references.coreModelPath && references.coreModelAnchor
+      ? { path: references.coreModelPath, anchor: references.coreModelAnchor, icon: "boxes", label: "核心模型" }
+      : null,
+    references.solutionPath && references.codeAnchor
+      ? { path: references.solutionPath, anchor: references.codeAnchor, icon: "braces", label: "Java 代码锚点" }
+      : null,
+  ].filter(Boolean);
+  if (!links.length) {
+    return "";
+  }
+  return `
+    <nav class="bank-reading-links experiment-references" aria-label="正式文档校验入口">
+      ${links
+        .map(
+          (link) => `
+            <a href="${docHref(link.path, link.anchor)}">
+              <i data-lucide="${link.icon}"></i>${escapeHtml(link.label)}
+            </a>
+          `
+        )
+        .join("")}
+    </nav>
   `;
 }
 

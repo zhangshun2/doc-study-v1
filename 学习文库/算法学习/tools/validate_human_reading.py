@@ -762,7 +762,7 @@ def validate_site_stage_gate(script: str) -> None:
     required_route_markers = [
         'state.bankStage = normalizeBankStage(query.get("stage"));',
         'params.set("stage", String(normalizeBankStage(stage)));',
-        "${renderBankStageContent(record, stage)}",
+        "${renderBankStageContent(record, stage, experiment)}",
         'state.bankDetailActive = Boolean(selected);',
         '"bank-stage-focus",',
         "state.bankDetailActive && state.bankStage < 6",
@@ -815,7 +815,7 @@ def validate_site_stage_gate(script: str) -> None:
         "return renderBankStageThree(record);",
         "return renderBankStageFour(record);",
         "return renderBankStageFive();",
-        "return renderBankStageSix(record);",
+        "return renderBankStageSix(record, experiment);",
         "return renderBankStageSeven(record);",
     ):
         if marker not in content:
@@ -830,6 +830,11 @@ def validate_site_stage_gate(script: str) -> None:
     stage_five = extract_js_function_source(script, "renderBankStageFive")
     stage_six = extract_js_function_source(script, "renderBankStageSix")
     stage_seven = extract_js_function_source(script, "renderBankStageSeven")
+    experiment_compare = extract_js_function_source(script, "renderAnalysisExperiment")
+    experiment_path = extract_js_function_source(script, "renderExperimentPath")
+    experiment_mappings = extract_js_function_source(
+        script, "renderExperimentCodeMappings"
+    )
 
     early_fields = (
         "record.constraints",
@@ -839,6 +844,12 @@ def validate_site_stage_gate(script: str) -> None:
         "record.officialHints",
         "record.primaryPattern",
         "record.officialTags",
+        "state.analysisExperiments",
+        "codeMappings",
+        "selectedReason",
+        "firstSeenStage",
+        "earliestFailure",
+        "path.scores",
     )
     for label, source in (
         ("阶段 1", stage_one),
@@ -861,8 +872,21 @@ def validate_site_stage_gate(script: str) -> None:
         if marker in stage_five:
             raise ValidationError(f"阶段 5 提前渲染了：{marker}")
 
+    fact_bank_render = extract_js_function_source(script, "renderFactBank")
+    for marker in (
+        "selected && state.bankStage === 6",
+        "loadAnalysisExperiment(selected.id)",
+    ):
+        if marker not in fact_bank_render:
+            raise ValidationError(f"阶段 6 才加载实验数据：缺少 {marker}")
+    experiment_loader = extract_js_function_source(script, "loadAnalysisExperiment")
+    if "loadAnalysisExperiments()" not in experiment_loader:
+        raise ValidationError("单项实验加载没有复用阶段 6 数据入口")
+
     if "record.solution" not in stage_six:
         raise ValidationError("阶段 6 没有在方向确认后提供题解关联")
+    if "renderAnalysisExperiment(experiment)" not in stage_six:
+        raise ValidationError("阶段 6 没有渲染候选比较实验")
     for marker in (
         "record.constraints",
         "record.javaTemplate",
@@ -871,6 +895,23 @@ def validate_site_stage_gate(script: str) -> None:
     ):
         if marker in stage_six:
             raise ValidationError(f"阶段 6 提前渲染了：{marker}")
+
+    for marker in (
+        "selectedReason",
+        "firstSeenStage",
+        "earliestFailure",
+        "EXPERIMENT_GATE_LABELS",
+        "EXPERIMENT_DIMENSION_LABELS",
+        "codeMappings",
+        "references",
+    ):
+        combined = experiment_compare + experiment_path + experiment_mappings
+        if marker not in combined:
+            raise ValidationError(f"阶段 6 实验比较缺少：{marker}")
+    if "不能证明已经理解" not in experiment_compare:
+        raise ValidationError("六维评分没有声明总分不能代表理解")
+    if "renderExperimentCodeMappings(selected, experiment)" not in experiment_compare:
+        raise ValidationError("主方向没有接代码映射表")
 
     for marker in ("record.javaTemplate", "record.officialHints"):
         if marker not in stage_seven:

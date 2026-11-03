@@ -20,6 +20,9 @@ ROOT = Path(__file__).resolve().parents[1]
 SITE_DIR = ROOT / "site"
 SOURCE_DIR = ROOT / "学习文库" / "算法学习"
 REVIEW_DIR = ROOT / "LeetCode-系统复习"
+EXPERIMENT_PATH = (
+    REVIEW_DIR / "07-分析法实验" / "analysis-experiments.json"
+)
 OUTPUT_DIR = ROOT / "_site"
 SOURCE_ROOTS = [
     (SOURCE_DIR, ""),
@@ -524,6 +527,23 @@ def build_fact_bank(
         "records": records,
         "recordById": {str(key): value for key, value in by_id.items()},
     }
+
+
+def build_experiment_payload() -> dict[str, Any]:
+    if not EXPERIMENT_PATH.exists():
+        raise FileNotFoundError(
+            f"缺少分析实验数据源：{EXPERIMENT_PATH}"
+        )
+    payload = json.loads(EXPERIMENT_PATH.read_text(encoding="utf-8"))
+    problems = payload.get("problems")
+    if not isinstance(problems, list):
+        raise ValueError("analysis-experiments.json 的 problems 必须是数组")
+    payload["problemById"] = {
+        str(problem["id"]): problem
+        for problem in problems
+        if isinstance(problem, dict) and "id" in problem
+    }
+    return payload
 
 
 def relative_files(base: Path) -> list[Path]:
@@ -1086,12 +1106,17 @@ def main() -> None:
         raise FileNotFoundError(f"缺少官方题面事实源：{problems_path}")
     problems_payload = json.loads(problems_path.read_text(encoding="utf-8"))
     fact_bank = build_fact_bank(problems_payload, docs)
+    analysis_experiments = build_experiment_payload()
     manifest = build_manifest(docs, fact_bank)
     search_index = build_search_index(docs, fact_bank)
     copy_site_files()
     write_json(OUTPUT_DIR / "assets" / "manifest.json", manifest)
     write_json(OUTPUT_DIR / "assets" / "search.json", search_index)
     write_json(OUTPUT_DIR / "assets" / "fact-bank.json", fact_bank)
+    write_json(
+        OUTPUT_DIR / "assets" / "analysis-experiments.json",
+        analysis_experiments,
+    )
     print(
         f"Built {len(docs)} documents into {OUTPUT_DIR} "
         f"({manifest['stats']['problems']} problems, "

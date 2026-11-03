@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "experimentDate": "2026-11-03",
   "mode": "post-hoc-verification",
   "dimensions": [
@@ -22,11 +22,22 @@
       "id": 1,
       "titleCn": "两数之和",
       "sourceUrl": "https://leetcode.cn/problems/two-sum/",
+      "selectedMethod": "人工枚举到补数查询与历史保留",
+      "migrationStatus": "complete-human-chain",
+      "references": {
+        "solutionPath": "学习文库/算法学习/题目/数组与哈希/1-Two-Sum.md",
+        "reasoningAnchor": "阶段 6｜交接 8：候选比较与方向确认",
+        "answerAnchor": "阶段 7｜交接 9：状态、更新顺序、不变量、代码、反例",
+        "codeAnchor": "LeetCode 可直接提交代码",
+        "coreModelPath": "学习文库/算法学习/核心模型/数组与哈希/1-Two-Sum-核心模型.md",
+        "coreModelAnchor": "一句话本质"
+      },
       "paths": [
         {
           "id": "label-first",
           "label": "看到哈希标签后直接写历史表",
           "status": "rejected",
+          "firstSeenStage": 1,
           "factGate": true,
           "naturalReachability": false,
           "causalClosure": false,
@@ -40,13 +51,14 @@
             "debug": 1,
             "transfer": 1
           },
-          "earliestFailure": "逐句扩写与第二次变化",
+          "earliestFailure": 2,
           "evidence": "标签不是题目事实；没有从人工枚举产生补数查询和历史保留的操作需求。"
         },
         {
           "id": "enumeration-to-history",
           "label": "枚举数对到补数查询与历史保留",
           "status": "main",
+          "firstSeenStage": 5,
           "factGate": true,
           "naturalReachability": true,
           "causalClosure": true,
@@ -61,7 +73,27 @@
             "transfer": 3
           },
           "earliestFailure": null,
-          "evidence": "当前数反复查询左侧补数；输出要求原下标；先查后写保证不使用当前元素两次。"
+          "evidence": "当前数反复查询左侧补数；输出要求原下标；先查后写保证不使用当前元素两次。",
+          "codeMappings": [
+            {
+              "object": "当前原数组元素及其下标",
+              "action": "从左到右拿起当前元素，查询它左侧是否已有补数",
+              "operation": "按补数值查询历史，并取回原始位置",
+              "state": "i、nums[i]、need、indexByValue",
+              "codeAnchor": "Integer previousIndex = indexByValue.get(need);",
+              "invariant": "进入第 i 轮时，indexByValue 只保存原始下标 [0,i) 中出现过的值到位置映射",
+              "counterexample": "nums=[3,3]、target=6 时若先写后查，会返回 [0,0]"
+            },
+            {
+              "object": "当前元素留给未来位置的身份",
+              "action": "确认左侧没有补数后，再把当前值和原下标加入历史",
+              "operation": "查询完成后插入",
+              "state": "indexByValue、i",
+              "codeAnchor": "indexByValue.put(nums[i], i);",
+              "invariant": "加入只发生在查询失败之后，因此当前元素不会被当前轮读取",
+              "counterexample": "在 need 查询前执行 put，会让同一个位置同时成为两个端点"
+            }
+          ]
         }
       ],
       "selectedPath": "enumeration-to-history",
@@ -72,11 +104,22 @@
       "id": 739,
       "titleCn": "每日温度",
       "sourceUrl": "https://leetcode.cn/problems/daily-temperatures/",
+      "selectedMethod": "等待日期的产生、结算与单调栈",
+      "migrationStatus": "post-hoc-pending-migration",
+      "references": {
+        "solutionPath": "学习文库/算法学习/题目/单调结构/739-Daily-Temperatures.md",
+        "reasoningAnchor": "核心观察",
+        "answerAnchor": "正确性与不变量",
+        "codeAnchor": "LeetCode 可直接提交代码",
+        "coreModelPath": "学习文库/算法学习/核心模型/单调结构/739-Daily-Temperatures-核心模型.md",
+        "coreModelAnchor": "一句话本质"
+      },
       "paths": [
         {
           "id": "daily-rescan",
           "label": "每天向右重新扫描",
           "status": "superseded",
+          "firstSeenStage": 3,
           "factGate": true,
           "naturalReachability": true,
           "causalClosure": true,
@@ -90,13 +133,14 @@
             "debug": 2,
             "transfer": 1
           },
-          "earliestFailure": "数据范围与操作预算",
+          "earliestFailure": 4,
           "evidence": "最坏约 n(n-1)/2 次比较，n 为 10^5 时不适合作最终方案。"
         },
         {
           "id": "value-range-nearest",
           "label": "按温度值域查询右侧最近位置",
           "status": "alternative",
+          "firstSeenStage": 6,
           "factGate": true,
           "naturalReachability": true,
           "causalClosure": true,
@@ -117,6 +161,7 @@
           "id": "waiting-lifecycle-stack",
           "label": "等待日期产生、结算与单调栈",
           "status": "main",
+          "firstSeenStage": 6,
           "factGate": true,
           "naturalReachability": true,
           "causalClosure": true,
@@ -131,7 +176,27 @@
             "transfer": 4
           },
           "earliestFailure": null,
-          "evidence": "等待日期按时间进入，新温度连续结算更低日期，严格更高和原始日期顺序共同决定栈操作。"
+          "evidence": "等待日期按时间进入，新温度连续结算更低日期，严格更高和原始日期顺序共同决定栈操作。",
+          "codeMappings": [
+            {
+              "object": "仍在等待更高温度的日期",
+              "action": "今天的新温度到来时，连续检查栈顶日期是否终于能结算",
+              "operation": "读取栈顶、比较温度、删除已结算日期",
+              "state": "today、stack、answer",
+              "codeAnchor": "while (!stack.isEmpty()",
+              "invariant": "栈中日期从底到顶保持非递增温度，且都还没有找到严格更高的未来温度",
+              "counterexample": "temperatures=[73,74] 时若直接丢掉 73 再处理 74，73 永远得不到 1 天"
+            },
+            {
+              "object": "今天这个新日期",
+              "action": "先结算所有能被今天温度解决的旧日期，再让今天进入等待",
+              "operation": "加入等待集合并保留未来结算资格",
+              "state": "stack、today",
+              "codeAnchor": "stack.push(today);",
+              "invariant": "只有今天能结算的旧日期全部弹出后，今天才压栈",
+              "counterexample": "temperatures=[74,73] 说明 74 仍要等待，不能因为今天出现就无条件清空栈"
+            }
+          ]
         }
       ],
       "selectedPath": "waiting-lifecycle-stack",
@@ -142,11 +207,22 @@
       "id": 11,
       "titleCn": "盛最多水的容器",
       "sourceUrl": "https://leetcode.cn/problems/container-with-most-water/",
+      "selectedMethod": "最宽区间到短板支配与安全淘汰",
+      "migrationStatus": "post-hoc-pending-migration",
+      "references": {
+        "solutionPath": "学习文库/算法学习/题目/双指针/11-Container-With-Most-Water.md",
+        "reasoningAnchor": "核心观察",
+        "answerAnchor": "正确性与不变量",
+        "codeAnchor": "LeetCode 可直接提交代码",
+        "coreModelPath": "学习文库/算法学习/核心模型/双指针/11-Container-With-Most-Water-核心模型.md",
+        "coreModelAnchor": "一句话本质"
+      },
       "paths": [
         {
           "id": "enumerate-pairs",
           "label": "枚举所有线对",
           "status": "superseded",
+          "firstSeenStage": 3,
           "factGate": true,
           "naturalReachability": true,
           "causalClosure": true,
@@ -160,13 +236,14 @@
             "debug": 3,
             "transfer": 2
           },
-          "earliestFailure": "数据范围与操作预算",
+          "earliestFailure": 4,
           "evidence": "最坏约 n(n-1)/2 对，n 为 10^5 时超预算。"
         },
         {
           "id": "label-first",
           "label": "看到双指针标签后移动短板",
           "status": "rejected",
+          "firstSeenStage": 1,
           "factGate": true,
           "naturalReachability": false,
           "causalClosure": false,
@@ -180,13 +257,14 @@
             "debug": 2,
             "transfer": 2
           },
-          "earliestFailure": "第二次变化与方向确认",
+          "earliestFailure": 5,
           "evidence": "没有说明哪一批候选被当前短板支配，也没有证明移动后不会漏掉更优面积。"
         },
         {
           "id": "widest-to-domination",
           "label": "最宽区间到短板支配与安全淘汰",
           "status": "main",
+          "firstSeenStage": 6,
           "factGate": true,
           "naturalReachability": true,
           "causalClosure": true,
@@ -201,7 +279,27 @@
             "transfer": 4
           },
           "earliestFailure": null,
-          "evidence": "保持较矮端点并向内收缩只会减小宽度且不能提高水位上限，因此整批候选被支配。"
+          "evidence": "保持较矮端点并向内收缩只会减小宽度且不能提高水位上限，因此整批候选被支配。",
+          "codeMappings": [
+            {
+              "object": "当前左右端点围成的容器",
+              "action": "先用当前宽度和较短边计算面积，再决定淘汰哪一侧",
+              "operation": "计算一次候选并排除一批不可能更优的区间",
+              "state": "left、right、width、limitedHeight、best",
+              "codeAnchor": "best = Math.max(best, width * limitedHeight);",
+              "invariant": "已经移出当前区间的候选都不可能再超过当前 best",
+              "counterexample": "height=[1,2,1] 时先移动较高端而不是较矮端，会让候选区域从面积 2 缩成 1"
+            },
+            {
+              "object": "较短边所在的那一侧",
+              "action": "保持较短边并向内移动，证明这一整批候选不可能提高最短边",
+              "operation": "淘汰被短板支配的候选集合",
+              "state": "left、right、height[left]、height[right]",
+              "codeAnchor": "if (height[left] < height[right]) {",
+              "invariant": "每次只移动较短边，因此宽度减小后仍保留唯一有希望提高水位上限的一侧",
+              "counterexample": "移动较长边时宽度必然减小且较短边不变或更短，无法产生更优面积"
+            }
+          ]
         }
       ],
       "selectedPath": "widest-to-domination",
@@ -212,11 +310,22 @@
       "id": 322,
       "titleCn": "零钱兑换",
       "sourceUrl": "https://leetcode.cn/problems/coin-change/",
+      "selectedMethod": "子问题复用与按金额递增 DP",
+      "migrationStatus": "post-hoc-pending-migration",
+      "references": {
+        "solutionPath": "学习文库/算法学习/题目/动态规划/322-Coin-Change.md",
+        "reasoningAnchor": "核心观察",
+        "answerAnchor": "正确性与不变量",
+        "codeAnchor": "LeetCode 可直接提交代码",
+        "coreModelPath": "学习文库/算法学习/核心模型/动态规划/322-Coin-Change-核心模型.md",
+        "coreModelAnchor": "一句话本质"
+      },
       "paths": [
         {
           "id": "greedy-largest",
           "label": "每次选择最大面额",
           "status": "rejected",
+          "firstSeenStage": 6,
           "factGate": true,
           "naturalReachability": true,
           "causalClosure": false,
@@ -230,13 +339,14 @@
             "debug": 1,
             "transfer": 1
           },
-          "earliestFailure": "候选比较",
+          "earliestFailure": 6,
           "evidence": "coins 为 [1,3,4]、amount 为 6 时，贪心得到 3 枚，最优为 2 枚。"
         },
         {
           "id": "unmemoized-dfs",
           "label": "无记忆递归枚举",
           "status": "superseded",
+          "firstSeenStage": 3,
           "factGate": true,
           "naturalReachability": true,
           "causalClosure": true,
@@ -250,13 +360,14 @@
             "debug": 2,
             "transfer": 2
           },
-          "earliestFailure": "第二次变化",
+          "earliestFailure": 5,
           "evidence": "同一剩余金额会从不同选择顺序重复到达，未保存结果会造成重复计算。"
         },
         {
           "id": "bfs-shortest-path",
           "label": "金额图上的 BFS",
           "status": "alternative",
+          "firstSeenStage": 6,
           "factGate": true,
           "naturalReachability": true,
           "causalClosure": true,
@@ -277,6 +388,7 @@
           "id": "subproblem-dp",
           "label": "子问题复用与按金额递增 DP",
           "status": "main",
+          "firstSeenStage": 6,
           "factGate": true,
           "naturalReachability": true,
           "causalClosure": true,
@@ -291,7 +403,27 @@
             "transfer": 4
           },
           "earliestFailure": null,
-          "evidence": "当前金额由更小金额加最后一枚硬币构造，金额依赖关系允许从小到大复用。"
+          "evidence": "当前金额由更小金额加最后一枚硬币构造，金额依赖关系允许从小到大复用。",
+          "codeMappings": [
+            {
+              "object": "当前金额和最后一枚硬币",
+              "action": "枚举最后一枚硬币，回到更小金额读取已知最少枚数",
+              "operation": "查询更小子问题并取最小值",
+              "state": "current、coin、dp",
+              "codeAnchor": "dp[current] = Math.min(",
+              "invariant": "计算金额 current 时，所有 current-coin 的更小金额都已经计算完成",
+              "counterexample": "coins=[2]、amount=4 若先算 4 再算 2，金额 4 会读取尚未确定的 dp[2]"
+            },
+            {
+              "object": "无法由硬币凑出的金额",
+              "action": "保留不可达标记，不把缺少方案误当成 0 枚",
+              "operation": "区分无解与已达成的合法结果",
+              "state": "unreachable、dp[amount]",
+              "codeAnchor": "return dp[amount] == unreachable ? -1 : dp[amount];",
+              "invariant": "未达金额始终大于任何可能的硬币枚数，合法最少枚数不会与它混淆",
+              "counterexample": "把不可达初始化为 0 会把无解金额 3 错报成 0 枚"
+            }
+          ]
         }
       ],
       "selectedPath": "subproblem-dp",

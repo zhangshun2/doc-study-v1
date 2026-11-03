@@ -3527,6 +3527,421 @@ button {
   line-height: 1.65;
 }
 
+.experiment-order-warning {
+  margin-top: 18px;
+  padding: 13px 15px;
+  border-left: 3px solid var(--amber);
+  background: color-mix(in srgb, var(--amber) 7%, var(--surface));
+}
+
+.experiment-order-warning strong {
+  font-size: 11px;
+}
+
+.experiment-order-warning p {
+  margin: 4px 0 0;
+  color: var(--text-soft);
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.bank-experiment {
+  margin-top: 24px;
+}
+
+.bank-experiment-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 18px;
+  padding: 0 0 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.bank-experiment-head h3,
+.experiment-code-head h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 780;
+  line-height: 1.35;
+}
+
+.bank-experiment-head p {
+  max-width: 760px;
+  margin: 7px 0 0;
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.experiment-migration {
+  max-width: 210px;
+  padding: 4px 8px;
+  border: 1px solid color-mix(in srgb, var(--blue) 28%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--blue) 7%, var(--surface));
+  color: var(--blue);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.experiment-checked-alternative {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.experiment-checked-alternative strong {
+  font-size: 10px;
+}
+
+.experiment-checked-alternative p {
+  margin: 4px 0 0;
+  color: var(--text-soft);
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.experiment-group {
+  margin-top: 24px;
+}
+
+.experiment-group-head {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px 10px;
+  margin-bottom: 10px;
+}
+
+.experiment-group-head > strong {
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 650;
+}
+
+.experiment-group-head > p {
+  margin: 0;
+  color: var(--text-faint);
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.experiment-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 23px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 9px;
+  font-weight: 760;
+  white-space: nowrap;
+}
+
+.experiment-status-main {
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--border));
+  color: var(--accent-strong);
+}
+
+.experiment-status-alternative {
+  border-color: color-mix(in srgb, var(--blue) 28%, var(--border));
+  color: var(--blue);
+}
+
+.experiment-status-superseded {
+  border-color: color-mix(in srgb, var(--amber) 30%, var(--border));
+  color: var(--amber);
+}
+
+.experiment-status-rejected {
+  border-color: color-mix(in srgb, var(--danger) 28%, var(--border));
+  color: var(--danger);
+}
+
+.experiment-path-list {
+  display: grid;
+  gap: 12px;
+}
+
+.experiment-path {
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.experiment-path.is-selected {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.experiment-path-head {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+}
+
+.experiment-path-index {
+  padding-top: 3px;
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 760;
+  overflow-wrap: anywhere;
+}
+
+.experiment-path.is-selected .experiment-path-index {
+  color: var(--accent-strong);
+}
+
+.experiment-path-head h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 780;
+  line-height: 1.45;
+}
+
+.experiment-path-head p {
+  margin: 5px 0 0;
+  color: var(--text-soft);
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.experiment-total {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  color: var(--text-faint);
+  font-family: var(--mono);
+}
+
+.experiment-total strong {
+  color: var(--text);
+  font-size: 16px;
+}
+
+.experiment-total small {
+  font-size: 8px;
+}
+
+.experiment-stage-evidence {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 13px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--border);
+}
+
+.experiment-stage-evidence > div {
+  display: grid;
+  gap: 3px;
+  padding: 9px 10px;
+  background: var(--surface-soft);
+}
+
+.experiment-stage-evidence span {
+  color: var(--text-faint);
+  font-size: 8px;
+}
+
+.experiment-stage-evidence strong {
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.experiment-gates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 12px;
+}
+
+.experiment-gate {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.experiment-gate svg {
+  width: 10px;
+  height: 10px;
+}
+
+.experiment-gate.is-pass {
+  border-color: color-mix(in srgb, var(--accent) 25%, var(--border));
+  color: var(--accent-strong);
+}
+
+.experiment-gate.is-fail {
+  border-color: color-mix(in srgb, var(--danger) 24%, var(--border));
+  color: var(--danger);
+}
+
+.experiment-scores {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--border);
+}
+
+.experiment-score {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 4px;
+  background: var(--surface);
+  text-align: center;
+}
+
+.experiment-score small {
+  display: block;
+  color: var(--text-faint);
+  font-size: 8px;
+  line-height: 1.3;
+}
+
+.experiment-score strong {
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.experiment-score > span {
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 7px;
+}
+
+.experiment-score-disclaimer {
+  margin: 15px 0 0;
+  color: var(--text-faint);
+  font-size: 10px;
+  line-height: 1.65;
+}
+
+.experiment-code-section {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.experiment-code-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 11px;
+}
+
+.experiment-code-head a {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.experiment-code-head a svg {
+  width: 12px;
+  height: 12px;
+}
+
+.bank-table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.experiment-code-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+  background: var(--surface);
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.experiment-code-table th,
+.experiment-code-table td {
+  padding: 10px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.experiment-code-table th:last-child,
+.experiment-code-table td:last-child {
+  border-right: 0;
+}
+
+.experiment-code-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.experiment-code-table th {
+  background: var(--surface-soft);
+  color: var(--text-faint);
+  font-size: 9px;
+  font-weight: 760;
+  white-space: nowrap;
+}
+
+.experiment-code-table code {
+  color: var(--accent-strong);
+  font-family: var(--mono);
+  font-size: 9px;
+  overflow-wrap: anywhere;
+}
+
+.experiment-code-empty {
+  margin-top: 20px;
+  padding: 13px 15px;
+  border: 1px solid color-mix(in srgb, var(--amber) 25%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--amber) 6%, var(--surface));
+}
+
+.experiment-code-empty strong {
+  font-size: 11px;
+}
+
+.experiment-code-empty p {
+  margin: 4px 0 0;
+  color: var(--text-soft);
+  font-size: 10px;
+  line-height: 1.65;
+}
+
+.experiment-references {
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
 .bank-code-gate,
 .bank-official-hints {
   margin-top: 14px;
@@ -4306,6 +4721,10 @@ pre:hover .copy-code,
     padding-top: 24px;
     border-top: 1px solid var(--border);
   }
+
+  .experiment-scores {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 680px) {
@@ -4781,6 +5200,109 @@ pre:hover .copy-code,
 
   .bank-complexity-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bank-experiment-head {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .experiment-migration {
+    max-width: none;
+    justify-self: start;
+  }
+
+  .experiment-group-head {
+    grid-template-columns: auto auto;
+  }
+
+  .experiment-group-head > p {
+    grid-column: 1 / -1;
+  }
+
+  .experiment-path {
+    padding: 13px;
+  }
+
+  .experiment-path-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px 10px;
+  }
+
+  .experiment-path-index {
+    grid-column: 1 / -1;
+    padding-top: 0;
+  }
+
+  .experiment-stage-evidence {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .experiment-scores {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .experiment-code-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .bank-table-scroll {
+    overflow: visible;
+    border: 0;
+  }
+
+  .experiment-code-table,
+  .experiment-code-table tbody,
+  .experiment-code-table tr,
+  .experiment-code-table td {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .experiment-code-table {
+    background: transparent;
+  }
+
+  .experiment-code-table thead {
+    display: none;
+  }
+
+  .experiment-code-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .experiment-code-table tr {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+  }
+
+  .experiment-code-table td {
+    display: grid;
+    grid-template-columns: minmax(82px, 0.36fr) minmax(0, 1fr);
+    gap: 10px;
+    padding: 9px 11px;
+    border-right: 0;
+  }
+
+  .experiment-code-table tbody tr:last-child td {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .experiment-code-table tbody tr td:last-child {
+    border-bottom: 0;
+  }
+
+  .experiment-code-table td::before {
+    color: var(--text-faint);
+    content: attr(data-label);
+    font-size: 8px;
+    font-weight: 760;
   }
 
   .bank-code-gate > summary,
