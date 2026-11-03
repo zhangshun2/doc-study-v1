@@ -451,7 +451,7 @@ const ACCEPTANCE_STATES = [
   {
     index: "01",
     title: "通过",
-    text: "交接六项与自然可达六项全部成立：只完成当前任务，纸面产物可见，结论边界清楚，下一问由证据自然产生，没有越级词。",
+    text: "交接六项与自然可达七项全部成立：只完成当前任务，纸面产物可见，结论边界清楚，下一问由证据自然产生，没有越级词。",
   },
   {
     index: "02",
@@ -473,32 +473,37 @@ const ACCEPTANCE_STATES = [
 const NATURAL_REACHABILITY_CHECKS = [
   {
     index: "01",
-    title: "只看上一步",
-    text: "遮住当前交接后面的全部内容，只留上一份产物。能否不看标题、模板和答案，用自己的话问出当前这一问？",
+    title: "上一份证据真的存在吗？",
+    text: "遮住当前交接后面的全部内容，只留上一份产物。指不出具体原句、对象、手算、变化、预算或操作记录，就退回上一交接补证据。",
   },
   {
     index: "02",
-    title: "删掉上一步",
-    text: "暂时删掉上一份原句、对象、手算、变化、预算或操作证据。当前问题如果仍原样存在，它来自模板或答案。",
+    title: "当前疑问确实由这份证据的缺口逼出吗？",
+    text: "当前问题必须正好追问上一份证据仍不能说明的那一处，而不是从标题、模板或最终方法倒着补一个问法。",
   },
   {
     index: "03",
-    title: "纸面动作",
-    text: "能否指出现在要圈哪句、写哪两个位置、走哪个最小例子、数哪轮重复或比较哪两个候选？只写“想一下”不算。",
+    title: "删掉上一份证据，这一问会消失吗？",
+    text: "暂时删掉上一份原句、对象、手算、变化、预算或操作证据。当前问题如果仍原样存在，它来自模板或答案，不来自现场。",
   },
   {
     index: "04",
-    title: "结论边界",
-    text: "分别写清这份证据只能证明什么、仍不能证明什么。一个例子不能自动证明全部输入，预算也不能自动证明方向。",
+    title: "回答当前问题只用了当时可见的信息吗？",
+    text: "回答时只能使用当时已经出现的原句、例子、手算、预算或操作需求；后文的方法名、代码和结论不能倒灌成现场依据。",
   },
   {
     index: "05",
-    title: "方法名时机",
+    title: "方法名最早出现在哪里？",
     text: "交接 1 到 5 不出现选择语气；交接 6 只进入待验证区；交接 8 才能选择和否决候选；交接 9 才映射代码。",
   },
   {
     index: "06",
-    title: "最小条件替换",
+    title: "新增证据的边界说清了吗？",
+    text: "分别写清这份证据只能证明什么、仍不能证明什么。一个例子不能自动证明全部输入，预算也不能自动证明方向。",
+  },
+  {
+    index: "07",
+    title: "换掉一个最小条件，最早从哪里失效？",
     text: "只改一个会改变答案位置、停止时刻、对象寿命或重复结构的条件，指出整条链最早要退回哪次交接。",
   },
 ];
@@ -629,28 +634,48 @@ const READING_HARD_GATES = [
 const LIVE_GENERATION_RULES = [
   {
     index: "01",
-    title: "我现在只能确认：",
-    text: "只写刚才由一条原句、一个最小例子、一次手算、一次预算或一项候选比较真正得到的证据。没有新增证据，就留在原处。",
+    title: "现场类型",
+    text: "先标明这是现场推导、事后重建还是事后校验。已经知道答案再重走理解链，不能把自己写成第一次独立发现。",
   },
   {
     index: "02",
-    title: "它还不够回答：",
-    text: "指出这份证据留下的最早空缺，限定它当前不能证明什么。不要把“数值不同”扩成“身份不同”，也不要把一个例子的结果扩成全部输入。",
+    title: "上一份证据",
+    text: "写下上一交接真正留下的纸面产物。第一份证据固定为题面、示例和返回要求已经分开，后续必须逐字继承上一交接的新增证据。",
   },
   {
     index: "03",
-    title: "因此现在只做：",
-    text: "下一步只能处理那个最早空缺，动作要小到能当场用一条原句、最小例子、手算、预算或候选比较完成。",
+    title: "它已经能回答 / 仍然不能回答",
+    text: "分别写出这份证据直接支持的有限结论，以及它留下的最早缺口。不能把“已经看见一个例子”改写成“已经证明所有输入”。",
   },
   {
     index: "04",
-    title: "做完必须多出的证据：",
-    text: "先说清这次纸面动作完成以后，纸上必须新增哪一份可核对证据。没有新增证据，就不算跨过当前台阶。",
+    title: "本步疑问",
+    text: "这一问必须由上一份证据的缺口逼出。删掉上一份证据后，如果这一问仍然原样存在，它来自标题、模板或答案。",
   },
   {
     index: "05",
-    title: "证据不足就退回：",
-    text: "如果新增证据仍不足以回答当前空缺，就退回最早缺失的交接；不能靠后面的方法名、结构或代码把缺口盖过去。",
+    title: "纸上动作",
+    text: "动作必须是现在就能执行的圈、写、走、数或比较。只写“想一下”“分析关系”不产生下一份可以继承的证据。",
+  },
+  {
+    index: "06",
+    title: "新增证据",
+    text: "动作完成后，纸上必须多出一份能核对的新产物。没有新增证据，就不算跨过当前交接，也不能继续问下一问。",
+  },
+  {
+    index: "07",
+    title: "新增证据的边界",
+    text: "再次写清这份新证据仍不能回答什么。一个最小例子不能自动承担全部输入，预算也不能自动指定实现方向。",
+  },
+  {
+    index: "08",
+    title: "证据不足退回",
+    text: "指回最早缺失证据的交接。后面的方法名、结构或代码不能反向替前面补证。",
+  },
+  {
+    index: "09",
+    title: "一次只跨一步",
+    text: "当前卡只处理一个缺口。整题完成后再保存九字段诊断留痕，检查九个交接能否逐份继承，而不是边做边填完整诊断表。",
   },
 ];
 
@@ -1485,6 +1510,18 @@ function renderHandoffField(label, text, className, icon) {
 
 function renderLiveHandoffCard(handoff, options = {}) {
   const compact = options.compact === true;
+  const position = Number(handoff.index) - 1;
+  const previous = position > 0 ? HANDOFFS[position - 1] : null;
+  const narrativeType = handoff.narrativeType || "事后重建";
+  const previousEvidence = previous
+    ? previous.evidence
+    : "原题、示例和返回要求已经分开，范围、标签和题解仍遮住";
+  const previousAnswer = previous
+    ? previous.only
+    : "可以逐句确认题目给了什么、要交回什么，以及示例怎样走";
+  const previousGap = previous
+    ? previous.cannot
+    : "还不能把静态题面变成一个人可以照着执行的动作";
   return `
     <article class="handoff-card handoff-card-live${compact ? " handoff-card-compact" : ""}" id="${handoffAnchorId(handoff)}" data-live-handoff="true">
       <header class="handoff-card-head">
@@ -1494,29 +1531,16 @@ function renderLiveHandoffCard(handoff, options = {}) {
           <h3>${escapeHtml(handoff.title)}</h3>
         </div>
       </header>
-      <div class="handoff-live-body">
-        <div class="handoff-live-question">
-          <span><i data-lucide="message-circle-question"></i>此刻自然只能问</span>
-          <p>${escapeHtml(handoff.question)}</p>
-        </div>
-        <div class="handoff-live-why">
-          <span><i data-lucide="clock-3"></i>为什么现在才轮到它</span>
-          <p>${escapeHtml(handoff.whyNow)}</p>
-        </div>
-        <div class="handoff-live-do">
-          <div>
-            <span><i data-lucide="pencil-line"></i>因此现场只做什么</span>
-            <p>${escapeHtml(handoff.paper)}</p>
-          </div>
-          <div>
-            <span><i data-lucide="file-check-2"></i>做完必须多出什么</span>
-            <p>${escapeHtml(handoff.evidence)}</p>
-          </div>
-        </div>
-        <div class="handoff-live-return">
-          <span><i data-lucide="corner-up-left"></i>证据不足退回到哪里</span>
-          <p>${escapeHtml(handoff.returnTo)}</p>
-        </div>
+      <div class="handoff-fields handoff-live-fields">
+        ${renderHandoffField("现场类型", narrativeType, "handoff-field-mode", "badge-check")}
+        ${renderHandoffField("上一份证据", previousEvidence, "handoff-field-previous", "archive")}
+        ${renderHandoffField("它已经能回答", previousAnswer, "handoff-field-only", "circle-check")}
+        ${renderHandoffField("它仍然不能回答", previousGap, "handoff-field-cannot", "circle-slash-2")}
+        ${renderHandoffField("本步由上一份证据逼出的疑问", handoff.question, "handoff-field-question", "message-circle-question")}
+        ${renderHandoffField("纸上动作", handoff.paper, "handoff-field-paper", "pencil-line")}
+        ${renderHandoffField("新增证据", handoff.evidence, "handoff-field-evidence", "file-check-2")}
+        ${renderHandoffField("新增证据仍不能回答", handoff.cannot, "handoff-field-cannot", "circle-slash-2")}
+        ${renderHandoffField("证据不足退回", handoff.returnTo, "handoff-field-return", "corner-up-left")}
       </div>
       <p class="handoff-blocked">
         <i data-lucide="shield-x"></i>
@@ -1539,7 +1563,7 @@ function renderCompleteHandoffCard(handoff, options = {}) {
         </div>
       </header>
       <div class="handoff-fields handoff-retrospective-fields">
-        ${renderHandoffField("小白此刻真正的原话疑问", handoff.question, "handoff-field-question", "message-circle-question")}
+        ${renderHandoffField("本步由上一份证据逼出的疑问", handoff.question, "handoff-field-question", "message-circle-question")}
         ${renderHandoffField("为什么这个疑问现在才出现", handoff.whyNow, "handoff-field-why", "clock-3")}
         ${renderHandoffField("纸上实际做了什么", handoff.paper, "handoff-field-paper", "pencil-line")}
         ${renderHandoffField("做完后新增了什么证据", handoff.evidence, "handoff-field-evidence", "file-check-2")}
@@ -1636,16 +1660,16 @@ function renderReviewCenter(query = null) {
         </div>
       </header>
 
-      <section class="review-chain-section review-live-main" aria-label="现场五句证据边界">
+      <section class="review-chain-section review-live-main" aria-label="现场九字段证据边界">
         <div class="review-section-head">
           <div>
-            <h2>每次换动作，现场只写这五句</h2>
+            <h2>每次换动作，现场只填九项证据</h2>
             <p>
-              五句负责决定这一步能不能继续。每做完一次纸面动作，只增加一份可核对证据；
-              九字段等到整题完成后再用于复盘，不在开始前逐项背诵。
+              九项不是九道可跳过的题：上一份证据先确定，缺口才生成当前疑问；纸面动作完成以后，
+              再记录新增证据和它仍不能回答的边界。后面的方法名、代码和答案不能倒着替前面补证。
             </p>
           </div>
-          <span class="review-chain-count">现场 · 5 句</span>
+          <span class="review-chain-count">现场 · 9 字段</span>
         </div>
         ${renderLiveGenerationRules()}
       </section>
@@ -1764,7 +1788,7 @@ function renderReviewCenter(query = null) {
                 <h2>人类解题验收标准</h2>
                 <p>先验收九次交接是否留下证据，再检查下一问是否由上一份证据逼出，最后确认代码能否逐段回到人工过程。</p>
               </div>
-              <span class="review-chain-count">9 次交接 · 6 项自然可达 · 3 条硬规则</span>
+              <span class="review-chain-count">9 次交接 · 7 项自然可达 · 3 条硬规则</span>
             </div>
             ${renderHumanAcceptanceStandard()}
             ${renderNaturalReachabilityChecks()}
@@ -2053,7 +2077,7 @@ function renderNaturalReachabilityChecks() {
         不改变七阶段、九交接；没有发生转折就写“没有发生转折”，不补造“我一开始以为”。
       </p>
     </div>
-    <div class="review-live-gates review-natural-checks" aria-label="小白自然可达六项检查">
+    <div class="review-live-gates review-natural-checks" aria-label="小白自然可达七项检查">
       ${NATURAL_REACHABILITY_CHECKS.map(
         (item) => `
           <div>
@@ -2137,7 +2161,7 @@ function renderReadingHardGates() {
 
 function renderLiveGenerationRules() {
   return `
-    <div class="review-live-gates review-live-gates-five">
+    <div class="review-live-gates review-live-gates-nine">
       ${LIVE_GENERATION_RULES.map(
         (rule) => `
           <div>

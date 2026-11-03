@@ -108,7 +108,7 @@ EXPECTED_MIN_CHAINS = {
 }
 
 HANDOFF_FIELDS = [
-    "小白此刻真正的原话疑问",
+    "本步由上一份证据逼出的疑问",
     "为什么这个疑问现在才出现",
     "纸上实际做了什么",
     "做完后新增了什么证据",
@@ -132,12 +132,22 @@ HANDOFF_FIELD_KEYS = [
 ]
 
 LIVE_GENERATION_FIELDS = [
-    "我现在只能确认：",
-    "它还不够回答：",
-    "因此现在只做：",
-    "做完必须多出的证据：",
-    "证据不足就退回：",
+    "现场类型：",
+    "上一份证据：",
+    "它已经能回答：",
+    "它仍然不能回答：",
+    "本步由上一份证据逼出的疑问：",
+    "纸上动作：",
+    "新增证据：",
+    "新增证据仍不能回答：",
+    "证据不足退回：",
 ]
+
+LIVE_FIRST_PREVIOUS_EVIDENCE = (
+    "原题、示例和返回要求已经分开，范围、标签和题解仍遮住"
+)
+
+NARRATIVE_TYPES = ["现场推导", "事后重建", "事后校验"]
 
 OBJECT_TABLE_FIELDS = [
     "题目对象",
@@ -234,6 +244,17 @@ STALE_CONTRACT_PHRASES = [
     "三句话现场交接",
     "题目凭什么允许此刻停止",
     "它还不能说明：",
+    "现场五句",
+    "我现在只能确认",
+    "它还不够回答",
+    "因此现在只做",
+    "做完必须多出的证据",
+    "证据不足就退回",
+    "自然可达六项",
+    "六项自然可达",
+    "六个检查",
+    "6 项自然可达",
+    "自然可达六项",
 ]
 
 CANDIDATE_PATTERNS = [
@@ -284,6 +305,12 @@ STALE_APP_PATTERNS = [
     "8 个问题",
     "范围不能直接点名任何具体方法或结构",
     "不能出现具体方法或结构名称",
+    "现场五句",
+    "现场 · 5 句",
+    "自然可达六项",
+    "六项自然可达",
+    "6 项自然可达",
+    "小白自然可达六项",
 ]
 
 HUMAN_ACCEPTANCE_COLUMNS = [
@@ -311,17 +338,20 @@ HUMAN_ACCEPTANCE_STATES = [
 ]
 
 NATURAL_REACHABILITY_CHECK_PHRASES = [
-    "只看上一步，能自己问出这一问吗？",
-    "删掉上一步，这一问会消失吗？",
-    "纸面动作能当场做吗？",
-    "新增证据的边界说清了吗？",
+    "上一份证据真的存在吗？",
+    "当前疑问确实由这份证据的缺口逼出吗？",
+    "删掉上一份证据，这一问会消失吗？",
+    "回答当前问题只用了当时可见的信息吗？",
     "方法名最早出现在哪里？",
+    "新增证据的边界说清了吗？",
     "换掉一个最小条件，最早从哪里失效？",
 ]
 
 NATURAL_REACHABILITY_SHARED_TERMS = [
-    "只看上一步",
-    "删掉上一步",
+    "上一份证据",
+    "由这份证据的缺口逼出",
+    "删掉上一份证据",
+    "当时可见的信息",
     "纸面动作",
     "只能证明什么",
     "仍不能证明什么",
@@ -351,6 +381,9 @@ KEYWORD_TRIGGER_TERMS = [
 
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 HANDOFF_RE = re.compile(r"交接\s*([1-9])")
+TEXT_FENCE_RE = re.compile(
+    r"(?ms)^```text[ \t]*\n(?P<body>.*?)^```[ \t]*$"
+)
 
 
 class ValidationError(RuntimeError):
@@ -469,14 +502,177 @@ def missing_markers(text: str, markers: list[str]) -> list[str]:
     return [marker for marker in markers if marker not in text]
 
 
-def validate_live_generation_contract(text: str, label: str) -> None:
-    missing = missing_markers(text, LIVE_GENERATION_FIELDS)
-    if missing:
-        raise ValidationError(
-            f"{label} 缺少现场五句：" + "、".join(missing)
+def extract_live_generation_cards(text: str) -> list[str]:
+    """Return fenced text cards that explicitly declare a narrative type."""
+    return [
+        match.group("body")
+        for match in TEXT_FENCE_RE.finditer(text)
+        if "现场类型：" in match.group("body")
+    ]
+
+
+def parse_live_generation_card(card: str, label: str) -> dict[str, str]:
+    """Validate one nine-field live card and return its field values."""
+    matches: list[tuple[int, str, str]] = []
+    for field in LIVE_GENERATION_FIELDS:
+        field_matches = list(
+            re.finditer(
+                rf"(?m)^{re.escape(field)}[ \t]*(?P<value>[^\n]*)$",
+                card,
+            )
         )
-    if "它还不能说明：" in text:
-        raise ValidationError(f"{label} 仍残留旧九字段笔误：它还不能说明：")
+        if not field_matches:
+            raise ValidationError(f"{label} 缺少现场字段：{field}")
+        if len(field_matches) > 1:
+            raise ValidationError(f"{label} 的现场字段重复：{field}")
+        match = field_matches[0]
+        value = match.group("value").strip()
+        if not value:
+            raise ValidationError(f"{label} 的现场字段为空：{field}")
+        matches.append((match.start(), field, value))
+
+    ordered_fields = [field for _position, field, _value in sorted(matches)]
+    if ordered_fields != LIVE_GENERATION_FIELDS:
+        raise ValidationError(
+            f"{label} 的现场字段顺序错误：期望 {LIVE_GENERATION_FIELDS}，"
+            f"实际 {ordered_fields}"
+        )
+
+    narrative_type = matches[0][2]
+    if narrative_type not in NARRATIVE_TYPES:
+        raise ValidationError(
+            f"{label} 的现场类型只能是"
+            + "、".join(NARRATIVE_TYPES)
+            + f"：{narrative_type}"
+        )
+    if narrative_type == "事后重建" and "真正的原话疑问" in card:
+        raise ValidationError(
+            f"{label} 是事后重建，不能冒充“真正的原话疑问”"
+        )
+    return {field: value for _position, field, value in sorted(matches)}
+
+
+def validate_live_generation_card(card: str, label: str) -> None:
+    """Validate one nine-field live card, including field order and uniqueness."""
+    parse_live_generation_card(card, label)
+
+
+def diagnostic_values(handoff: Handoff) -> dict[str, str]:
+    match = next(
+        (
+            candidate
+            for candidate in TEXT_FENCE_RE.finditer(handoff.block)
+            if all(f"{field}：" in candidate.group("body") for field in HANDOFF_FIELDS)
+        ),
+        None,
+    )
+    if match is None:
+        raise ValidationError(
+            f"{handoff.location} 交接 {handoff.index} 找不到完整九字段诊断卡"
+        )
+    body = match.group("body")
+    values: dict[str, str] = {}
+    for field in HANDOFF_FIELDS:
+        field_match = re.search(
+            rf"(?m)^{re.escape(field)}：(?P<value>.*)$", body
+        )
+        values[field] = field_match.group("value").strip() if field_match else ""
+    return values
+
+
+def validate_handoff_live_generation_card(handoff: Handoff) -> None:
+    cards = extract_live_generation_cards(handoff.block)
+    if len(cards) != 1:
+        raise ValidationError(
+            f"{handoff.location} 交接 {handoff.index} 必须且只能有一张"
+            f"独立 text 现场卡，实际 {len(cards)} 张"
+        )
+    validate_live_generation_card(
+        cards[0], f"{handoff.location} 交接 {handoff.index}"
+    )
+
+
+def validate_live_handoff_chain(
+    chain: list[Handoff],
+    *,
+    allow_instructional_template: bool = False,
+) -> None:
+    """Validate live evidence continuity across one complete 1-9 chain."""
+    previous_diagnostic: dict[str, str] | None = None
+    for handoff in chain:
+        cards = extract_live_generation_cards(handoff.block)
+        if len(cards) != 1:
+            raise ValidationError(
+                f"{handoff.location} 交接 {handoff.index} 必须且只能有一张"
+                f"独立 text 现场卡，实际 {len(cards)} 张"
+            )
+
+        label = f"{handoff.location} 交接 {handoff.index}"
+        live = parse_live_generation_card(cards[0], label)
+        if not allow_instructional_template:
+            weak_fields = [
+                field
+                for field, value in live.items()
+                if "______" in value
+                or "填写时" in value
+                or value.strip() in {"待填写", "略", "同上"}
+            ]
+            if weak_fields:
+                raise ValidationError(
+                    f"{label} 的现场证据仍是占位文本："
+                    + "、".join(weak_fields)
+                )
+
+        if previous_diagnostic is None:
+            if live["上一份证据："] != LIVE_FIRST_PREVIOUS_EVIDENCE:
+                raise ValidationError(
+                    f"{label} 的第一份现场证据没有从固定读题起点出发："
+                    f"{live['上一份证据：']}"
+                )
+        else:
+            expected_previous = {
+                "上一份证据：": previous_diagnostic["做完后新增了什么证据"],
+                "它已经能回答：": previous_diagnostic["这份证据只能说明什么"],
+                "它仍然不能回答：": previous_diagnostic["它还不能说明什么"],
+            }
+            for field, expected in expected_previous.items():
+                if live[field] != expected:
+                    raise ValidationError(
+                        f"{label} 的“{field.rstrip('：')}”与上一交接不一致："
+                        f"期望“{expected}”，实际“{live[field]}”"
+                    )
+
+        if not allow_instructional_template:
+            current = diagnostic_values(handoff)
+            expected_current = {
+                "本步由上一份证据逼出的疑问：": current[
+                    "本步由上一份证据逼出的疑问"
+                ],
+                "纸上动作：": current["纸上实际做了什么"],
+                "新增证据：": current["做完后新增了什么证据"],
+                "新增证据仍不能回答：": current["它还不能说明什么"],
+                "证据不足退回：": current["如果答不出，退回哪里"],
+            }
+            mismatched = [
+                field.rstrip("：")
+                for field, expected in expected_current.items()
+                if live[field] != expected
+            ]
+            if mismatched:
+                raise ValidationError(
+                    f"{label} 的现场卡与诊断卡不一致："
+                    + "、".join(mismatched)
+                )
+
+        previous_diagnostic = diagnostic_values(handoff)
+
+
+def validate_live_generation_cards(text: str, label: str) -> None:
+    cards = extract_live_generation_cards(text)
+    if not cards:
+        raise ValidationError(f"{label} 缺少独立 text 现场卡")
+    for index, card in enumerate(cards, start=1):
+        validate_live_generation_card(card, f"{label} 现场卡 {index}")
 
 
 def validate_nine_field_contract(text: str, label: str) -> None:
@@ -618,7 +814,7 @@ def validate_natural_reachability_contract(
     )
     if missing_checks:
         raise ValidationError(
-            f"{label} 的自然可达六项检查缺少："
+            f"{label} 的自然可达七项检查缺少："
             + "、".join(missing_checks)
         )
     if "不改变七阶段、九交接" not in section:
@@ -696,9 +892,9 @@ def validate_human_acceptance_contract(text: str, label: str) -> None:
         raise ValidationError(
             f"{label} 的验收状态缺少：" + "、".join(missing_states)
         )
-    if "六项交接条件与六项自然可达检查全部满足" not in states:
+    if "六项交接条件与七项自然可达检查全部满足" not in states:
         raise ValidationError(
-            f"{label} 的通过状态没有同时要求交接六项和自然可达六项"
+            f"{label} 的通过状态没有同时要求交接六项和自然可达七项"
         )
 
     validate_natural_reachability_contract(
@@ -851,15 +1047,20 @@ def validate_document(path: Path) -> int:
         validate_handoff_sequence(chain)
         for handoff in chain:
             validate_handoff_fields(handoff)
+            validate_handoff_live_generation_card(handoff)
             validate_data_range_zone(handoff)
             if handoff.index == 2:
                 validate_expanded_statement_contract(
                     handoff.block, handoff.location
                 )
+        validate_live_handoff_chain(
+            chain,
+            allow_instructional_template=path == REAL_PROBLEM_TEMPLATE,
+        )
         validate_candidate_gate(chain)
 
     if path == REPO_SKILL:
-        for marker in ("七阶段、九次交接", "小白此刻真正的原话疑问", "交接 9"):
+        for marker in ("七阶段、九次交接", "本步由上一份证据逼出的疑问", "交接 9"):
             if marker not in text:
                 raise ValidationError(
                     f"{display_path(path)} 缺少九交接标记：{marker}"
@@ -1153,7 +1354,7 @@ def validate_site_handoff_placement(script: str) -> None:
     diagnostics_start = script.find('<details class="review-diagnostics">')
     diagnostics_end = script.find("</details>", diagnostics_start)
     if script.count(live_call) != 1:
-        raise ValidationError("主现场必须且只能从五句现场卡渲染九次交接")
+        raise ValidationError("主现场必须且只能从九字段现场卡渲染九次交接")
     if script.count(complete_call) != 1:
         raise ValidationError("完整九字段必须且只能出现一次完成复盘卡")
     if diagnostics_start < 0 or diagnostics_end <= diagnostics_start:
@@ -1163,7 +1364,7 @@ def validate_site_handoff_placement(script: str) -> None:
         raise ValidationError("九字段完整卡被放在现场区，而不是完成后诊断区")
     live_position = script.find(live_call)
     if not 0 <= live_position < diagnostics_start:
-        raise ValidationError("现场五句卡没有出现在完成后诊断区之前")
+        raise ValidationError("九字段现场卡没有出现在完成后诊断区之前")
 
 
 def validate_site_app(path: Path) -> None:
@@ -1236,7 +1437,6 @@ def validate_site_app(path: Path) -> None:
     if "待验证方向" not in question_source or "六项" not in question_source:
         raise ValidationError("九问卡没有说明交接 6 的六项待验证方向")
 
-    validate_live_generation_contract(script, "site/assets/app.js")
     for pattern in STALE_CONTRACT_PHRASES:
         if pattern in script:
             raise ValidationError(f"site/assets/app.js 仍残留旧标准：{pattern}")
@@ -1245,11 +1445,14 @@ def validate_site_app(path: Path) -> None:
     complete_function = extract_js_function_source(
         script, "renderCompleteHandoffCard"
     )
-    leaked_fields = [field for field in HANDOFF_FIELDS if field in live_function]
-    if leaked_fields:
+    missing_live_fields = missing_markers(
+        live_function,
+        [field.rstrip("：") for field in LIVE_GENERATION_FIELDS],
+    )
+    if missing_live_fields:
         raise ValidationError(
-            "现场交接卡又渲染了九字段："
-            + "、".join(leaked_fields)
+            "现场交接卡缺少九字段："
+            + "、".join(missing_live_fields)
         )
     missing_complete_fields = missing_markers(
         complete_function, [f"{field}" for field in HANDOFF_FIELDS]
@@ -1272,7 +1475,7 @@ def validate_site_app(path: Path) -> None:
     acceptance_tail = script[acceptance_start : acceptance_start + 1800]
     if "HANDOFFS.map" not in acceptance_tail:
         raise ValidationError("验收卡没有从唯一 HANDOFFS 数据生成")
-    if "9 次交接 · 6 项自然可达 · 3 条硬规则" not in script:
+    if "9 次交接 · 7 项自然可达 · 3 条硬规则" not in script:
         raise ValidationError("验收标题没有同时标明九次交接、自然可达和硬规则")
     if "review-causal-path" not in script or "范围预算" not in script:
         raise ValidationError("复习页缺少从题面到算法方向的九次交接路径")
@@ -1281,7 +1484,7 @@ def validate_site_app(path: Path) -> None:
     if "const ACCEPTANCE_STATES = [" not in script:
         raise ValidationError("复习页缺少四种验收状态数据")
     if "const NATURAL_REACHABILITY_CHECKS = [" not in script:
-        raise ValidationError("复习页缺少小白自然可达六项检查数据")
+        raise ValidationError("复习页缺少小白自然可达七项检查数据")
     if "const NATURAL_CONDITION_SWAPS = [" not in script:
         raise ValidationError("复习页缺少最小条件替换示例")
     if "review-keyword-main" not in script:
@@ -1291,7 +1494,7 @@ def validate_site_app(path: Path) -> None:
     if script.count("${renderAcceptanceStates()}") != 1:
         raise ValidationError("四种验收状态必须且只能渲染一次")
     if script.count("${renderNaturalReachabilityChecks()}") != 1:
-        raise ValidationError("小白自然可达六项必须且只能渲染一次")
+        raise ValidationError("小白自然可达七项必须且只能渲染一次")
 
     acceptance_section_start = script.find(
         '<section class="review-chain-section" aria-label="人类解题验收标准">'
@@ -1331,12 +1534,13 @@ def validate_site_app(path: Path) -> None:
     missing_natural_data = missing_markers(
         script,
         [
-            "只看上一步",
-            "删掉上一步",
-            "纸面动作",
-            "结论边界",
-            "方法名时机",
-            "最小条件替换",
+            "上一份证据真的存在吗？",
+            "当前疑问确实由这份证据的缺口逼出吗？",
+            "删掉上一份证据，这一问会消失吗？",
+            "回答当前问题只用了当时可见的信息吗？",
+            "方法名最早出现在哪里？",
+            "新增证据的边界说清了吗？",
+            "换掉一个最小条件，最早从哪里失效？",
         ],
     )
     if missing_natural_data:
@@ -1413,9 +1617,9 @@ def validate_maintained_guides() -> None:
 
     reading_guide = read_text(READING_GUIDE)
     for marker in (
-        "## 先做交接验收六项，再做自然可达六项",
+        "## 先做交接验收六项，再做自然可达七项",
         "交接六项",
-        "自然可达六项",
+        "自然可达七项",
         "最小条件替换",
     ):
         if marker not in reading_guide:
@@ -1478,7 +1682,7 @@ def validate_maintained_guides() -> None:
     for path in SHARED_CONTRACT_DOCUMENTS:
         text = read_text(path)
         label = str(display_path(path))
-        validate_live_generation_contract(text, label)
+        validate_live_generation_cards(text, label)
         validate_nine_field_contract(text, label)
         validate_expanded_statement_contract(text, label)
         for stale in STALE_CONTRACT_PHRASES:
@@ -1561,15 +1765,53 @@ def expect_failure(label: str, action) -> None:
 def run_fixture_checks() -> None:
     ordered = fixture_chain(list(range(1, 10)))
 
-    validate_live_generation_contract(
-        "\n".join(LIVE_GENERATION_FIELDS),
-        "正向现场五句",
+    live_values = [
+        "事后重建",
+        LIVE_FIRST_PREVIOUS_EVIDENCE,
+        "能确认输入、输出和题目保证",
+        "还不能把静态事实变成人的动作",
+        "一个人拿到输入后先做什么",
+        "圈出输入和返回要求",
+        "得到一份能指回原句的事实表",
+        "仍不能说明对象身份和有效期",
+        "交接 1 的原句核对",
+    ]
+    valid_live_card = "\n".join(
+        f"{field}{value}"
+        for field, value in zip(LIVE_GENERATION_FIELDS, live_values)
+    )
+    validate_live_generation_card(valid_live_card, "正向现场九字段")
+    expect_failure(
+        "现场九字段缺少上一份证据",
+        lambda: validate_live_generation_card(
+            valid_live_card.replace(
+                f"上一份证据：{LIVE_FIRST_PREVIOUS_EVIDENCE}\n", ""
+            ),
+            "缺上一份证据夹具",
+        ),
     )
     expect_failure(
-        "现场五句缺少退回条件",
-        lambda: validate_live_generation_contract(
-            "\n".join(LIVE_GENERATION_FIELDS[:-1]),
-            "缺句夹具",
+        "事后重建冒充真正的原话疑问",
+        lambda: validate_live_generation_card(
+            valid_live_card.replace(
+                "本步由上一份证据逼出的疑问：一个人拿到输入后先做什么",
+                "真正的原话疑问：一个人拿到输入后先做什么",
+            ),
+            "冒充现场夹具",
+        ),
+    )
+    expect_failure(
+        "现场卡缺少现场类型",
+        lambda: validate_live_generation_card(
+            valid_live_card.replace("现场类型：事后重建\n", ""),
+            "缺现场类型夹具",
+        ),
+    )
+    expect_failure(
+        "现场类型不合法",
+        lambda: validate_live_generation_card(
+            valid_live_card.replace("现场类型：事后重建", "现场类型：回忆"),
+            "非法现场类型夹具",
         ),
     )
 

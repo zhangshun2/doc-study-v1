@@ -2231,8 +2231,8 @@ button {
   border-bottom: 1px solid var(--border);
 }
 
-.review-live-gates-five {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+.review-live-gates-nine {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .review-live-gates > div {
@@ -4647,16 +4647,16 @@ pre:hover .copy-code,
     display: none;
   }
 
-  .review-live-gates-five {
+  .review-live-gates-nine {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .review-live-gates-five > div,
-  .review-live-gates-five > div:first-child {
+  .review-live-gates-nine > div,
+  .review-live-gates-nine > div:first-child {
     padding: 16px 0;
   }
 
-  .review-live-gates-five > div + div {
+  .review-live-gates-nine > div + div {
     border-top: 1px solid var(--border);
     border-left: 0;
   }
