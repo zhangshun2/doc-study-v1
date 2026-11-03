@@ -1150,7 +1150,7 @@ def validate_site_stage_gate(script: str) -> None:
 
     required_route_markers = [
         'state.bankStage = normalizeBankStage(query.get("stage"));',
-        'params.set("stage", String(normalizeBankStage(stage)));',
+        'params.set("stage", String(normalizedStage));',
         "${renderBankStageContent(record, stage, experiment)}",
         'state.bankDetailActive = Boolean(selected);',
         '"bank-stage-focus",',
@@ -1345,6 +1345,67 @@ def extract_js_function_source(script: str, name: str) -> str:
     return script[start:end]
 
 
+def validate_bank_stage_three_handoff(script: str) -> None:
+    """Keep object, slow process, and first change as three separate screens."""
+    if "bankHandoff: 3," not in script:
+        raise ValidationError("阶段 3 没有默认停在交接 3")
+    if "function normalizeBankHandoff(" not in script:
+        raise ValidationError("阶段 3 缺少 handoff 参数规范化")
+
+    fact_bank = extract_js_function_source(script, "renderFactBank")
+    required_route = (
+        'state.bankHandoff = state.bankStage === 3 ? '
+        'normalizeBankHandoff(query.get("handoff")) : 3;'
+    )
+    if required_route not in fact_bank:
+        raise ValidationError("阶段 3 没有只在当前阶段读取 handoff 参数")
+    if script.count('query.get("handoff")') != 1:
+        raise ValidationError("handoff 参数只能由阶段 3 的入口读取")
+
+    href = extract_js_function_source(script, "bankHref")
+    if "if (normalizedStage === 3)" not in href:
+        raise ValidationError("handoff 参数没有锁定到阶段 3 链接")
+    if href.count('params.set("handoff"') != 1:
+        raise ValidationError("bankHref 必须且只能在一处写入 handoff")
+
+    stage_three = extract_js_function_source(script, "renderBankStageThree")
+    if "const handoff = normalizeBankHandoff(state.bankHandoff);" not in stage_three:
+        raise ValidationError("阶段 3 没有按规范化后的 handoff 渲染")
+    if stage_three.count("renderLiveHandoffCard(") != 1:
+        raise ValidationError("阶段 3 一次只能渲染一张现场交接卡")
+    indexed_cards = re.findall(r"HANDOFFS\[\s*([0-8])\s*\]", stage_three)
+    if indexed_cards:
+        raise ValidationError(
+            "阶段 3 又用固定下标渲染了后续现场卡："
+            + "、".join(f"HANDOFFS[{index}]" for index in indexed_cards)
+        )
+    if "HANDOFFS.slice(2, 5)" not in stage_three:
+        raise ValidationError("阶段 3 缺少交接 3、4、5 的子入口")
+    if "bank-stage-subnavigation" not in stage_three:
+        raise ValidationError("阶段 3 缺少子导航")
+    if "handoff === 4 && record.officialExamples?.length" not in stage_three:
+        raise ValidationError("官方示例没有锁定到交接 4")
+    for marker in (
+        "record.constraints",
+        "record.solution",
+        "record.javaTemplate",
+        "record.officialHints",
+    ):
+        if marker in stage_three:
+            raise ValidationError(f"阶段 3 提前读取后续字段：{marker}")
+
+    gate = extract_js_function_source(script, "renderBankStageGate")
+    for marker in (
+        "const handoff = stage === 3 ? normalizeBankHandoff(state.bankHandoff) : null;",
+        "handoff === 3",
+        "handoff === 5",
+        "{ stage: 3, handoff: handoff + 1 }",
+        "{ stage: 4, handoff: null }",
+    ):
+        if marker not in gate:
+            raise ValidationError(f"阶段 3 出口没有按交接推进：缺少 {marker}")
+
+
 def validate_site_handoff_placement(script: str) -> None:
     live_call = "HANDOFFS.map((handoff) => renderLiveHandoffCard(handoff)).join(\"\")"
     complete_call = (
@@ -1468,6 +1529,7 @@ def validate_site_app(path: Path) -> None:
         raise ValidationError("完成后九字段卡没有 data-retrospective-handoff 标记")
 
     validate_site_handoff_placement(script)
+    validate_bank_stage_three_handoff(script)
 
     acceptance_start = script.find("function renderHumanAcceptanceStandard()")
     if acceptance_start < 0:
@@ -1955,6 +2017,63 @@ def run_fixture_checks() -> None:
     expect_failure(
         "九字段完整卡又被放回现场区",
         lambda: validate_site_handoff_placement(retrospective_in_live),
+    )
+
+    stage_three_site = """
+const state = { bankHandoff: 3, };
+function normalizeBankHandoff(value) {
+  return [3, 4, 5].includes(value) ? value : 3;
+}
+async function renderFactBank(query = new URLSearchParams()) {
+  state.bankStage = normalizeBankStage(query.get("stage"));
+  state.bankHandoff = state.bankStage === 3 ? normalizeBankHandoff(query.get("handoff")) : 3;
+}
+function bankHref({ stage = 1, handoff = state.bankHandoff } = {}) {
+  const normalizedStage = normalizeBankStage(stage);
+  if (normalizedStage === 3) {
+    params.set("handoff", String(normalizeBankHandoff(handoff)));
+  }
+}
+function renderBankStageThree(record) {
+  const handoff = normalizeBankHandoff(state.bankHandoff);
+  return `
+    <nav class="bank-stage-subnavigation">${HANDOFFS.slice(2, 5)}</nav>
+    ${renderLiveHandoffCard(HANDOFFS[handoff - 1], { compact: true })}
+    ${handoff === 4 && record.officialExamples?.length ? "examples" : ""}
+  `;
+}
+function renderBankStageGate(record, stage) {
+  const handoff = stage === 3 ? normalizeBankHandoff(state.bankHandoff) : null;
+  const previous = handoff ? (handoff === 3 ? { stage: 2 } : { stage: 3, handoff: handoff - 1 }) : null;
+  const next = handoff ? (handoff === 5 ? { stage: 4, handoff: null } : { stage: 3, handoff: handoff + 1 }) : null;
+}
+"""
+    validate_bank_stage_three_handoff(stage_three_site)
+    expect_failure(
+        "阶段 3 同时渲染三张现场卡",
+        lambda: validate_bank_stage_three_handoff(
+            stage_three_site.replace(
+                "${renderLiveHandoffCard(HANDOFFS[handoff - 1], { compact: true })}",
+                "${renderLiveHandoffCard(HANDOFFS[2], { compact: true })}"
+                "${renderLiveHandoffCard(HANDOFFS[3], { compact: true })}"
+                "${renderLiveHandoffCard(HANDOFFS[4], { compact: true })}",
+            )
+        ),
+    )
+    expect_failure(
+        "阶段 3 缺少交接子入口",
+        lambda: validate_bank_stage_three_handoff(
+            stage_three_site.replace("HANDOFFS.slice(2, 5)", "HANDOFFS")
+        ),
+    )
+    expect_failure(
+        "阶段 3 提前渲染后续交接卡",
+        lambda: validate_bank_stage_three_handoff(
+            stage_three_site.replace(
+                "${renderLiveHandoffCard(HANDOFFS[handoff - 1], { compact: true })}",
+                "${renderLiveHandoffCard(HANDOFFS[5], { compact: true })}",
+            )
+        ),
     )
 
     reversed_middle = fixture_chain([1, 2, 3, 4, 5, 7, 6, 8, 9])

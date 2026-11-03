@@ -25,6 +25,7 @@ const state = {
   bankQuery: "",
   bankDifficulty: "all",
   bankStage: 1,
+  bankHandoff: 3,
   bankDetailActive: false,
 };
 
@@ -2330,6 +2331,7 @@ async function renderFactBank(query = new URLSearchParams()) {
   state.bankQuery = query.get("q") || "";
   state.bankDifficulty = normalizeBankDifficulty(query.get("difficulty"));
   state.bankStage = normalizeBankStage(query.get("stage"));
+  state.bankHandoff = state.bankStage === 3 ? normalizeBankHandoff(query.get("handoff")) : 3;
   state.bankDetailActive = Number(query.get("id")) > 0;
   document.body.classList.toggle(
     "bank-stage-focus",
@@ -2456,6 +2458,11 @@ function normalizeBankStage(value) {
     : 1;
 }
 
+function normalizeBankHandoff(value) {
+  const handoff = Number.parseInt(value, 10);
+  return [3, 4, 5].includes(handoff) ? handoff : 3;
+}
+
 function bankHref({
   view = state.bankView,
   group = "all",
@@ -2463,8 +2470,10 @@ function bankHref({
   difficulty = "all",
   id = null,
   stage = 1,
+  handoff = state.bankHandoff,
 } = {}) {
   const params = new URLSearchParams();
+  const normalizedStage = normalizeBankStage(stage);
   params.set("view", normalizeBankView(view));
   if (group && group !== "all") {
     params.set("group", group);
@@ -2477,7 +2486,10 @@ function bankHref({
   }
   if (id !== null && id !== undefined && id !== "") {
     params.set("id", String(id));
-    params.set("stage", String(normalizeBankStage(stage)));
+    params.set("stage", String(normalizedStage));
+    if (normalizedStage === 3) {
+      params.set("handoff", String(normalizeBankHandoff(handoff)));
+    }
   }
   return `#/bank?${params.toString()}`;
 }
@@ -2853,8 +2865,10 @@ function renderBankStageTwo() {
 }
 
 function renderBankStageThree(record) {
+  const handoff = normalizeBankHandoff(state.bankHandoff);
+  const currentHandoff = HANDOFFS[handoff - 1];
   return `
-    <section class="bank-fact-section" data-stage-panel="3">
+    <section class="bank-fact-section" data-stage-panel="3" data-bank-handoff="${handoff}">
       <div class="bank-section-heading">
         <span>03</span>
         <div>
@@ -2862,13 +2876,37 @@ function renderBankStageThree(record) {
           <p>阶段 3 是三次独立交接。交接 3 先产生身份证据并填七列对象表；交接 4 才能用最小完整例子走最笨但正确的过程；交接 5 只记录谁发生变化、触发事件、变化前、变化后、答案确定时刻，以及为什么不是更早或更晚。</p>
         </div>
       </div>
+      <nav class="bank-stage-subnavigation" aria-label="阶段 3 的三个独立交接">
+        <ol class="bank-stage-subnav-list">
+          ${HANDOFFS.slice(2, 5)
+            .map((item) => {
+              const itemHandoff = Number.parseInt(item.index, 10);
+              const isCurrent = itemHandoff === handoff;
+              return `
+                <li class="${isCurrent ? "active" : ""}">
+                  <a href="${bankHref({
+                    view: state.bankView,
+                    group: state.bankGroup,
+                    q: state.bankQuery,
+                    difficulty: state.bankDifficulty,
+                    id: record.id,
+                    stage: 3,
+                    handoff: itemHandoff,
+                  })}" ${isCurrent ? 'aria-current="step"' : ""}>
+                    <span>交接 ${itemHandoff}</span>
+                    <strong>${escapeHtml(item.stageTitle)}</strong>
+                  </a>
+                </li>
+              `;
+            })
+            .join("")}
+        </ol>
+      </nav>
       <div class="bank-handoff-stack">
-        ${renderLiveHandoffCard(HANDOFFS[2], { compact: true })}
-        ${renderLiveHandoffCard(HANDOFFS[3], { compact: true })}
-        ${renderLiveHandoffCard(HANDOFFS[4], { compact: true })}
+        ${renderLiveHandoffCard(currentHandoff, { compact: true })}
       </div>
       ${
-        record.officialExamples?.length
+        handoff === 4 && record.officialExamples?.length
           ? `<div class="bank-examples">
               <p class="bank-muted">用下面示例核对手工过程。示例只检查过程，不替代边界和反例。</p>
               ${record.officialExamples
@@ -2884,7 +2922,9 @@ function renderBankStageThree(record) {
                 )
                 .join("")}
             </div>`
-          : `<p class="bank-muted">当前快照没有结构化示例。</p>`
+          : handoff === 4
+            ? `<p class="bank-muted">当前快照没有结构化示例。</p>`
+            : ""
       }
     </section>
   `;
@@ -3269,39 +3309,57 @@ function renderBankStageSeven(record) {
 }
 
 function renderBankStageGate(record, stage) {
-  const current = BANK_STAGES[stage - 1];
-  const previousStage = stage > 1 ? stage - 1 : null;
-  const nextStage = stage < BANK_STAGES.length ? stage + 1 : null;
+  const handoff = stage === 3 ? normalizeBankHandoff(state.bankHandoff) : null;
+  const current = handoff ? HANDOFFS[handoff - 1] : BANK_STAGES[stage - 1];
+  const currentIndex = handoff || stage;
+  const previous = handoff
+    ? handoff === 3
+      ? { stage: 2, handoff: null }
+      : { stage: 3, handoff: handoff - 1 }
+    : stage > 1
+      ? { stage: stage - 1, handoff: null }
+      : null;
+  const next = handoff
+    ? handoff === 5
+      ? { stage: 4, handoff: null }
+      : { stage: 3, handoff: handoff + 1 }
+    : stage < BANK_STAGES.length
+      ? { stage: stage + 1, handoff: null }
+      : null;
+  const previousLabel = handoff ? "返回上一份交接" : "回到上一阶段";
+  const nextLabel = handoff && handoff < 5 ? "继续到下一份交接" : current.next;
   return `
     <section class="bank-stage-gate" data-stage-gate="${stage}" aria-label="阶段出口">
       <div>
-        <span>当前 ${String(stage).padStart(2, "0")} / 07 · ${escapeHtml(current.handoff)}</span>
+        <span>当前 ${String(currentIndex).padStart(2, "0")} / 07 · ${escapeHtml(current.handoff)}</span>
         <strong>${escapeHtml(current.label)}</strong>
         <p>继续前，纸上先留下：${escapeHtml(current.evidence)}</p>
       </div>
       <div class="bank-stage-gate-actions">
         ${
-          previousStage
+          previous
             ? `<a class="secondary-button compact" href="${bankHref({
                 view: state.bankView,
                 group: state.bankGroup,
                 q: state.bankQuery,
                 difficulty: state.bankDifficulty,
                 id: record.id,
-                stage: previousStage,
-              })}"><i data-lucide="arrow-left"></i>回到上一阶段</a>`
+                stage: previous.stage,
+                handoff: previous.handoff ?? state.bankHandoff,
+              })}"><i data-lucide="arrow-left"></i>${previousLabel}</a>`
             : ""
         }
         ${
-          nextStage
+          next
             ? `<a class="primary-button compact" href="${bankHref({
                 view: state.bankView,
                 group: state.bankGroup,
                 q: state.bankQuery,
                 difficulty: state.bankDifficulty,
                 id: record.id,
-                stage: nextStage,
-              })}">${escapeHtml(current.next)}<i data-lucide="arrow-right"></i></a>`
+                stage: next.stage,
+                handoff: next.handoff ?? state.bankHandoff,
+              })}">${escapeHtml(nextLabel)}<i data-lucide="arrow-right"></i></a>`
             : `<a class="primary-button compact" href="${bankHref({
                 view: state.bankView,
                 group: state.bankGroup,
