@@ -22,6 +22,8 @@ const state = {
   bankGroup: "all",
   bankQuery: "",
   bankDifficulty: "all",
+  bankStage: 1,
+  bankDetailActive: false,
 };
 
 const elements = {
@@ -189,6 +191,58 @@ const HANDOFFS = [
     nextEvidence: "最小反例、边界输入和一次不看资料的完整重建。",
     returnTo: "最先说不清的交接；状态或顺序错误回本段反例，方向没有依据回交接 8。",
     blocked: "更换算法方向、用模板顺序冒充证明，或用“运行通过”补缺失推导。",
+  },
+];
+
+const BANK_STAGES = [
+  {
+    index: 1,
+    label: "原题事实",
+    handoff: "交接 1",
+    evidence: "一份每条都能指回原句的输入、输出、保证、禁止和未知。",
+    next: "继续到人话扩写",
+  },
+  {
+    index: 2,
+    label: "人话扩写",
+    handoff: "交接 2",
+    evidence: "一条别人只读文字就能按时间演完的人话过程。",
+    next: "继续到对象分析",
+  },
+  {
+    index: 3,
+    label: "对象、慢过程、第一次变化",
+    handoff: "交接 3-5",
+    evidence: "身份证据、逐行慢过程和第一次变化六项。",
+    next: "继续读数据范围",
+  },
+  {
+    index: 4,
+    label: "数据范围与预算",
+    handoff: "交接 6",
+    evidence: "完整约束、最坏重复预算和被排除的复杂度家族。",
+    next: "继续捕捉第二次变化",
+  },
+  {
+    index: 5,
+    label: "第二次变化",
+    handoff: "交接 7",
+    evidence: "四类现象的最小证据，以及未来需要的操作动词。",
+    next: "继续比较候选",
+  },
+  {
+    index: 6,
+    label: "候选比较与方向确认",
+    handoff: "交接 8",
+    evidence: "有支持、缺口、失效条件和代价的方向确认句。",
+    next: "继续到完整思维链",
+  },
+  {
+    index: 7,
+    label: "状态、顺序、不变量、代码和反例",
+    handoff: "交接 9",
+    evidence: "状态语义、更新顺序、不变量、代码映射和最小反例。",
+    next: "回到题目列表",
   },
 ];
 
@@ -687,6 +741,7 @@ function bindShellEvents() {
 
 function route() {
   const target = parseRoute();
+  document.body.classList.remove("bank-stage-focus");
   toggleSidebar(false);
   closeSearch();
   if (target.home) {
@@ -769,6 +824,10 @@ function renderSidebar() {
         </span>
         <i data-lucide="arrow-up-right"></i>
       </a>
+    </div>
+    <div class="sidebar-stage-hold" role="note">
+      <strong>当前停在事实与过程阶段</strong>
+      <span>知识导航到方向确认后再展开，避免题型名称提前替代你的判断。</span>
     </div>
     ${state.manifest.nav
       .map((section) => renderNavSection(section, currentDoc))
@@ -2121,6 +2180,12 @@ async function renderFactBank(query = new URLSearchParams()) {
   state.bankGroup = query.get("group") || "all";
   state.bankQuery = query.get("q") || "";
   state.bankDifficulty = normalizeBankDifficulty(query.get("difficulty"));
+  state.bankStage = normalizeBankStage(query.get("stage"));
+  state.bankDetailActive = Number(query.get("id")) > 0;
+  document.body.classList.toggle(
+    "bank-stage-focus",
+    state.bankDetailActive && state.bankStage < 6
+  );
   const selectedId = Number(query.get("id"));
   const requestId = ++state.factBankRequest;
 
@@ -2135,6 +2200,11 @@ async function renderFactBank(query = new URLSearchParams()) {
     const selected = Number.isInteger(selectedId) && selectedId > 0
       ? state.factBank.recordById[String(selectedId)] || null
       : null;
+    state.bankDetailActive = Boolean(selected);
+    document.body.classList.toggle(
+      "bank-stage-focus",
+      state.bankDetailActive && state.bankStage < 6
+    );
     elements.content.innerHTML = renderFactBankPage(selected);
     addCopyButtons(elements.content);
     elements.content.querySelectorAll("pre code").forEach((block) => {
@@ -2189,7 +2259,21 @@ function normalizeBankDifficulty(value) {
   return ["Easy", "Medium", "Hard"].includes(value) ? value : "all";
 }
 
-function bankHref({ view = state.bankView, group = "all", q = "", difficulty = "all", id = null } = {}) {
+function normalizeBankStage(value) {
+  const stage = Number.parseInt(value, 10);
+  return Number.isInteger(stage) && stage >= 1 && stage <= BANK_STAGES.length
+    ? stage
+    : 1;
+}
+
+function bankHref({
+  view = state.bankView,
+  group = "all",
+  q = "",
+  difficulty = "all",
+  id = null,
+  stage = 1,
+} = {}) {
   const params = new URLSearchParams();
   params.set("view", normalizeBankView(view));
   if (group && group !== "all") {
@@ -2203,6 +2287,7 @@ function bankHref({ view = state.bankView, group = "all", q = "", difficulty = "
   }
   if (id !== null && id !== undefined && id !== "") {
     params.set("id", String(id));
+    params.set("stage", String(normalizeBankStage(stage)));
   }
   return `#/bank?${params.toString()}`;
 }
@@ -2272,9 +2357,9 @@ function renderBankBrowser() {
     <section class="bank-browser" id="bank-browser">
       <div class="bank-toolbar">
         <label class="bank-search-control">
-          <span>搜索题面、标签或分类</span>
+          <span>${state.bankView === "official" ? "搜索题号、题目名或原题词句" : "搜索题号、题目名或当前视图要素"}</span>
           <i data-lucide="search"></i>
-          <input id="bank-query" type="search" value="${escapeAttribute(state.bankQuery)}" placeholder="例如：单调栈、text =、P0">
+          <input id="bank-query" type="search" value="${escapeAttribute(state.bankQuery)}" placeholder="${state.bankView === "official" ? "例如：两数之和、target =、1-Two-Sum" : "例如：单调栈、P0、数组与哈希"}">
         </label>
         <label>
           <span>当前视图分组</span>
@@ -2321,7 +2406,7 @@ function renderBankResults() {
     <div class="bank-results-meta">
       <span>${escapeHtml(context)}</span>
       <strong>${records.length} 道</strong>
-      <small>列表只显示题面事实与分类；打开题目后先停在读题阶段。</small>
+      <small>普通列表不展示算法标签；打开题目后先停在原题事实。</small>
     </div>
     ${
       records.length
@@ -2342,10 +2427,11 @@ function filteredBankRecords() {
   const group = view.groups.find((item) => item.id === state.bankGroup);
   const allowedIds = group ? new Set(group.problemIds.map(String)) : null;
   const query = normalizeText(state.bankQuery);
+  const includeFacets = state.bankView !== "official";
   return state.factBank.records
     .filter((record) => !allowedIds || allowedIds.has(String(record.id)))
     .filter((record) => state.bankDifficulty === "all" || record.difficulty === state.bankDifficulty)
-    .filter((record) => !query || bankRecordSearchText(record).includes(query))
+    .filter((record) => !query || bankRecordSearchText(record, includeFacets).includes(query))
     .sort(
       (left, right) =>
         ["Easy", "Medium", "Hard"].indexOf(left.difficulty) -
@@ -2354,27 +2440,35 @@ function filteredBankRecords() {
     );
 }
 
-function bankRecordSearchText(record) {
-  if (!record._searchText) {
-    record._searchText = normalizeText(
+function bankRecordSearchText(record, includeFacets = false) {
+  const cacheKey = includeFacets ? "_searchTextWithFacets" : "_searchText";
+  if (!record[cacheKey]) {
+    const facets = includeFacets
+      ? [
+          record.primaryPattern,
+          ...(record.priorities || []),
+          ...(record.checklistTags || []),
+          ...(record.officialTags || []).map((tag) => tag.translatedName),
+        ]
+      : [];
+    record[cacheKey] = normalizeText(
       [
         record.id,
         record.titleCn,
         record.titleEn,
-        record.primaryPattern,
-        ...(record.priorities || []),
-        ...(record.checklistTags || []),
-        ...(record.officialTags || []).map((tag) => tag.translatedName),
+        ...facets,
         stripHtmlText(record.descriptionHtml),
         ...(record.constraints || []),
       ].join(" ")
     );
   }
-  return record._searchText;
+  return record[cacheKey];
 }
 
 function renderBankProblemRow(record) {
   const priorities = record.priorities || [];
+  const showLocalPriority = state.bankView === "interview";
+  const showOfficialTags = state.bankView === "tags";
   return `
     <a class="bank-problem-row" href="${bankHref({
       view: state.bankView,
@@ -2386,12 +2480,12 @@ function renderBankProblemRow(record) {
       <span class="bank-problem-number">${escapeHtml(String(record.id).padStart(2, "0"))}</span>
       <span class="bank-problem-main">
         <strong>${escapeHtml(record.titleCn)}</strong>
-        <small>${escapeHtml(record.titleEn || "")} · ${escapeHtml(record.primaryPattern || "未分类")}</small>
+        <small>${escapeHtml(record.titleEn || "")}</small>
       </span>
       <span class="bank-problem-tags">
         <span class="bank-difficulty bank-difficulty-${escapeAttribute(record.difficulty)}">${escapeHtml(difficultyLabel(record.difficulty))}</span>
-        ${priorities.map((priority) => `<span class="bank-priority">${escapeHtml(priority)}</span>`).join("")}
-        ${record.officialTags.slice(0, 2).map((tag) => `<span>${escapeHtml(tag.translatedName)}</span>`).join("")}
+        ${showLocalPriority ? priorities.map((priority) => `<span class="bank-priority">${escapeHtml(priority)}</span>`).join("") : ""}
+        ${showOfficialTags ? record.officialTags.slice(0, 2).map((tag) => `<span>${escapeHtml(tag.translatedName)}</span>`).join("") : ""}
       </span>
       <i data-lucide="arrow-up-right"></i>
     </a>
@@ -2399,15 +2493,9 @@ function renderBankProblemRow(record) {
 }
 
 function renderBankDetail(record) {
-  const requiredComplexity = record.complexity?.required || [];
-  const advancedComplexity = record.complexity?.advanced || [];
-  const tags = (record.officialTags || []).map((tag) => tag.translatedName);
-  const priorities = record.priorities || [];
-  const solution = record.solution;
-  const statement = sanitizeHtml(record.descriptionHtml);
-  const sourceSha = record.sourceFactsSha256 ? record.sourceFactsSha256.slice(0, 12) : "未记录";
+  const stage = normalizeBankStage(state.bankStage);
   return `
-    <section class="bank-detail">
+    <section class="bank-detail" data-bank-stage="${stage}">
       <div class="bank-detail-top">
         <a class="secondary-button compact" href="${bankHref({
           view: state.bankView,
@@ -2419,276 +2507,421 @@ function renderBankDetail(record) {
         </a>
         <span>Source checked ${escapeHtml(record.sourceCheckedAt || "未记录")}</span>
       </div>
-
-      <header class="bank-detail-head">
-        <p class="bank-detail-number">LeetCode ${escapeHtml(record.id)} · ${escapeHtml(difficultyLabel(record.difficulty))}</p>
-        <h1>${escapeHtml(record.titleCn)}</h1>
-        <p>${escapeHtml(record.titleEn || "")}</p>
-        <div class="bank-chip-row">
-          ${priorities.map((priority) => `<span class="bank-priority">${escapeHtml(priority)}</span>`).join("")}
-          <span><i data-lucide="network"></i>${escapeHtml(record.system?.label || "未分类")}</span>
-          ${tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
-        </div>
-      </header>
-
-      <ol class="bank-stage-list" aria-label="人类读题阶段">
-        ${[
-          ["01", "原题事实"],
-          ["02", "人话扩写"],
-          ["03", "对象、慢过程与第一次变化 · 交接 3-5"],
-          ["04", "数据范围与慢过程预算"],
-          ["05", "第二次变化"],
-          ["06", "候选比较与方向确认"],
-          ["07", "状态、更新顺序、不变量、代码、反例"],
-        ]
-          .map(
-            ([index, label], position) => `
-              <li class="${position === 0 ? "active" : ""}">
-                <b>${index}</b>
-                <span>${label}</span>
-              </li>
-            `
-          )
-          .join("")}
-      </ol>
-
+      ${renderBankDetailHeader(record, stage)}
+      ${renderBankStageNavigation(record, stage)}
       <div class="bank-detail-layout">
         <div class="bank-detail-main">
-          <section class="bank-fact-section">
-            <div class="bank-section-heading">
-              <span>01</span>
-              <div>
-                <h2>先只读原题事实</h2>
-                <p>下面保持题面原样。先把事实、由事实推出的结论和你的猜测分开。</p>
-              </div>
-            </div>
-            ${renderLiveHandoffCard(HANDOFFS[0], { compact: true })}
-            <div class="markdown-body bank-statement">${statement}</div>
-          </section>
-
-          <section class="bank-fact-section">
-            <div class="bank-section-heading">
-              <span>02</span>
-              <div>
-                <h2>先逐句扩写，再合成一个人能执行的过程</h2>
-                <p>还不要想对象清单或算法。先确认每个原句新增了谁、什么动作、什么顺序、什么限制，以及忽略它会犯什么具体错误。</p>
-              </div>
-            </div>
-            ${renderLiveHandoffCard(HANDOFFS[1], { compact: true })}
-            <ol class="bank-question-list">
-              <li>这句话新增了哪个对象、动作、身份、顺序或停止条件？</li>
-              <li>如果忽略这句话，我会在过程里做错哪一个具体动作或交回什么错误结果？</li>
-              <li>哪一句改变了谁先处理、谁后处理，或者哪个对象不能提前丢掉？</li>
-              <li>把这些句子按时间合起来以后，一个普通人从哪里开始、反复做什么、何时停下、最后交出什么？</li>
-              <li>扩写里有没有题面没有保证的内容？它只能标成推测，不能拿去证明后面的方向。</li>
-            </ol>
-            <div class="bank-reading-links">
-              <a href="${docHref("LeetCode-系统复习/05-单题流程/单题推导标准卡.md")}">
-                <i data-lucide="clipboard-list"></i>按标准卡写下自己的扩写
-              </a>
-              <a href="${docHref("LeetCode-系统复习/05-单题流程/小白读题现场示范.md")}">
-                <i data-lucide="message-circle-more"></i>看小白怎样停下来问下一步
-              </a>
-            </div>
-          </section>
-
-          <section class="bank-fact-section">
-            <div class="bank-section-heading">
-              <span>03</span>
-              <div>
-                <h2>先分对象，再走慢过程，最后只记录第一次变化</h2>
-                <p>阶段 3 是三次独立交接。交接 3 先产生身份证据并填七列对象表；交接 4 才能用最小完整例子走最笨但正确的过程；交接 5 只记录谁发生变化、触发事件、变化前、变化后、答案确定时刻，以及为什么不是更早或更晚。</p>
-              </div>
-            </div>
-            <div class="bank-handoff-stack">
-              ${renderLiveHandoffCard(HANDOFFS[2], { compact: true })}
-              ${renderLiveHandoffCard(HANDOFFS[3], { compact: true })}
-              ${renderLiveHandoffCard(HANDOFFS[4], { compact: true })}
-            </div>
-            ${
-              record.officialExamples?.length
-                ? `<div class="bank-examples">
-                    <p class="bank-muted">用下面示例核对手工过程。示例只检查过程，不替代边界和反例。</p>
-                    ${record.officialExamples
-                      .map(
-                        (example, index) => `
-                          <div class="bank-example">
-                            <span>示例 ${index + 1}</span>
-                            <pre><code>输入：${escapeHtml(example.input || "")}\n输出：${escapeHtml(example.output || "")}${
-                              example.explanation ? `\n解释：${escapeHtml(example.explanation)}` : ""
-                            }</code></pre>
-                          </div>
-                        `
-                      )
-                      .join("")}
-                  </div>`
-                : `<p class="bank-muted">当前快照没有结构化示例。</p>`
-            }
-          </section>
-
-          <section class="bank-fact-section">
-            <div class="bank-section-heading">
-              <span>04</span>
-              <div>
-                <h2>交接 6：数据范围与慢过程预算</h2>
-                <p>先抄官方约束，再单独估算慢过程在最坏输入上的操作量并排除复杂度家族。冒出的方法记忆只能放进“待验证方向”，写全六项证据，仍然不能直接成为结论。</p>
-              </div>
-            </div>
-            ${renderLiveHandoffCard(HANDOFFS[5], { compact: true })}
-            <div class="bank-constraint-block">
-              <h3>官方约束</h3>
-              ${
-                record.constraints?.length
-                  ? `<ul>${record.constraints.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
-                  : `<p class="bank-muted">当前快照没有结构化提示。</p>`
-              }
-            </div>
-            <div class="bank-complexity-grid">
-              <div>
-                <h3>题面明确要求</h3>
-                ${
-                  requiredComplexity.length
-                    ? `<ul>${requiredComplexity.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
-                    : `<p class="bank-muted">题面无明确复杂度要求。</p>`
-                }
-              </div>
-              <div>
-                <h3>官方“进阶”建议</h3>
-                ${
-                  advancedComplexity.length
-                    ? `<ul>${advancedComplexity.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
-                    : `<p class="bank-muted">题面无额外进阶复杂度建议。</p>`
-                }
-              </div>
-            </div>
-            <div class="bank-budget-prompt">
-              <strong>接下来由你补上的三层</strong>
-              <p>官方事实：上面已经列出。操作预算：最慢的人工过程大约重复多少次？排除范围：哪些复杂度家族不能稳定承受最坏输入？方法记忆另写成六项待验证方向，不把熟悉感当成选择依据。</p>
-            </div>
-          </section>
-
-          <section class="bank-fact-section">
-            <div class="bank-section-heading">
-              <span>05</span>
-              <div>
-                <h2>带着预算第二次捕捉变化</h2>
-                <p>第一次变化只说明过程里发生了什么。现在带着操作预算重看，找出真正重复、会失效或可复用的工作，再写清未来需要哪些操作。</p>
-              </div>
-            </div>
-            ${renderLiveHandoffCard(HANDOFFS[6], { compact: true })}
-            <ol class="bank-question-list">
-              <li>哪份工作被反复做，保留什么历史才能不再重扫？</li>
-              <li>哪批候选会在同一个事件后一起失效，为什么可以安全丢掉？</li>
-              <li>同一个子问题会不会从多条路径重复到达，需要复用吗？</li>
-            </ol>
-          </section>
-
-          <section class="bank-fact-section">
-            <div class="bank-section-heading">
-              <span>06</span>
-              <div>
-                <h2>交接 8：比较候选，确认算法方向</h2>
-                <p>现在才允许具体方法名进入比较。候选必须能承担交接 7 的查询、插入、删除、取极值或恢复现场，并通过交接 6 的预算。</p>
-              </div>
-            </div>
-            ${renderLiveHandoffCard(HANDOFFS[7], { compact: true })}
-            <ol class="bank-question-list">
-              <li>这个候选消除了第二次变化里的哪份重复劳动或失效扫描？</li>
-              <li>它需要哪些操作，时间和额外空间在当前范围里是否允许？</li>
-              <li>有真实替代方向时，它在当前题目哪个条件下失效或代价过高？</li>
-              <li>没有形成真实歧义时，我检查过的熟悉替代方向为什么不能承担当前操作？</li>
-              <li>我能不能不报方法名，先用完整因果句说清“为什么必须是这类操作”？</li>
-            </ol>
-            ${
-              solution
-                ? `<div class="bank-solution-gate">
-                    <strong>方向确认以后，再用正式文档校验</strong>
-                    <p>先自己写出方向确认句，再打开现有题解。若还说不清“为什么需要这些操作”，先退回交接 7 或交接 6。</p>
-                    <div class="bank-reading-links">
-                      <a href="${docHref(solution.path, solution.reasoningAnchor)}"><i data-lucide="git-branch"></i>人的推导</a>
-                      <a href="${docHref(solution.path, solution.answerAnchor)}"><i data-lucide="shield-check"></i>答案与不变量</a>
-                      <a href="${docHref(solution.path, solution.codeAnchor)}"><i data-lucide="code-2"></i>Java 实现</a>
-                    </div>
-                  </div>`
-                : `<p class="bank-muted">当前快照没有关联到本地标准题解。</p>`
-            }
-          </section>
-
-          <section class="bank-fact-section">
-            <div class="bank-section-heading">
-              <span>07</span>
-              <div>
-                <h2>交接 9：状态、更新顺序、不变量、代码和反例</h2>
-                <p>从这里开始只讨论实现。任何一项都必须能回到交接 3 的对象、交接 5 的第一次变化和交接 7 的第二次变化。</p>
-              </div>
-            </div>
-            ${renderLiveHandoffCard(HANDOFFS[8], { compact: true })}
-            <ol class="bank-question-list">
-              <li>每个状态在题目世界里代表什么，覆盖哪段对象，何时被读取和更新？</li>
-              <li>初始值、停止条件和答案时机分别对应现实过程中的哪一刻？</li>
-              <li>交换两个更新动作后，哪一个最小输入会产生错误结果？</li>
-              <li>不变量为什么能证明不会漏、不会多、不会误删？</li>
-              <li>每一段代码对应哪个对象、状态和动作，关闭资料后能否重建？</li>
-            </ol>
-            <details class="bank-code-gate">
-              <summary>
-                <span>
-                  <strong>我已经完成方向确认，展开签名与 Java 模板</strong>
-                  <small>如果还说不清主方向、所需操作和适用边界，先不要展开。</small>
-                </span>
-                <i data-lucide="chevron-down"></i>
-              </summary>
-              <div class="bank-code-body">
-                <p>${escapeHtml(renderSignatureText(record.signature))}</p>
-                <pre><code class="language-java">${escapeHtml(record.javaTemplate || "当前快照没有 Java 模板。")}</code></pre>
-              </div>
-            </details>
-          </section>
-
-          <details class="bank-official-hints">
-            <summary>
-              <span>
-                <strong>查看平台提示（可能提前泄露思考方向）</strong>
-                <small>${record.officialHints?.length || 0} 条官方提示，阅读前先写下自己的当前困惑。</small>
-              </span>
-              <i data-lucide="chevron-down"></i>
-            </summary>
-            <ol>
-              ${
-                record.officialHints?.length
-                  ? record.officialHints.map((hint) => `<li>${sanitizeHtml(hint)}</li>`).join("")
-                  : "<li>当前快照没有官方提示。</li>"
-              }
-            </ol>
-          </details>
+          ${renderBankStageContent(record, stage)}
+          ${renderBankStageGate(record, stage)}
         </div>
-
-        <aside class="bank-detail-aside">
-          <section>
-            <span class="bank-aside-label">事实源</span>
-            <a href="${escapeAttribute(record.sourceUrl || "#")}" target="_blank" rel="noreferrer">
-              打开 LeetCode 原题<i data-lucide="external-link"></i>
-            </a>
-            <dl class="bank-source-facts">
-              <div><dt>核验日期</dt><dd>${escapeHtml(record.sourceCheckedAt || "未记录")}</dd></div>
-              <div><dt>快照摘要</dt><dd><code>${escapeHtml(sourceSha)}</code></dd></div>
-              <div><dt>主分类</dt><dd>${escapeHtml(record.primaryPattern || "未分类")}</dd></div>
-            </dl>
-          </section>
-          <section>
-            <span class="bank-aside-label">怎样区分</span>
-            <p><strong>官方事实</strong>来自题面快照。</p>
-            <p><strong>P0 与体系形态</strong>来自本地策展，不冒充平台评级或推荐解法。</p>
-            <p><strong>Java 模板</strong>只是函数签名，不证明算法方向。</p>
-          </section>
-          <section>
-            <span class="bank-aside-label">当前断点</span>
-            <p>如果第二次变化还说不清，就把最早缺失的问题写在单题工作台，不要用打开题解替代推导。</p>
-            <a href="${docHref("学习看板/单题复习工作台.md")}">记录本题断点<i data-lucide="arrow-right"></i></a>
-          </section>
-        </aside>
+        ${renderBankDetailAside(record, stage)}
       </div>
     </section>
+  `;
+}
+
+function renderBankDetailHeader(record, stage) {
+  const showCuration = stage >= 6;
+  const priorities = record.priorities || [];
+  const tags = (record.officialTags || []).map((tag) => tag.translatedName);
+  return `
+    <header class="bank-detail-head">
+      <p class="bank-detail-number">LeetCode ${escapeHtml(record.id)} · ${escapeHtml(difficultyLabel(record.difficulty))}</p>
+      <h1>${escapeHtml(record.titleCn)}</h1>
+      <p>${escapeHtml(record.titleEn || "")}</p>
+      ${
+        showCuration
+          ? `<div class="bank-chip-row">
+              ${priorities.map((priority) => `<span class="bank-priority">${escapeHtml(priority)}</span>`).join("")}
+              <span><i data-lucide="network"></i>${escapeHtml(record.system?.label || "未分类")}</span>
+              ${tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
+            </div>`
+          : `<p class="bank-stage-hold">当前只展开事实与过程证据；标签、主分类和题解关联到方向确认阶段才出现。</p>`
+      }
+    </header>
+  `;
+}
+
+function renderBankStageNavigation(record, stage) {
+  return `
+    <nav class="bank-stage-navigation" aria-label="当前推导阶段">
+      <ol class="bank-stage-list">
+        ${BANK_STAGES.map((item) => {
+          const isCurrent = item.index === stage;
+          const isAvailable = item.index <= stage;
+          const className = [isCurrent ? "active" : "", isAvailable ? "available" : "locked"]
+            .filter(Boolean)
+            .join(" ");
+          return `
+            <li class="${className}">
+              ${
+                isAvailable
+                  ? `<a href="${bankHref({
+                      view: state.bankView,
+                      group: state.bankGroup,
+                      q: state.bankQuery,
+                      difficulty: state.bankDifficulty,
+                      id: record.id,
+                      stage: item.index,
+                    })}" ${isCurrent ? 'aria-current="step"' : ""}>
+                      <b>${String(item.index).padStart(2, "0")}</b>
+                      <span>${escapeHtml(item.label)}</span>
+                    </a>`
+                  : `<div aria-disabled="true">
+                      <b>${String(item.index).padStart(2, "0")}</b>
+                      <span>${escapeHtml(item.label)}</span>
+                      <i data-lucide="lock" aria-hidden="true"></i>
+                    </div>`
+              }
+            </li>
+          `;
+        }).join("")}
+      </ol>
+    </nav>
+  `;
+}
+
+function renderBankStageContent(record, stage) {
+  switch (stage) {
+    case 2:
+      return renderBankStageTwo();
+    case 3:
+      return renderBankStageThree(record);
+    case 4:
+      return renderBankStageFour(record);
+    case 5:
+      return renderBankStageFive();
+    case 6:
+      return renderBankStageSix(record);
+    case 7:
+      return renderBankStageSeven(record);
+    default:
+      return renderBankStageOne(record);
+  }
+}
+
+function renderBankStageOne(record) {
+  const statement = sanitizeHtml(record.descriptionHtml);
+  return `
+    <section class="bank-fact-section" data-stage-panel="1">
+      <div class="bank-section-heading">
+        <span>01</span>
+        <div>
+          <h2>先只读原题事实</h2>
+          <p>下面保持题面原样。先把事实、由事实推出的结论和你的猜测分开；数据范围、标签和题解还没有展开。</p>
+        </div>
+      </div>
+      ${renderLiveHandoffCard(HANDOFFS[0], { compact: true })}
+      <div class="bank-paper-prompt">
+        <strong>读题结束时，纸上至少留下</strong>
+        <p>输入是什么；要交回数量、值、下标、路径还是布尔值；示例怎样走到输出；题目保证什么、禁止什么；哪一句我还没读懂。</p>
+      </div>
+      <div class="markdown-body bank-statement">${statement}</div>
+    </section>
+  `;
+}
+
+function renderBankStageTwo() {
+  return `
+    <section class="bank-fact-section" data-stage-panel="2">
+      <div class="bank-section-heading">
+        <span>02</span>
+        <div>
+          <h2>先逐句扩写，再合成一个人能执行的过程</h2>
+          <p>还不要想对象清单或算法。先确认每个原句新增了谁、什么动作、什么顺序、什么限制，以及忽略它会犯什么具体错误。</p>
+        </div>
+      </div>
+      ${renderLiveHandoffCard(HANDOFFS[1], { compact: true })}
+      <ol class="bank-question-list">
+        <li>这句话新增了哪个对象、动作、身份、顺序或停止条件？</li>
+        <li>如果忽略这句话，我会在过程里做错哪一个具体动作或交回什么错误结果？</li>
+        <li>哪一句改变了谁先处理、谁后处理，或者哪个对象不能提前丢掉？</li>
+        <li>把这些句子按时间合起来以后，一个普通人从哪里开始、反复做什么、何时停下、最后交出什么？</li>
+        <li>扩写里有没有题面没有保证的内容？它只能标成推测，不能拿去证明后面的方向。</li>
+      </ol>
+      <div class="bank-reading-links">
+        <a href="${docHref("LeetCode-系统复习/05-单题流程/单题推导标准卡.md")}">
+          <i data-lucide="clipboard-list"></i>按标准卡写下自己的扩写
+        </a>
+        <a href="${docHref("LeetCode-系统复习/05-单题流程/小白读题现场示范.md")}">
+          <i data-lucide="message-circle-more"></i>看小白怎样停下来问下一步
+        </a>
+      </div>
+    </section>
+  `;
+}
+
+function renderBankStageThree(record) {
+  return `
+    <section class="bank-fact-section" data-stage-panel="3">
+      <div class="bank-section-heading">
+        <span>03</span>
+        <div>
+          <h2>先分对象，再走慢过程，最后只记录第一次变化</h2>
+          <p>阶段 3 是三次独立交接。交接 3 先产生身份证据并填七列对象表；交接 4 才能用最小完整例子走最笨但正确的过程；交接 5 只记录谁发生变化、触发事件、变化前、变化后、答案确定时刻，以及为什么不是更早或更晚。</p>
+        </div>
+      </div>
+      <div class="bank-handoff-stack">
+        ${renderLiveHandoffCard(HANDOFFS[2], { compact: true })}
+        ${renderLiveHandoffCard(HANDOFFS[3], { compact: true })}
+        ${renderLiveHandoffCard(HANDOFFS[4], { compact: true })}
+      </div>
+      ${
+        record.officialExamples?.length
+          ? `<div class="bank-examples">
+              <p class="bank-muted">用下面示例核对手工过程。示例只检查过程，不替代边界和反例。</p>
+              ${record.officialExamples
+                .map(
+                  (example, index) => `
+                    <div class="bank-example">
+                      <span>示例 ${index + 1}</span>
+                      <pre><code>输入：${escapeHtml(example.input || "")}\n输出：${escapeHtml(example.output || "")}${
+                        example.explanation ? `\n解释：${escapeHtml(example.explanation)}` : ""
+                      }</code></pre>
+                    </div>
+                  `
+                )
+                .join("")}
+            </div>`
+          : `<p class="bank-muted">当前快照没有结构化示例。</p>`
+      }
+    </section>
+  `;
+}
+
+function renderBankStageFour(record) {
+  const requiredComplexity = record.complexity?.required || [];
+  const advancedComplexity = record.complexity?.advanced || [];
+  return `
+    <section class="bank-fact-section" data-stage-panel="4">
+      <div class="bank-section-heading">
+        <span>04</span>
+        <div>
+          <h2>交接 6：数据范围与慢过程预算</h2>
+          <p>先抄官方约束，再单独估算慢过程在最坏输入上的操作量并排除复杂度家族。冒出的方法记忆只能放进“待验证方向”，写全六项证据，仍然不能直接成为结论。</p>
+        </div>
+      </div>
+      ${renderLiveHandoffCard(HANDOFFS[5], { compact: true })}
+      <div class="bank-constraint-block">
+        <h3>官方约束</h3>
+        ${
+          record.constraints?.length
+            ? `<ul>${record.constraints.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+            : `<p class="bank-muted">当前快照没有结构化提示。</p>`
+        }
+      </div>
+      <div class="bank-complexity-grid">
+        <div>
+          <h3>题面中与复杂度有关的句子</h3>
+          ${
+            requiredComplexity.length
+              ? `<ul>${requiredComplexity.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+              : `<p class="bank-muted">题面没有提取到相关句子。</p>`
+          }
+        </div>
+        <div>
+          <h3>题面“进阶”文字提到的方向</h3>
+          ${
+            advancedComplexity.length
+              ? `<ul>${advancedComplexity.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+              : `<p class="bank-muted">题面没有提取到“进阶”文字。</p>`
+          }
+        </div>
+      </div>
+      <p class="bank-source-note">这两栏是从题面文字提取的句子，不是平台提供的独立复杂度字段。</p>
+      <div class="bank-budget-prompt">
+        <strong>接下来由你补上的三层</strong>
+        <p>官方事实：上面已经列出。操作预算：最慢的人工过程大约重复多少次？排除范围：哪些复杂度家族不能稳定承受最坏输入？方法记忆另写成六项待验证方向，不把熟悉感当成选择依据。</p>
+      </div>
+    </section>
+  `;
+}
+
+function renderBankStageFive() {
+  return `
+    <section class="bank-fact-section" data-stage-panel="5">
+      <div class="bank-section-heading">
+        <span>05</span>
+        <div>
+          <h2>带着预算第二次捕捉变化</h2>
+          <p>第一次变化只说明过程里发生了什么。现在带着操作预算重看，找出真正重复、会失效或可复用的工作，再写清未来需要哪些操作。</p>
+        </div>
+      </div>
+      ${renderLiveHandoffCard(HANDOFFS[6], { compact: true })}
+      <ol class="bank-question-list">
+        <li>哪份工作被反复做，保留什么历史才能不再重扫？</li>
+        <li>哪批候选会在同一个事件后一起失效，为什么可以安全丢掉？</li>
+        <li>同一个子问题会不会从多条路径重复到达，需要复用吗？</li>
+        <li>哪条读取、删除或结算顺序不能交换，交换后在哪个最小输入上先出错？</li>
+      </ol>
+    </section>
+  `;
+}
+
+function renderBankStageSix(record) {
+  const solution = record.solution;
+  return `
+    <section class="bank-fact-section" data-stage-panel="6">
+      <div class="bank-section-heading">
+        <span>06</span>
+        <div>
+          <h2>交接 8：比较候选，确认算法方向</h2>
+          <p>现在才允许具体方法名进入比较。候选必须能承担交接 7 的查询、插入、删除、取极值或恢复现场，并通过交接 6 的预算。</p>
+        </div>
+      </div>
+      ${renderLiveHandoffCard(HANDOFFS[7], { compact: true })}
+      <ol class="bank-question-list">
+        <li>这个候选消除了第二次变化里的哪份重复劳动或失效扫描？</li>
+        <li>它需要哪些操作，时间和额外空间在当前范围里是否允许？</li>
+        <li>有真实替代方向时，它在当前题目哪个条件下失效或代价过高？</li>
+        <li>没有形成真实歧义时，我检查过的熟悉替代方向为什么不能承担当前操作？</li>
+        <li>我能不能不报方法名，先用完整因果句说清“为什么必须是这类操作”？</li>
+      </ol>
+      ${
+        solution
+          ? `<div class="bank-solution-gate">
+              <strong>方向确认以后，再用正式文档校验</strong>
+              <p>先自己写出方向确认句，再打开现有题解。若还说不清“为什么需要这些操作”，先退回交接 7 或交接 6。</p>
+              <div class="bank-reading-links">
+                <a href="${docHref(solution.path, solution.reasoningAnchor)}"><i data-lucide="git-branch"></i>人的推导</a>
+                <a href="${docHref(solution.path, solution.answerAnchor)}"><i data-lucide="shield-check"></i>答案与不变量</a>
+              </div>
+            </div>`
+          : `<p class="bank-muted">当前快照没有关联到本地标准题解。</p>`
+      }
+    </section>
+  `;
+}
+
+function renderBankStageSeven(record) {
+  return `
+    <section class="bank-fact-section" data-stage-panel="7">
+      <div class="bank-section-heading">
+        <span>07</span>
+        <div>
+          <h2>交接 9：状态、更新顺序、不变量、代码和反例</h2>
+          <p>从这里开始只讨论实现。任何一项都必须能回到交接 3 的对象、交接 5 的第一次变化和交接 7 的第二次变化。</p>
+        </div>
+      </div>
+      ${renderLiveHandoffCard(HANDOFFS[8], { compact: true })}
+      <ol class="bank-question-list">
+        <li>每个状态在题目世界里代表什么，覆盖哪段对象，何时被读取和更新？</li>
+        <li>初始值、停止条件和答案时机分别对应现实过程中的哪一刻？</li>
+        <li>交换两个更新动作后，哪一个最小输入会产生错误结果？</li>
+        <li>不变量为什么能证明不会漏、不会多、不会误删？</li>
+        <li>每一段代码对应哪个对象、状态和动作，关闭资料后能否重建？</li>
+      </ol>
+      <details class="bank-code-gate">
+        <summary>
+          <span>
+            <strong>我已经完成方向确认，展开签名与 Java 模板</strong>
+            <small>如果还说不清主方向、所需操作和适用边界，先不要展开。</small>
+          </span>
+          <i data-lucide="chevron-down"></i>
+        </summary>
+        <div class="bank-code-body">
+          <p>${escapeHtml(renderSignatureText(record.signature))}</p>
+          <pre><code class="language-java">${escapeHtml(record.javaTemplate || "当前快照没有 Java 模板。")}</code></pre>
+        </div>
+      </details>
+      <details class="bank-official-hints">
+        <summary>
+          <span>
+            <strong>查看平台提示（可能提前泄露思考方向）</strong>
+            <small>${record.officialHints?.length || 0} 条官方提示，只在实现链完成以后用来校验自己的方向。</small>
+          </span>
+          <i data-lucide="chevron-down"></i>
+        </summary>
+        <ol>
+          ${
+            record.officialHints?.length
+              ? record.officialHints.map((hint) => `<li>${sanitizeHtml(hint)}</li>`).join("")
+              : "<li>当前快照没有官方提示。</li>"
+          }
+        </ol>
+      </details>
+    </section>
+  `;
+}
+
+function renderBankStageGate(record, stage) {
+  const current = BANK_STAGES[stage - 1];
+  const previousStage = stage > 1 ? stage - 1 : null;
+  const nextStage = stage < BANK_STAGES.length ? stage + 1 : null;
+  return `
+    <section class="bank-stage-gate" data-stage-gate="${stage}" aria-label="阶段出口">
+      <div>
+        <span>当前 ${String(stage).padStart(2, "0")} / 07 · ${escapeHtml(current.handoff)}</span>
+        <strong>${escapeHtml(current.label)}</strong>
+        <p>继续前，纸上先留下：${escapeHtml(current.evidence)}</p>
+      </div>
+      <div class="bank-stage-gate-actions">
+        ${
+          previousStage
+            ? `<a class="secondary-button compact" href="${bankHref({
+                view: state.bankView,
+                group: state.bankGroup,
+                q: state.bankQuery,
+                difficulty: state.bankDifficulty,
+                id: record.id,
+                stage: previousStage,
+              })}"><i data-lucide="arrow-left"></i>回到上一阶段</a>`
+            : ""
+        }
+        ${
+          nextStage
+            ? `<a class="primary-button compact" href="${bankHref({
+                view: state.bankView,
+                group: state.bankGroup,
+                q: state.bankQuery,
+                difficulty: state.bankDifficulty,
+                id: record.id,
+                stage: nextStage,
+              })}">${escapeHtml(current.next)}<i data-lucide="arrow-right"></i></a>`
+            : `<a class="primary-button compact" href="${bankHref({
+                view: state.bankView,
+                group: state.bankGroup,
+                q: state.bankQuery,
+                difficulty: state.bankDifficulty,
+              })}">${escapeHtml(current.next)}<i data-lucide="arrow-right"></i></a>`
+        }
+      </div>
+    </section>
+  `;
+}
+
+function renderBankDetailAside(record, stage) {
+  const sourceSha = record.sourceFactsSha256 ? record.sourceFactsSha256.slice(0, 12) : "未记录";
+  const showCuration = stage >= 6;
+  return `
+    <aside class="bank-detail-aside">
+      <section>
+        <span class="bank-aside-label">事实源</span>
+        <a href="${escapeAttribute(record.sourceUrl || "#")}" target="_blank" rel="noreferrer">
+          打开 LeetCode 原题<i data-lucide="external-link"></i>
+        </a>
+        <dl class="bank-source-facts">
+          <div><dt>核验日期</dt><dd>${escapeHtml(record.sourceCheckedAt || "未记录")}</dd></div>
+          <div><dt>快照摘要</dt><dd><code>${escapeHtml(sourceSha)}</code></dd></div>
+          ${
+            showCuration
+              ? `<div><dt>主分类</dt><dd>${escapeHtml(record.primaryPattern || "未分类")}</dd></div>`
+              : ""
+          }
+        </dl>
+      </section>
+      <section>
+        <span class="bank-aside-label">怎样区分</span>
+        <p><strong>官方事实</strong>来自题面快照。</p>
+        <p><strong>本地策展信息</strong>到方向确认阶段才展开，不冒充平台评级。</p>
+        <p><strong>Java 模板</strong>只是函数签名，不证明算法方向。</p>
+      </section>
+      <section>
+        <span class="bank-aside-label">当前断点</span>
+        <p>现在只停留在阶段 ${stage}。如果这一份纸面证据还写不出，就退回上一阶段；不要用打开题解替代当前证据。</p>
+        <a href="${docHref("学习看板/单题复习工作台.md")}">记录本题断点<i data-lucide="arrow-right"></i></a>
+      </section>
+    </aside>
   `;
 }
 

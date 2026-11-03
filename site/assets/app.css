@@ -320,6 +320,34 @@ button {
   background-clip: padding-box;
 }
 
+.sidebar-stage-hold {
+  display: none;
+  gap: 4px;
+  margin: 14px 6px 6px;
+  padding: 13px 14px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent-soft) 42%, var(--surface));
+}
+
+.sidebar-stage-hold strong {
+  font-size: 12px;
+}
+
+.sidebar-stage-hold span {
+  color: var(--text-soft);
+  font-size: 10px;
+  line-height: 1.65;
+}
+
+.bank-stage-focus .sidebar-stage-hold {
+  display: grid;
+}
+
+.bank-stage-focus .sidebar-nav .nav-section {
+  display: none;
+}
+
 .nav-section {
   margin-top: 8px;
 }
@@ -3102,6 +3130,14 @@ button {
   margin-top: 15px;
 }
 
+.bank-stage-hold {
+  max-width: 660px;
+  margin: 12px 0 0 !important;
+  color: var(--text-faint) !important;
+  font-size: 11px !important;
+  line-height: 1.65;
+}
+
 .bank-chip-row > span {
   display: inline-flex;
   align-items: center;
@@ -3125,12 +3161,34 @@ button {
 }
 
 .bank-stage-list li {
-  display: grid;
   min-width: 0;
-  gap: 3px;
-  padding: 12px 10px;
   border-right: 1px solid var(--border);
   color: var(--text-faint);
+}
+
+.bank-stage-list li > a,
+.bank-stage-list li > div {
+  display: grid;
+  min-height: 100%;
+  gap: 3px;
+  padding: 12px 10px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.bank-stage-list li > a:hover {
+  background: color-mix(in srgb, var(--accent-soft) 46%, var(--surface));
+  color: var(--accent-strong);
+}
+
+.bank-stage-list li.locked > div {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.bank-stage-list li.locked svg {
+  width: 11px;
+  height: 11px;
 }
 
 .bank-stage-list li:last-child {
@@ -3156,6 +3214,48 @@ button {
 
 .bank-stage-list li.active b {
   font-weight: 800;
+}
+
+.bank-stage-gate {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 24px;
+  padding: 17px 0 0;
+  border-top: 1px solid var(--border);
+}
+
+.bank-stage-gate > div:first-child {
+  display: grid;
+  max-width: 620px;
+  gap: 3px;
+}
+
+.bank-stage-gate > div:first-child > span {
+  color: var(--accent-strong);
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.bank-stage-gate > div:first-child > strong {
+  font-size: 13px;
+}
+
+.bank-stage-gate > div:first-child > p {
+  margin: 2px 0 0;
+  color: var(--text-soft);
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.bank-stage-gate-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .bank-detail-layout {
@@ -3224,6 +3324,24 @@ button {
   padding-left: 22px;
   color: var(--text-soft);
   font-size: 13px;
+  line-height: 1.7;
+}
+
+.bank-paper-prompt {
+  margin: 16px 0;
+  padding: 12px 14px;
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent-soft) 45%, var(--surface));
+}
+
+.bank-paper-prompt strong {
+  font-size: 11px;
+}
+
+.bank-paper-prompt p {
+  margin: 4px 0 0;
+  color: var(--text-soft);
+  font-size: 12px;
   line-height: 1.7;
 }
 
@@ -3381,6 +3499,13 @@ button {
   color: var(--text-soft);
   font-size: 12px;
   line-height: 1.7;
+}
+
+.bank-source-note {
+  margin: 12px 0 0;
+  color: var(--text-faint);
+  font-size: 10px;
+  line-height: 1.65;
 }
 
 .bank-solution-gate {
@@ -4638,6 +4763,16 @@ pre:hover .copy-code,
 
   .bank-detail-layout {
     padding-top: 22px;
+  }
+
+  .bank-stage-gate {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 13px;
+  }
+
+  .bank-stage-gate-actions {
+    justify-content: flex-start;
   }
 
   .bank-section-heading {

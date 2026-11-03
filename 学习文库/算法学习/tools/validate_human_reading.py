@@ -684,6 +684,153 @@ def validate_beginner_question_structure(
             )
 
 
+def validate_site_stage_gate(script: str) -> None:
+    """Ensure problem details render only the selected stage."""
+    stages = extract_js_array(script, "BANK_STAGES")
+    if count_top_level_js_objects(stages) != 7:
+        raise ValidationError("题库详情必须正好有 7 个展示阶段")
+
+    expected_labels = [
+        "原题事实",
+        "人话扩写",
+        "对象、慢过程、第一次变化",
+        "数据范围与预算",
+        "第二次变化",
+        "候选比较与方向确认",
+        "状态、顺序、不变量、代码和反例",
+    ]
+    label_positions = [stages.find(f'label: "{label}"') for label in expected_labels]
+    if any(position < 0 for position in label_positions) or label_positions != sorted(
+        label_positions
+    ):
+        raise ValidationError("题库详情的七阶段名称缺失或顺序错误")
+
+    required_route_markers = [
+        'state.bankStage = normalizeBankStage(query.get("stage"));',
+        'params.set("stage", String(normalizeBankStage(stage)));',
+        "${renderBankStageContent(record, stage)}",
+        'state.bankDetailActive = Boolean(selected);',
+        '"bank-stage-focus",',
+        "state.bankDetailActive && state.bankStage < 6",
+    ]
+    missing_route = missing_markers(script, required_route_markers)
+    if missing_route:
+        raise ValidationError(
+            "题库详情没有按 stage 参数门控渲染：" + "、".join(missing_route)
+        )
+
+    route_source = extract_js_function_source(script, "route")
+    if 'document.body.classList.remove("bank-stage-focus");' not in route_source:
+        raise ValidationError("离开单题详情的读题阶段后没有恢复知识导航")
+
+    sidebar = extract_js_function_source(script, "renderSidebar")
+    for marker in ("sidebar-stage-hold", "知识导航到方向确认后再展开"):
+        if marker not in sidebar:
+            raise ValidationError(f"读题阶段侧栏缺少知识导航门控：{marker}")
+
+    detail = extract_js_function_source(script, "renderBankDetail")
+    leaked_in_shell = [
+        marker
+        for marker in (
+            "record.constraints",
+            "record.javaTemplate",
+            "record.officialHints",
+            "record.solution",
+            "record.officialTags",
+            "record.primaryPattern",
+        )
+        if marker in detail
+    ]
+    if leaked_in_shell:
+        raise ValidationError(
+            "题库详情外壳提前读取了后续阶段字段：" + "、".join(leaked_in_shell)
+        )
+
+    header = extract_js_function_source(script, "renderBankDetailHeader")
+    if "const showCuration = stage >= 6;" not in header:
+        raise ValidationError("主分类和官方标签没有锁定到阶段 6")
+
+    navigation = extract_js_function_source(script, "renderBankStageNavigation")
+    if "const isAvailable = item.index <= stage;" not in navigation:
+        raise ValidationError("阶段导航没有锁住后续阶段")
+
+    content = extract_js_function_source(script, "renderBankStageContent")
+    for marker in (
+        "return renderBankStageOne(record);",
+        "return renderBankStageTwo();",
+        "return renderBankStageThree(record);",
+        "return renderBankStageFour(record);",
+        "return renderBankStageFive();",
+        "return renderBankStageSix(record);",
+        "return renderBankStageSeven(record);",
+    ):
+        if marker not in content:
+            raise ValidationError(f"阶段分发缺少：{marker}")
+    if content.count("return renderBankStage") != 7:
+        raise ValidationError("阶段分发必须一回合一阶段，不能拼接后续内容")
+
+    stage_one = extract_js_function_source(script, "renderBankStageOne")
+    stage_two = extract_js_function_source(script, "renderBankStageTwo")
+    stage_three = extract_js_function_source(script, "renderBankStageThree")
+    stage_four = extract_js_function_source(script, "renderBankStageFour")
+    stage_five = extract_js_function_source(script, "renderBankStageFive")
+    stage_six = extract_js_function_source(script, "renderBankStageSix")
+    stage_seven = extract_js_function_source(script, "renderBankStageSeven")
+
+    early_fields = (
+        "record.constraints",
+        "record.complexity",
+        "record.solution",
+        "record.javaTemplate",
+        "record.officialHints",
+        "record.primaryPattern",
+        "record.officialTags",
+    )
+    for label, source in (
+        ("阶段 1", stage_one),
+        ("阶段 2", stage_two),
+        ("阶段 3", stage_three),
+    ):
+        leaked = [marker for marker in early_fields if marker in source]
+        if leaked:
+            raise ValidationError(
+                f"{label}提前渲染了后续字段：" + "、".join(leaked)
+            )
+
+    if "record.constraints" not in stage_four or "record.complexity" not in stage_four:
+        raise ValidationError("阶段 4 没有承担数据范围和复杂度句子的渲染")
+    for marker in ("record.solution", "record.javaTemplate"):
+        if marker in stage_four:
+            raise ValidationError(f"阶段 4 提前渲染了：{marker}")
+
+    for marker in ("record.constraints", "record.solution", "record.javaTemplate"):
+        if marker in stage_five:
+            raise ValidationError(f"阶段 5 提前渲染了：{marker}")
+
+    if "record.solution" not in stage_six:
+        raise ValidationError("阶段 6 没有在方向确认后提供题解关联")
+    for marker in (
+        "record.constraints",
+        "record.javaTemplate",
+        "record.officialHints",
+        "solution.codeAnchor",
+    ):
+        if marker in stage_six:
+            raise ValidationError(f"阶段 6 提前渲染了：{marker}")
+
+    for marker in ("record.javaTemplate", "record.officialHints"):
+        if marker not in stage_seven:
+            raise ValidationError(f"阶段 7 缺少实现链内容：{marker}")
+    if "record.solution" in stage_seven:
+        raise ValidationError("阶段 7 不应重新打开方向选择入口")
+
+    row = extract_js_function_source(script, "renderBankProblemRow")
+    if "record.primaryPattern" in row:
+        raise ValidationError("普通题库列表提前展示主分类")
+    if 'const showOfficialTags = state.bankView === "tags";' not in row:
+        raise ValidationError("官方标签没有限制在标签视图")
+
+
 def extract_js_function_source(script: str, name: str) -> str:
     marker = f"function {name}("
     start = script.find(marker)
@@ -723,6 +870,8 @@ def validate_site_app(path: Path) -> None:
     for stale in STALE_APP_PATTERNS:
         if stale in script:
             raise ValidationError(f"site/assets/app.js 仍残留旧标准：{stale}")
+
+    validate_site_stage_gate(script)
 
     blocks = extract_js_handoff_blocks(script)
     indexes = [index for index, _block in blocks]
@@ -856,6 +1005,12 @@ def validate_maintained_guides() -> None:
         raise ValidationError("标准卡缺少小白逐步产生下一问的现场因果表")
     if "数据范围必须放在第一次变化之后" not in standard:
         raise ValidationError("标准卡没有锁定数据范围与第一次变化的先后关系")
+    if "## 网站门控：只显示当前这一步" not in standard:
+        raise ValidationError("标准卡没有把网站阶段门控映射回唯一标准")
+    if "后续阶段不会作为隐藏内容提前放进页面" not in standard:
+        raise ValidationError("标准卡没有禁止后续阶段提前渲染")
+    if "阶段 1 至 5 打开单题时，侧栏同时收起知识目录" not in standard:
+        raise ValidationError("标准卡没有禁止知识目录提前暴露题型名称")
     validate_keyword_trigger_contract(standard, "单题推导标准卡")
     validate_human_acceptance_contract(standard, "单题推导标准卡")
     if "第二次变化不是把第一次变化重说一遍" not in standard:
