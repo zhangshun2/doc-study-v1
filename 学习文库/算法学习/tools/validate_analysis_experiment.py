@@ -38,7 +38,9 @@ REQUIRED_DOCS = {
         "问题事实",
     ],
     "分析法实验协议.md": [
-        "七阶段是共同基线",
+        "七阶段、九次交接是共同基线",
+        "交接 6 只排除复杂度家族",
+        "交接 8 才允许具体候选上桌",
         "没有形成候选",
         "没有发生转折",
         "事后校验",
@@ -58,11 +60,33 @@ REQUIRED_DOCS = {
         "自然可达",
         "编码定位",
         "比较最低分",
+        "具体候选留到交接 8",
     ],
     "量产与复习协议.md": [
         "同分异构",
         "标准题解仍是题意、签名、权威 Java 和复习日期的唯一来源",
         "不维护第二份日期",
+        "交接 6 不建立具体候选池",
+        "交接 8 才比较具体方向",
+    ],
+}
+
+FORBIDDEN_DOC_PATTERNS = {
+    "分析法实验协议.md": [
+        "七阶段是共同基线",
+        "-> 数据范围、操作预算、功能候选",
+    ],
+    "四题多路径实验.md": [
+        "### 4. 数据范围、预算和候选池",
+        "| 排除哪些功能候选 |",
+        "| 保留哪些功能候选 |",
+    ],
+    "评分与选择规则.md": [
+        "只写到事实、过程或候选池",
+    ],
+    "量产与复习协议.md": [
+        "写七阶段主路径",
+        "被排除的复杂度家族 -> 功能候选",
     ],
 }
 
@@ -105,6 +129,12 @@ def check_docs(errors: list[str]) -> None:
                 fail(
                     errors,
                     f"{path.relative_to(REPO_ROOT)}: unfinished marker {forbidden!r}",
+                )
+        for forbidden in FORBIDDEN_DOC_PATTERNS.get(name, []):
+            if forbidden in text:
+                fail(
+                    errors,
+                    f"{path.relative_to(REPO_ROOT)}: stale sequential rule {forbidden!r}",
                 )
 
 
