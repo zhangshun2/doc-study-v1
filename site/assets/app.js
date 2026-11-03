@@ -315,6 +315,81 @@ const HUMAN_ACCEPTANCE_RULES = [
   },
 ];
 
+const KEYWORD_TRIGGERS = [
+  {
+    keyword: "下标、位置、第几天",
+    gap: "答案跟着值本身，还是跟着原位置",
+    action: "把两个相同的值写在两个不同位置，分别标出身份和结果归属",
+    evidence: "相同值仍是两个对象，答案绑定到正确位置",
+    still: "还不知道一个普通人按什么顺序执行",
+  },
+  {
+    keyword: "之后、第一个、最近",
+    gap: "比较方向、起点和停止时刻是什么",
+    action: "画出从当前对象出发的方向，并圈出第一次满足条件的位置",
+    evidence: "方向固定，停止时刻绑定在第一次事件上",
+    still: "还不知道哪个对象会在这一刻发生变化",
+  },
+  {
+    keyword: "严格更高、最多、恰好",
+    gap: "相等算不算，候选出现是否等于答案确定",
+    action: "在最小例子上分别检查相等和真正满足条件的情况",
+    evidence: "比较边界和答案确定时刻有了具体例子",
+    still: "还不知道这份过程要重复多少轮",
+  },
+  {
+    keyword: "同一个元素只能用一次、可以重复使用",
+    gap: "对象何时失效，何时还能再次被选中",
+    action: "写出一次选择前后的状态，并检查当前对象是否可能被提前算进历史",
+    evidence: "对象有效期和读取、加入的先后关系",
+    still: "还不知道哪份状态会被后续事件重复读取",
+  },
+  {
+    keyword: "唯一答案、找不到返回",
+    gap: "题目给了什么停止保证，无解时交回什么",
+    action: "把停止条件和无解返回分别写成可检查的纸面规则",
+    evidence: "第一次合法结果是否已经足够，以及无解路径",
+    still: "还不知道更贵的慢过程是否超出预算",
+  },
+  {
+    keyword: "有序、连续区间",
+    gap: "顺序或连续性是否真的参与当前人工动作",
+    action: "回到慢过程，指出这条性质改变了哪一次比较或哪一段范围",
+    evidence: "当前过程是否真的依赖顺序，失去它会发生什么",
+    still: "还不知道未来需要查询、删除或保序哪些信息",
+  },
+  {
+    keyword: "1 <= n <= ...",
+    gap: "逐轮重复的慢过程在最坏输入上是否超预算",
+    action: "取最坏输入形状，数一轮核心动作，再乘最坏轮数",
+    evidence: "操作预算和被排除的复杂度家族",
+    still: "范围不能直接宣布算法，仍需第二次变化和候选比较",
+  },
+];
+
+const ACCEPTANCE_STATES = [
+  {
+    index: "01",
+    title: "通过",
+    text: "进入条件成立，只完成当前任务，纸面产物可见，结论边界清楚，下一问由证据自然产生，没有越级词。",
+  },
+  {
+    index: "02",
+    title: "证据不足",
+    text: "动作做了，但产物回答不了当前疑问。留在本交接补证据；仍不足就退回最早缺失处。",
+  },
+  {
+    index: "03",
+    title: "越级",
+    text: "当前交接出现了后面阶段才允许的方法名、结构、变化或代码。删除结论，回到最早越级处重走。",
+  },
+  {
+    index: "04",
+    title: "事实错误",
+    text: "原句、输入输出、保证或禁止读错。一票否决，回到交接 1；后面的过程、预算和方向全部作废。",
+  },
+];
+
 const BEGINNER_QUESTION_CARD = [
   {
     index: "01",
@@ -1436,6 +1511,20 @@ function renderReviewCenter(query = null) {
         ${renderLiveGenerationRules()}
       </section>
 
+      <section class="review-chain-section review-keyword-main" aria-label="题面关键词到纸面证据">
+        <div class="review-section-head">
+          <div>
+            <h2>题面里的词只会逼出下一问，不会直接报算法</h2>
+            <p>
+              真正影响执行的词，先用来发现当前理解缺了什么。做一个纸面动作，拿到一份能指回原句或
+              最小例子的证据，才允许继续；关键词本身不能证明保存什么，更不能证明算法方向。
+            </p>
+          </div>
+          <span class="review-chain-count">关键词 · 缺口 · 证据</span>
+        </div>
+        ${renderKeywordTriggerTable()}
+      </section>
+
       <section class="review-chain-section review-handoff-main" aria-label="七阶段九次交接唯一主线">
         <div class="review-section-head">
           <div>
@@ -1539,6 +1628,7 @@ function renderReviewCenter(query = null) {
               <span class="review-chain-count">9 次交接 · 3 条硬规则</span>
             </div>
             ${renderHumanAcceptanceStandard()}
+            ${renderAcceptanceStates()}
             <div class="review-live-gates" aria-label="人类解题验收三条硬规则">
               ${HUMAN_ACCEPTANCE_RULES.map(
                 (rule) => `
@@ -1746,6 +1836,35 @@ function renderBeginnerActionTable() {
   `;
 }
 
+function renderKeywordTriggerTable() {
+  return `
+    <div class="keyword-trigger-table" role="table" aria-label="题面关键词到纸面证据的触发表">
+      <div class="keyword-trigger-row keyword-trigger-header" role="row">
+        <span role="columnheader">题面现象</span>
+        <span role="columnheader">当前缺口</span>
+        <span role="columnheader">现在只做的纸面动作</span>
+        <span role="columnheader">做完新增的证据</span>
+        <span role="columnheader">仍然不能回答</span>
+      </div>
+      ${KEYWORD_TRIGGERS.map(
+        (item) => `
+          <div class="keyword-trigger-row" role="row">
+            <strong role="cell" data-label="题面现象">${escapeHtml(item.keyword)}</strong>
+            <p role="cell" data-label="当前缺口">${escapeHtml(item.gap)}</p>
+            <p role="cell" data-label="现在只做的纸面动作">${escapeHtml(item.action)}</p>
+            <p role="cell" data-label="做完新增的证据">${escapeHtml(item.evidence)}</p>
+            <p role="cell" data-label="仍然不能回答">${escapeHtml(item.still)}</p>
+          </div>
+        `,
+      ).join("")}
+    </div>
+    <p class="keyword-trigger-note">
+      关键词只负责暴露当前缺口，不负责宣布算法。忽略它不会改变任何纸面动作时，先记下但不补作用；
+      如果会改变答案位置、停止时刻或对象寿命，就必须在当前交接留下证据。
+    </p>
+  `;
+}
+
 function renderHumanAcceptanceStandard() {
   return `
     <ol class="beginner-live-list beginner-acceptance-list">
@@ -1758,15 +1877,15 @@ function renderHumanAcceptanceStandard() {
             </div>
             <div class="beginner-live-grid beginner-acceptance-grid">
               <div class="beginner-live-cell beginner-acceptance-cell">
-                <strong>先看什么</strong>
-                <p>${escapeHtml(item.question)}</p>
+                <strong>进入条件</strong>
+                <p>${escapeHtml(item.whyNow)}</p>
               </div>
               <div class="beginner-live-cell beginner-acceptance-cell">
-                <strong>下一件纸面动作</strong>
+                <strong>本步唯一任务</strong>
                 <p>${escapeHtml(item.paper)}</p>
               </div>
               <div class="beginner-live-cell beginner-live-evidence beginner-acceptance-cell">
-                <strong>允许继续的证据</strong>
+                <strong>通过时必须留下</strong>
                 <p>${escapeHtml(item.evidence)}</p>
               </div>
               <div class="beginner-live-cell beginner-live-blocked beginner-acceptance-cell">
@@ -1782,6 +1901,22 @@ function renderHumanAcceptanceStandard() {
         `,
       ).join("")}
     </ol>
+  `;
+}
+
+function renderAcceptanceStates() {
+  return `
+    <div class="review-live-gates review-acceptance-states" aria-label="人类解题验收的四种状态">
+      ${ACCEPTANCE_STATES.map(
+        (item) => `
+          <div>
+            <span>${escapeHtml(item.index)}</span>
+            <strong>${escapeHtml(item.title)}</strong>
+            <p>${escapeHtml(item.text)}</p>
+          </div>
+        `,
+      ).join("")}
+    </div>
   `;
 }
 

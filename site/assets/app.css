@@ -2065,6 +2065,68 @@ button {
   border-left: 0;
 }
 
+.keyword-trigger-table {
+  min-width: 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.keyword-trigger-row {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(130px, 0.9fr) repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  padding: 14px 0;
+}
+
+.keyword-trigger-row + .keyword-trigger-row {
+  border-top: 1px solid var(--border);
+}
+
+.keyword-trigger-header {
+  padding: 9px 0;
+  background: color-mix(in srgb, var(--surface-soft) 56%, transparent);
+}
+
+.keyword-trigger-header span {
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 760;
+  letter-spacing: 0;
+}
+
+.keyword-trigger-row strong,
+.keyword-trigger-row p {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.keyword-trigger-row strong {
+  color: var(--accent-strong);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.keyword-trigger-row p {
+  color: var(--text-soft);
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.keyword-trigger-note {
+  margin: 12px 0 0;
+  color: var(--text-faint);
+  font-size: 11px;
+  line-height: 1.75;
+}
+
+.review-acceptance-states {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 16px;
+}
+
 .review-live-gates {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -4055,6 +4117,31 @@ pre:hover .copy-code,
 
   .review-evidence-grid > div:nth-child(4) {
     border-top: 1px solid var(--border);
+  }
+
+  .keyword-trigger-header {
+    display: none;
+  }
+
+  .keyword-trigger-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding: 15px 0;
+  }
+
+  .keyword-trigger-row strong::before,
+  .keyword-trigger-row p::before {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--text-faint);
+    content: attr(data-label);
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 700;
+  }
+
+  .review-acceptance-states {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .review-rules > div {

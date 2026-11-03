@@ -192,6 +192,38 @@ STALE_APP_PATTERNS = [
     "不能出现具体方法或结构名称",
 ]
 
+HUMAN_ACCEPTANCE_COLUMNS = [
+    "进入条件（上一份证据）",
+    "本步唯一任务",
+    "通过时必须留下",
+    "仍禁止出现",
+    "说不通退回",
+]
+
+HUMAN_ACCEPTANCE_CRITERIA = [
+    "进入条件成立",
+    "只做当前任务",
+    "纸上产物可见",
+    "结论边界清楚",
+    "下一问自然出现",
+    "没有越级词",
+]
+
+HUMAN_ACCEPTANCE_STATES = [
+    "通过",
+    "证据不足",
+    "越级",
+    "事实错误",
+]
+
+KEYWORD_TRIGGER_TERMS = [
+    "下标",
+    "重复元素",
+    "之后",
+    "严格更高",
+    "数值范围",
+]
+
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 HANDOFF_RE = re.compile(r"交接\s*([1-9])")
 
@@ -353,6 +385,104 @@ def validate_candidate_contract(text: str, label: str) -> None:
     if missing:
         raise ValidationError(
             f"{label} 的待验证方向缺少字段：" + "、".join(missing)
+        )
+
+
+def validate_keyword_trigger_contract(text: str, label: str) -> None:
+    heading = "## 题面关键词只触发问题，不触发算法"
+    start = text.find(heading)
+    if start < 0:
+        raise ValidationError(f"{label} 缺少题面关键词触发表")
+    end = text.find("\n## ", start + len(heading))
+    section = text[start:] if end < 0 else text[start:end]
+
+    missing = missing_markers(section, KEYWORD_TRIGGER_TERMS)
+    if missing:
+        raise ValidationError(
+            f"{label} 的关键词触发表没有覆盖：" + "、".join(missing)
+        )
+    compact_section = re.sub(r"\s+", "", section)
+    for marker in ("忽略它具体会错在哪", "关键词本身不能证明算法方向"):
+        if marker not in section and marker not in compact_section:
+            raise ValidationError(f"{label} 的关键词表缺少边界：{marker}")
+
+
+def validate_human_acceptance_contract(text: str, label: str) -> None:
+    heading = "## 人类解题验收标准"
+    start = text.find(heading)
+    if start < 0:
+        raise ValidationError(f"{label} 缺少人类解题验收标准")
+
+    criteria_start = text.find("### 一个交接算通过，必须同时满足", start)
+    if criteria_start < 0:
+        raise ValidationError(f"{label} 缺少六项同时满足条件")
+
+    table = text[start:criteria_start]
+    missing_columns = missing_markers(table, HUMAN_ACCEPTANCE_COLUMNS)
+    if missing_columns:
+        raise ValidationError(
+            f"{label} 的九次交接验收表缺少列：" + "、".join(missing_columns)
+        )
+
+    rows = [
+        line
+        for line in table.splitlines()
+        if re.match(r"^\|\s*[1-9]\.\s", line)
+    ]
+    expected_indexes = [str(index) for index in range(1, 10)]
+    actual_indexes = [
+        match.group(1)
+        for line in rows
+        if (match := re.match(r"^\|\s*([1-9])\.\s", line))
+    ]
+    if actual_indexes != expected_indexes:
+        raise ValidationError(
+            f"{label} 的验收表必须完整覆盖交接 1 到 9，"
+            f"实际为 {actual_indexes}"
+        )
+
+    for line in rows:
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if len(cells) != 6 or any(not cell for cell in cells):
+            raise ValidationError(
+                f"{label} 的验收行字段不完整：{line}"
+            )
+
+    states_start = text.find("### 验收状态", criteria_start)
+    if states_start < 0:
+        raise ValidationError(f"{label} 缺少验收状态")
+    states_end = text.find("\n三条硬规则", states_start)
+    criteria = text[criteria_start:states_start]
+    states = text[states_start:] if states_end < 0 else text[states_start:states_end]
+
+    missing_criteria = missing_markers(criteria, HUMAN_ACCEPTANCE_CRITERIA)
+    if missing_criteria:
+        raise ValidationError(
+            f"{label} 的六项同时满足条件缺少："
+            + "、".join(missing_criteria)
+        )
+    missing_states = missing_markers(states, HUMAN_ACCEPTANCE_STATES)
+    if missing_states:
+        raise ValidationError(
+            f"{label} 的验收状态缺少：" + "、".join(missing_states)
+        )
+
+
+def validate_demo_acceptance_contract(text: str, label: str) -> None:
+    if "## 每日温度的关键词触发记录" not in text:
+        raise ValidationError(f"{label} 缺少关键词触发记录")
+    demo_terms = ["之后", "第一个", "严格更高", "几天后", "temperatures.length"]
+    missing = missing_markers(text, demo_terms)
+    if missing:
+        raise ValidationError(
+            f"{label} 的关键词现场记录缺少：" + "、".join(missing)
+        )
+    if "## 这份示范怎样验收" not in text:
+        raise ValidationError(f"{label} 缺少示范验收说明")
+    missing_states = missing_markers(text, HUMAN_ACCEPTANCE_STATES)
+    if missing_states:
+        raise ValidationError(
+            f"{label} 的示范验收没有覆盖状态：" + "、".join(missing_states)
         )
 
 
@@ -695,6 +825,29 @@ def validate_site_app(path: Path) -> None:
         raise ValidationError("验收标题仍不是九次交接")
     if "review-causal-path" not in script or "范围预算" not in script:
         raise ValidationError("复习页缺少从题面到算法方向的九次交接路径")
+    if "const KEYWORD_TRIGGERS = [" not in script:
+        raise ValidationError("复习页缺少题面关键词数据")
+    if "const ACCEPTANCE_STATES = [" not in script:
+        raise ValidationError("复习页缺少四种验收状态数据")
+    if "review-keyword-main" not in script:
+        raise ValidationError("复习页缺少关键词到纸面证据的主现场")
+    if script.count("${renderKeywordTriggerTable()}") != 1:
+        raise ValidationError("关键词触发表必须且只能在主现场渲染一次")
+    if script.count("${renderAcceptanceStates()}") != 1:
+        raise ValidationError("四种验收状态必须且只能渲染一次")
+
+    acceptance_function = extract_js_function_source(
+        script, "renderHumanAcceptanceStandard"
+    )
+    missing_acceptance_labels = missing_markers(
+        acceptance_function,
+        ["进入条件", "本步唯一任务", "通过时必须留下", "仍禁止出现", "说不通退回"],
+    )
+    if missing_acceptance_labels:
+        raise ValidationError(
+            "验收卡缺少判定列："
+            + "、".join(missing_acceptance_labels)
+        )
 
 
 def validate_maintained_guides() -> None:
@@ -703,6 +856,15 @@ def validate_maintained_guides() -> None:
         raise ValidationError("标准卡缺少小白逐步产生下一问的现场因果表")
     if "数据范围必须放在第一次变化之后" not in standard:
         raise ValidationError("标准卡没有锁定数据范围与第一次变化的先后关系")
+    validate_keyword_trigger_contract(standard, "单题推导标准卡")
+    validate_human_acceptance_contract(standard, "单题推导标准卡")
+    if "第二次变化不是把第一次变化重说一遍" not in standard:
+        raise ValidationError("标准卡没有区分第一次变化和第二次变化")
+    if "支持、缺口、失效条件和代价" not in standard:
+        raise ValidationError("标准卡的方向确认没有要求支持、缺口、失效和代价")
+
+    demo = read_text(DEMO)
+    validate_demo_acceptance_contract(demo, "小白读题现场示范")
 
     for path in SHARED_CONTRACT_DOCUMENTS:
         text = read_text(path)
