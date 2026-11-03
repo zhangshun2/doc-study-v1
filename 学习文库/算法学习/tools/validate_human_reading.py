@@ -36,6 +36,10 @@ REPO_SKILL = (
 )
 SITE_APP = REPO_ROOT / "site" / "assets" / "app.js"
 AGENTS = REPO_ROOT / "学习文库" / "算法学习" / "AGENTS.md"
+T0_README = REPO_ROOT / "学习文库" / "算法学习" / "建模专题" / "README.md"
+T0_MIGRATION = (
+    REPO_ROOT / "学习文库" / "算法学习" / "建模专题" / "T0旧文迁移边界.md"
+)
 WORKBENCH = (
     REPO_ROOT
     / "学习文库"
@@ -113,6 +117,28 @@ FIRST_CHANGE_FIELDS = [
     "变化后：",
     "答案确定时刻：",
     "为什么不是更早或更晚：",
+]
+
+BEGINNER_CAUSAL_COLUMNS = [
+    "当前证据",
+    "还缺什么",
+    "小白此刻会自然问",
+    "纸上动作",
+    "做完新增什么证据",
+    "此刻仍不能做什么",
+]
+
+DERIVATION_MODE_TERMS = [
+    "现场推导",
+    "事后重建",
+    "事后校验",
+]
+
+RETROSPECTIVE_CHECK_QUESTIONS = [
+    "当前结论依据哪份上一阶段产物？",
+    "删除这份产物后，下一问是否仍会存在？",
+    "方法名最早允许出现在哪里？",
+    "哪些句子属于越级？",
 ]
 
 SHARED_CONTRACT_DOCUMENTS = [
@@ -377,6 +403,34 @@ def validate_first_change_contract(text: str, label: str) -> None:
     if missing:
         raise ValidationError(
             f"{label} 的第一次变化缺少字段：" + "、".join(missing)
+        )
+
+
+def validate_beginner_causal_table(text: str, label: str) -> None:
+    heading = "## 小白现场原话：每一步为什么自然产生"
+    start = text.find(heading)
+    if start < 0:
+        raise ValidationError(f"{label} 缺少小白现场因果表")
+    end = text.find("\n## ", start + len(heading))
+    section = text[start:] if end < 0 else text[start:end]
+
+    header = next(
+        (
+            line
+            for line in section.splitlines()
+            if line.startswith("| 当前证据 |")
+        ),
+        None,
+    )
+    if header is None:
+        raise ValidationError(f"{label} 的小白现场因果表缺少标准表头")
+
+    cells = [cell.strip() for cell in header.strip().strip("|").split("|")]
+    missing = missing_markers(header, BEGINNER_CAUSAL_COLUMNS)
+    if len(cells) != len(BEGINNER_CAUSAL_COLUMNS) or missing:
+        raise ValidationError(
+            f"{label} 的小白现场因果表必须正好有六列："
+            + "、".join(BEGINNER_CAUSAL_COLUMNS)
         )
 
 
@@ -1003,6 +1057,25 @@ def validate_maintained_guides() -> None:
     standard = read_text(STANDARD)
     if "小白现场原话：每一步为什么自然产生" not in standard:
         raise ValidationError("标准卡缺少小白逐步产生下一问的现场因果表")
+    validate_beginner_causal_table(standard, "单题推导标准卡")
+    if "### 顺序冲突时，以这条硬链为准" not in standard:
+        raise ValidationError("标准卡缺少顺序冲突时优先遵守的硬链")
+    if "### 现场推导、事后重建、事后校验必须分开" not in standard:
+        raise ValidationError("标准卡缺少现场推导、事后重建和事后校验的边界")
+    missing_modes = missing_markers(standard, DERIVATION_MODE_TERMS)
+    if missing_modes:
+        raise ValidationError(
+            "标准卡缺少推导叙事类型：" + "、".join(missing_modes)
+        )
+    if "### 倒推验收再问四句" not in standard:
+        raise ValidationError("标准卡缺少倒推验收四问")
+    missing_questions = missing_markers(
+        standard, RETROSPECTIVE_CHECK_QUESTIONS
+    )
+    if missing_questions:
+        raise ValidationError(
+            "标准卡的倒推验收缺少问题：" + "、".join(missing_questions)
+        )
     if "数据范围必须放在第一次变化之后" not in standard:
         raise ValidationError("标准卡没有锁定数据范围与第一次变化的先后关系")
     if "## 网站门控：只显示当前这一步" not in standard:
@@ -1017,6 +1090,43 @@ def validate_maintained_guides() -> None:
         raise ValidationError("标准卡没有区分第一次变化和第二次变化")
     if "支持、缺口、失效条件和代价" not in standard:
         raise ValidationError("标准卡的方向确认没有要求支持、缺口、失效和代价")
+
+    t0_readme = read_text(T0_README)
+    stale_entry = "数据范围提供了什么性能信号"
+    if stale_entry in t0_readme:
+        raise ValidationError(
+            "T0 总规范仍把数据范围放进第一切入点："
+            + stale_entry
+        )
+    required_t0_order = [
+        "数据范围不得在慢过程和第一次变化之前读取",
+        "### 5.4.1 现场硬顺序：标题职责不能替代读题顺序",
+        "-> 第一次变化和答案确定时刻",
+        "-> 数据范围、最坏预算和待验证方向",
+        "旧文多数仍在“第一切入点”提前读范围，因此当前只能算事后拆解",
+    ]
+    missing_t0_order = missing_markers(t0_readme, required_t0_order)
+    if missing_t0_order:
+        raise ValidationError(
+            "T0 总规范没有锁定新现场顺序："
+            + "、".join(missing_t0_order)
+        )
+
+    migration = read_text(T0_MIGRATION)
+    required_migration = [
+        "现场推导",
+        "事后重建",
+        "事后校验",
+        "旧 T0 长文默认属于“事后拆解”",
+        "已按新现场顺序完成迁移 | 0 篇",
+        "缺少任一项，只能写“事后拆解”或“待迁移”",
+    ]
+    missing_migration = missing_markers(migration, required_migration)
+    if missing_migration:
+        raise ValidationError(
+            "T0 旧文迁移边界缺少判定条件："
+            + "、".join(missing_migration)
+        )
 
     demo = read_text(DEMO)
     validate_demo_acceptance_contract(demo, "小白读题现场示范")
@@ -1145,6 +1255,24 @@ def run_fixture_checks() -> None:
         lambda: validate_first_change_contract(
             "\n".join(FIRST_CHANGE_FIELDS[:-1]),
             "缺第六项夹具",
+        ),
+    )
+
+    validate_beginner_causal_table(
+        "## 小白现场原话：每一步为什么自然产生\n\n"
+        "| "
+        + " | ".join(BEGINNER_CAUSAL_COLUMNS)
+        + " |\n",
+        "正向六列小白现场表",
+    )
+    expect_failure(
+        "小白现场表缺少仍不能做什么",
+        lambda: validate_beginner_causal_table(
+            "## 小白现场原话：每一步为什么自然产生\n\n"
+            "| "
+            + " | ".join(BEGINNER_CAUSAL_COLUMNS[:-1])
+            + " |\n",
+            "缺第六列夹具",
         ),
     )
 
