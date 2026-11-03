@@ -1150,6 +1150,44 @@ button {
   line-height: 1.85;
 }
 
+.review-causal-path {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin: 24px 0 0;
+  padding: 1px;
+  border: 1px solid var(--border);
+  background: var(--border);
+  list-style: none;
+}
+
+.review-causal-path > li {
+  min-width: 0;
+  padding: 14px 15px 15px;
+  background: var(--surface);
+}
+
+.review-causal-path span {
+  display: block;
+  color: var(--accent-strong);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 760;
+}
+
+.review-causal-path strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 13px;
+}
+
+.review-causal-path p {
+  margin: 4px 0 0;
+  color: var(--text-soft);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
 .review-hero-actions {
   display: flex;
   flex-wrap: wrap;
@@ -4028,6 +4066,10 @@ pre:hover .copy-code,
 
   .review-hero h1 {
     font-size: 31px;
+  }
+
+  .review-causal-path {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .seven-step-list > li {

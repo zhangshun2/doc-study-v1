@@ -1336,6 +1336,17 @@ function renderReviewCenter(query = null) {
           带着代价第二次捕捉变化，比较候选并确认方向，最后才写状态、更新顺序、不变量、代码和反例。
           每次交接都必须留下九个字段，下一问只能由上一份证据留下的空缺产生。
         </p>
+        <ol class="review-causal-path" aria-label="从小白读题到确认算法方向的九次交接">
+          <li><span>01</span><strong>读题</strong><p>题目给了我什么，要我交回什么？</p></li>
+          <li><span>02</span><strong>人话动作</strong><p>一个人先拿什么，反复做什么，何时停？</p></li>
+          <li><span>03</span><strong>对象</strong><p>两个相同的值，是不是同一个对象？</p></li>
+          <li><span>04</span><strong>笨过程</strong><p>最直接的人类办法怎样完整走一遍？</p></li>
+          <li><span>05</span><strong>第一次变化</strong><p>哪一刻什么变了，答案何时算定？</p></li>
+          <li><span>06</span><strong>范围预算</strong><p>最坏重复多少，哪些复杂度家族先排除？</p></li>
+          <li><span>07</span><strong>第二次变化</strong><p>哪份信息重复、失效、复用或必须保序？</p></li>
+          <li><span>08</span><strong>方向确认</strong><p>哪个候选能承担操作，另一个为什么不够？</p></li>
+          <li><span>09</span><strong>思维链</strong><p>对象怎样变成状态、顺序、不变量和代码？</p></li>
+        </ol>
         <div class="review-hero-actions">
           ${
             suggested

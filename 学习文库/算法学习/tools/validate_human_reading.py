@@ -35,6 +35,8 @@ REPO_SKILL = (
     / "leetcode-steady-java-SKILL.md"
 )
 SITE_APP = REPO_ROOT / "site" / "assets" / "app.js"
+AGENTS = REPO_ROOT / "学习文库" / "算法学习" / "AGENTS.md"
+ALGORITHM_README = REPO_ROOT / "学习文库" / "算法学习" / "README.md"
 
 CHECKED_DOCUMENTS = [
     STANDARD,
@@ -479,6 +481,49 @@ def validate_site_app(path: Path) -> None:
         raise ValidationError("验收卡没有从唯一 HANDOFFS 数据生成")
     if "9 次交接 · 3 条硬规则" not in script:
         raise ValidationError("验收标题仍不是九次交接")
+    if "review-causal-path" not in script or "范围预算" not in script:
+        raise ValidationError("复习页缺少从题面到算法方向的九次交接路径")
+
+
+def validate_maintained_guides() -> None:
+    standard = read_text(STANDARD)
+    if "小白现场原话：每一步为什么自然产生" not in standard:
+        raise ValidationError("标准卡缺少小白逐步产生下一问的现场因果表")
+    if "数据范围必须放在第一次变化之后" not in standard:
+        raise ValidationError("标准卡没有锁定数据范围与第一次变化的先后关系")
+
+    agents = read_text(AGENTS)
+    required_agents_questions = [
+        "问题 4：照着最笨的办法走一遍，第一步先处理谁",
+        "问题 5：走完以后，哪一刻什么变了",
+        "问题 6：这个笨办法最坏会重复多少",
+        "问题 7：带着这个代价重看",
+        "问题 8：这些操作需要什么方向来承担",
+        "问题 9：方向已经定了，状态、更新顺序、不变量、代码和反例",
+        "知道可能太贵 -> 不知道留下什么、何时丢掉 -> 交接 7",
+    ]
+    for marker in required_agents_questions:
+        if marker not in agents:
+            raise ValidationError(f"AGENTS.md 的九问或现场因果已过期：{marker}")
+
+    stale_agents_questions = [
+        "问题 4：照着最笨的办法走一遍，哪一刻什么变了",
+        "问题 5：这个笨办法最坏会重复多少",
+        "问题 6：带着这个代价重看",
+        "问题 7：这些操作需要什么方向来承担",
+        "问题 8：方向已经定了",
+    ]
+    for stale in stale_agents_questions:
+        if stale in agents:
+            raise ValidationError(f"AGENTS.md 仍残留旧九问编号：{stale}")
+
+    readme = read_text(ALGORITHM_README)
+    stale_readme = ("第一层六个方向判断阶段", "方向确认后的 8 个推导确认点")
+    for stale in stale_readme:
+        if stale in readme:
+            raise ValidationError(f"算法学习 README 仍残留旧复习页说明：{stale}")
+    if "七阶段、九次交接" not in readme:
+        raise ValidationError("算法学习 README 没有说明七阶段、九次交接")
 
 
 def fixture_chain(order: list[int]) -> list[Handoff]:
@@ -651,6 +696,7 @@ def main() -> int:
         for path in CHECKED_DOCUMENTS:
             total_chains += validate_document(path)
         validate_site_app(SITE_APP)
+        validate_maintained_guides()
     except ValidationError as exc:
         print(f"FAIL: {exc}", file=sys.stderr)
         return 1
