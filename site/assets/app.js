@@ -70,12 +70,12 @@ const HANDOFFS = [
     index: "02",
     stage: "阶段 2",
     stageTitle: "人话扩写",
-    title: "把题干扩成普通人能执行的动作",
-    question: "我手里拿着什么，第一步先碰谁，接下来反复做什么，何时停止？",
-    whyNow: "题目事实已经分开，但它们仍是静态文字，没有先后动作，也没有停止时机。",
-    paper: "逐句写“原句 -> 自己的话 -> 要做的动作 -> 忽略会错在哪”，再合成谁拿什么、先看哪里、重复做什么、哪个条件改变动作或停止。",
-    evidence: "一条另一个人只读文字就能照着演完的人话过程。",
-    only: "怎样机械地执行题意，以及每个条件防住了什么错误。",
+    title: "先照抄原句，再扩成普通人能执行的动作",
+    question: "我先照抄哪一句原题，里面的代词、方向和时间点分别指向谁？",
+    whyNow: "题目事实已经分开，但如果先把原句概括成“核心过程”，后面的动作就会失去原句依据；现在只能先逐句扩写。",
+    paper: "关键原句先照抄，不能先概括；逐个写清所指、执行者手里有什么、第一步、重复动作、停止条件、交回内容、忽略后的具体错误和来源，最后才合成过程。",
+    evidence: "每条关键原句都有可核对的九项记录，并且全部记录合成一条另一个人能按时间演完的人话。",
+    only: "原句里的动作怎样按顺序发生，以及每个条件防住了什么具体错误。",
     cannot: "值、位置和身份是否已经分清，也不知道哪一刻答案真的确定。",
     nextQuestion: "这里面谁是一个独立对象，值和位置怎样分开？",
     nextEvidence: "两个值相同但位置不同的最小身份证据。",
@@ -208,7 +208,7 @@ const BANK_STAGES = [
     index: 2,
     label: "人话扩写",
     handoff: "交接 2",
-    evidence: "一条别人只读文字就能按时间演完的人话过程。",
+    evidence: "关键原句先照抄，九项记录逐句有依据，最后合成一条别人能按时间演完的人话。",
     next: "继续到对象分析",
   },
   {
@@ -328,10 +328,10 @@ const BEGINNER_ACTION_STEPS = [
     blocked: "猜方法，或把示例当完整规则。",
   },
   {
-    gap: "知道要求，但还不会把题干扩写成动作",
-    action: "逐句写“原句 -> 自己的话 -> 下一步动作 -> 忽略会错在哪”，再合成一段能照着执行的人话。",
-    evidence: "一条普通人能照着执行的人话过程。",
-    blocked: "只换同义词，或提前优化。",
+    gap: "知道要求，但会直接把题干概括成“核心过程”",
+    action: "关键原句先照抄，逐句写所指、执行者、第一步、重复动作、停止条件、交回内容、忽略后的错误和来源；全部写完后才合成过程。",
+    evidence: "每条原句都有可核对记录，九项全部能指回原句，并合成一段普通人能照着执行的人话。",
+    blocked: "先概括再补原句、只换同义词、把“理解题意”当动作，或提前优化。",
   },
   {
     gap: "能讲大概过程，但对象混在一起",
@@ -359,7 +359,7 @@ const BEGINNER_ACTION_STEPS = [
   },
   {
     gap: "知道贵，但不知道留下什么、何时丢掉",
-    action: "回到同一过程，逐类检查重复查询、候选失效、子问题复用和顺序约束，再翻译成操作。",
+    action: "带着预算回到同一过程，逐类检查重复查询、候选失效、子问题复用和顺序约束，再翻译成操作。",
     evidence: "四类现象的发生状态、最小证据和未来需要的操作。",
     blocked: "还没取证就报容器，或把候选池当成结论。",
   },
@@ -451,7 +451,7 @@ const ACCEPTANCE_STATES = [
   {
     index: "01",
     title: "通过",
-    text: "进入条件成立，只完成当前任务，纸面产物可见，结论边界清楚，下一问由证据自然产生，没有越级词。",
+    text: "交接六项与自然可达六项全部成立：只完成当前任务，纸面产物可见，结论边界清楚，下一问由证据自然产生，没有越级词。",
   },
   {
     index: "02",
@@ -470,6 +470,60 @@ const ACCEPTANCE_STATES = [
   },
 ];
 
+const NATURAL_REACHABILITY_CHECKS = [
+  {
+    index: "01",
+    title: "只看上一步",
+    text: "遮住当前交接后面的全部内容，只留上一份产物。能否不看标题、模板和答案，用自己的话问出当前这一问？",
+  },
+  {
+    index: "02",
+    title: "删掉上一步",
+    text: "暂时删掉上一份原句、对象、手算、变化、预算或操作证据。当前问题如果仍原样存在，它来自模板或答案。",
+  },
+  {
+    index: "03",
+    title: "纸面动作",
+    text: "能否指出现在要圈哪句、写哪两个位置、走哪个最小例子、数哪轮重复或比较哪两个候选？只写“想一下”不算。",
+  },
+  {
+    index: "04",
+    title: "结论边界",
+    text: "分别写清这份证据只能证明什么、仍不能证明什么。一个例子不能自动证明全部输入，预算也不能自动证明方向。",
+  },
+  {
+    index: "05",
+    title: "方法名时机",
+    text: "交接 1 到 5 不出现选择语气；交接 6 只进入待验证区；交接 8 才能选择和否决候选；交接 9 才映射代码。",
+  },
+  {
+    index: "06",
+    title: "最小条件替换",
+    text: "只改一个会改变答案位置、停止时刻、对象寿命或重复结构的条件，指出整条链最早要退回哪次交接。",
+  },
+];
+
+const NATURAL_CONDITION_SWAPS = [
+  {
+    original: "两数之和要求返回原下标",
+    changed: "改成只返回两个值",
+    failure: "交接 3：值、位置和结果归属改变",
+    reason: "排序候选不再因“必须保留原下标”失效，交接 8 的取舍必须重写。",
+  },
+  {
+    original: "每日温度要求第一次“严格更高”",
+    changed: "改成“高于或等于”",
+    failure: "交接 2：动作改变和停止条件改变",
+    reason: "第一次变化、结算时机和交接 8 的条件都要跟着改。",
+  },
+  {
+    original: "零钱兑换允许每种硬币无限次使用",
+    changed: "改成每种只能用一次",
+    failure: "交接 2：一次选择的后果改变",
+    reason: "慢过程、子问题是否可复用以及状态含义都要重新取证。",
+  },
+];
+
 const BEGINNER_QUESTION_CARD = [
   {
     index: "01",
@@ -483,11 +537,11 @@ const BEGINNER_QUESTION_CARD = [
   {
     index: "02",
     stage: "阶段 2 · 能复述，但不会动手",
-    ask: "每个字都懂，可一个普通人在纸上第一步做什么？",
-    gap: "我能复述事实，却想不出谁拿着什么、先碰哪里、下一步做什么，所以现在自然要问这一句。",
-    evidence: "别人只看扩写就能按时间演完；每个条件能说出它防止的具体错误。",
-    unlock: "答完得到一个普通人能照着执行的完整过程；仍然没有优化依据。",
-    blocked: "优化理由、最终方法名、没有来源的规则。",
+    ask: "我先照抄哪一句原题；它里面的代词、方向和时间点分别指谁？",
+    gap: "我能复述事实，却可能直接把原句概括成“核心过程”；一旦原句被改写，后面的动作就找不到依据，所以现在必须先逐句扩写。",
+    evidence: "关键原句先照抄；所指、执行者、第一步、重复动作、停止条件、交回内容、具体防错和来源都能逐项核对；全部记录合成后别人能按时间演完。",
+    unlock: "答完得到有原句来源的可执行过程；仍然没有优化依据。",
+    blocked: "先概括再补原句、优化理由、最终方法名、没有来源的规则。",
   },
   {
     index: "03",
@@ -1318,7 +1372,7 @@ function renderHome() {
           </div>
         </div>
         <div class="review-evidence-list">
-          <div><span>扩写</span><p>补全谁在做什么、何时停止，每条扩写都能指回原句。</p></div>
+          <div><span>扩写</span><p>先照抄原句，再补全所指、执行者、第一步、停止条件和交回内容。</p></div>
           <div><span>手算</span><p>不跳步骤走完最小例子，并说清重复劳动在哪里。</p></div>
           <div><span>选向</span><p>用操作需求和数据预算比较候选方案，不靠标签猜方法。</p></div>
           <div><span>重建</span><p>闭卷重建状态、更新顺序、不变量、Java 和自己的检查输入。</p></div>
@@ -1708,11 +1762,12 @@ function renderReviewCenter(query = null) {
             <div class="review-section-head">
               <div>
                 <h2>人类解题验收标准</h2>
-                <p>验收的是九次交接是否留下证据，以及代码能否逐段回到人工过程。</p>
+                <p>先验收九次交接是否留下证据，再检查下一问是否由上一份证据逼出，最后确认代码能否逐段回到人工过程。</p>
               </div>
-              <span class="review-chain-count">9 次交接 · 3 条硬规则</span>
+              <span class="review-chain-count">9 次交接 · 6 项自然可达 · 3 条硬规则</span>
             </div>
             ${renderHumanAcceptanceStandard()}
+            ${renderNaturalReachabilityChecks()}
             ${renderAcceptanceStates()}
             <div class="review-live-gates" aria-label="人类解题验收三条硬规则">
               ${HUMAN_ACCEPTANCE_RULES.map(
@@ -1774,7 +1829,7 @@ function renderReviewCenter(query = null) {
           </div>
         </div>
         <div class="review-evidence-grid">
-          <div><span>01</span><strong>能扩写</strong><p>每个新增解释都能追溯到原句。</p></div>
+          <div><span>01</span><strong>能扩写</strong><p>先保留原句，再把所指、动作、停止条件和交回内容逐项说清。</p></div>
           <div><span>02</span><strong>能手算</strong><p>最笨过程能换一个最小例子重走，第一次变化有证据。</p></div>
           <div><span>03</span><strong>能解释方向</strong><p>候选从操作和预算长出来，取舍与失效条件说得清。</p></div>
           <div><span>04</span><strong>能重建</strong><p>状态、更新顺序、不变量和代码能逐段回到人工过程。</p></div>
@@ -1986,6 +2041,50 @@ function renderHumanAcceptanceStandard() {
         `,
       ).join("")}
     </ol>
+  `;
+}
+
+function renderNaturalReachabilityChecks() {
+  return `
+    <div class="review-chain-frame">
+      <span>小白自然可达：不新增阶段</span>
+      <p>
+        遮住当前交接后面的全部内容，只留上一份产物。这里检查下一问是否由上一份证据逼出，
+        不改变七阶段、九交接；没有发生转折就写“没有发生转折”，不补造“我一开始以为”。
+      </p>
+    </div>
+    <div class="review-live-gates review-natural-checks" aria-label="小白自然可达六项检查">
+      ${NATURAL_REACHABILITY_CHECKS.map(
+        (item) => `
+          <div>
+            <span>${escapeHtml(item.index)}</span>
+            <strong>${escapeHtml(item.title)}</strong>
+            <p>${escapeHtml(item.text)}</p>
+          </div>
+        `,
+      ).join("")}
+    </div>
+    <div class="review-swap-table" role="table" aria-label="最小条件替换检查">
+      <div class="review-swap-row review-swap-header" role="row">
+        <span role="columnheader">原条件</span>
+        <span role="columnheader">只改一个条件</span>
+        <span role="columnheader">最早失效的位置</span>
+        <span role="columnheader">为什么不能照搬</span>
+      </div>
+      ${NATURAL_CONDITION_SWAPS.map(
+        (item) => `
+          <div class="review-swap-row" role="row">
+            <strong role="cell" data-label="原条件">${escapeHtml(item.original)}</strong>
+            <span role="cell" data-label="只改一个条件">${escapeHtml(item.changed)}</span>
+            <span role="cell" data-label="最早失效的位置">${escapeHtml(item.failure)}</span>
+            <p role="cell" data-label="为什么不能照搬">${escapeHtml(item.reason)}</p>
+          </div>
+        `,
+      ).join("")}
+    </div>
+    <p class="keyword-trigger-note">
+      最小条件替换只检查迁移，不要求每题制造错误。两组检查都通过，才算这次交接通过。
+    </p>
   `;
 }
 
@@ -2694,18 +2793,29 @@ function renderBankStageTwo() {
       <div class="bank-section-heading">
         <span>02</span>
         <div>
-          <h2>先逐句扩写，再合成一个人能执行的过程</h2>
-          <p>还不要想对象清单或算法。先确认每个原句新增了谁、什么动作、什么顺序、什么限制，以及忽略它会犯什么具体错误。</p>
+          <h2>先照抄原句，再逐句扩写，最后合成一个人能执行的过程</h2>
+          <p>还不要想对象清单或算法。先把关键原句原样留下，确认所指、执行者、第一步、重复动作、停止条件、交回内容、忽略后的具体错误和来源，最后才合成过程。</p>
         </div>
       </div>
       ${renderLiveHandoffCard(HANDOFFS[1], { compact: true })}
+      <div class="bank-paper-prompt">
+        <strong>阶段 2 的现场顺序</strong>
+        <p>原句照抄 -> 消解所指 -> 写执行者和手中材料 -> 第一步 -> 重复动作 -> 改变或停止 -> 最后交回 -> 忽略后的具体错误 -> 标来源 -> 合成过程 -> 换一个最小例子复述。不能先写“核心过程”再补原句。</p>
+      </div>
       <ol class="bank-question-list">
-        <li>这句话新增了哪个对象、动作、身份、顺序或停止条件？</li>
-        <li>如果忽略这句话，我会在过程里做错哪一个具体动作或交回什么错误结果？</li>
-        <li>哪一句改变了谁先处理、谁后处理，或者哪个对象不能提前丢掉？</li>
-        <li>把这些句子按时间合起来以后，一个普通人从哪里开始、反复做什么、何时停下、最后交出什么？</li>
-        <li>扩写里有没有题面没有保证的内容？它只能标成推测，不能拿去证明后面的方向。</li>
+        <li>原句有没有先照抄，而不是先写自己的概括？</li>
+        <li>“它、这个、该位置、之后、此时、前一个”分别指向哪个对象、位置或时刻？</li>
+        <li>执行者手里有什么，第一步实际做什么；哪句话会把这一步变成“理解题意”或“分析关系”？</li>
+        <li>反复比较、移动、选择、累加或检查的到底是什么，哪个条件会让动作改变或停止？</li>
+        <li>最后交回值、位置、数量、路径还是布尔值，它属于哪个对象？</li>
+        <li>忽略这句话会在哪一步产生什么具体错误输出？</li>
+        <li>这条解释是事实、推论还是推测；推测有没有被错误拿去做后续证明？</li>
+        <li>把全部记录按时间合成以后，另一个人能不能照着走完；换一个最小例子还能不能复述？</li>
       </ol>
+      <div class="bank-paper-prompt">
+        <strong>这里只固定两个观察位置</strong>
+        <p>第一次变化要等慢过程走完再观察；第二次变化必须等数据范围之后，带着代价回到同一条过程取证。现在不提前回答变化内容。</p>
+      </div>
       <div class="bank-reading-links">
         <a href="${docHref("LeetCode-系统复习/05-单题流程/单题推导标准卡.md")}">
           <i data-lucide="clipboard-list"></i>按标准卡写下自己的扩写

@@ -2155,6 +2155,75 @@ button {
   margin-top: 16px;
 }
 
+.review-natural-checks {
+  margin-top: 12px;
+}
+
+.review-natural-checks > div:nth-child(3n + 1) {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.review-natural-checks > div:nth-child(n + 4) {
+  border-top: 1px solid var(--border);
+}
+
+.review-swap-table {
+  margin-top: 16px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.review-swap-row {
+  display: grid;
+  min-width: 0;
+  grid-template-columns:
+    minmax(140px, 0.9fr)
+    minmax(120px, 0.72fr)
+    minmax(150px, 0.95fr)
+    minmax(0, 1.2fr);
+  gap: 18px;
+  padding: 12px 0;
+}
+
+.review-swap-row + .review-swap-row {
+  border-top: 1px solid var(--border);
+}
+
+.review-swap-header {
+  padding: 9px 0;
+  background: color-mix(in srgb, var(--surface-soft) 56%, transparent);
+}
+
+.review-swap-header span {
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 760;
+  letter-spacing: 0;
+}
+
+.review-swap-row strong,
+.review-swap-row span,
+.review-swap-row p {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.review-swap-row strong {
+  color: var(--accent-strong);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.review-swap-row span,
+.review-swap-row p {
+  color: var(--text-soft);
+  font-size: 11px;
+  line-height: 1.7;
+}
+
 .review-live-gates {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -5006,6 +5075,12 @@ pre:hover .copy-code,
   .review-live-gates > div + div {
     border-top: 1px solid var(--border);
     border-left: 0;
+  }
+
+  .review-swap-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+    padding: 12px 0;
   }
 
   .review-source-rules-head,

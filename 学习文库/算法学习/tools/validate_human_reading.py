@@ -12,9 +12,18 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 STANDARD = REPO_ROOT / "LeetCode-系统复习" / "05-单题流程" / "单题推导标准卡.md"
+PROTOCOL = (
+    REPO_ROOT
+    / "LeetCode-系统复习"
+    / "07-分析法实验"
+    / "题库与题解生产协议-v2.md"
+)
 TEMPLATE = REPO_ROOT / "LeetCode-系统复习" / "99-Skill" / "非压缩题解模板.md"
 HUMAN_GUIDE = (
     REPO_ROOT / "LeetCode-系统复习" / "05-单题流程" / "人类推导样板与评分.md"
+)
+READING_GUIDE = (
+    REPO_ROOT / "LeetCode-系统复习" / "05-单题流程" / "人类读题与算法确认.md"
 )
 DEMO = REPO_ROOT / "LeetCode-系统复习" / "05-单题流程" / "小白读题现场示范.md"
 REAL_PROBLEM_TEMPLATE = (
@@ -27,6 +36,30 @@ TWO_SUM = (
     / "题目"
     / "数组与哈希"
     / "1-Two-Sum.md"
+)
+CONTAINER = (
+    REPO_ROOT
+    / "学习文库"
+    / "算法学习"
+    / "题目"
+    / "双指针"
+    / "11-Container-With-Most-Water.md"
+)
+COIN_CHANGE = (
+    REPO_ROOT
+    / "学习文库"
+    / "算法学习"
+    / "题目"
+    / "动态规划"
+    / "322-Coin-Change.md"
+)
+DAILY_TEMPERATURES = (
+    REPO_ROOT
+    / "学习文库"
+    / "算法学习"
+    / "题目"
+    / "单调结构"
+    / "739-Daily-Temperatures.md"
 )
 REPO_SKILL = (
     REPO_ROOT
@@ -56,6 +89,9 @@ CHECKED_DOCUMENTS = [
     DEMO,
     REAL_PROBLEM_TEMPLATE,
     TWO_SUM,
+    CONTAINER,
+    COIN_CHANGE,
+    DAILY_TEMPERATURES,
     REPO_SKILL,
 ]
 
@@ -66,6 +102,9 @@ EXPECTED_MIN_CHAINS = {
     DEMO: 1,
     REAL_PROBLEM_TEMPLATE: 1,
     TWO_SUM: 1,
+    CONTAINER: 1,
+    COIN_CHANGE: 1,
+    DAILY_TEMPERATURES: 1,
 }
 
 HANDOFF_FIELDS = [
@@ -119,6 +158,27 @@ FIRST_CHANGE_FIELDS = [
     "为什么不是更早或更晚：",
 ]
 
+EXPANDED_STATEMENT_FIELDS = [
+    "原句（不改写）：",
+    "代词指向：",
+    "谁在做事、手里有什么：",
+    "第一步：",
+    "重复动作：",
+    "动作改变或停止：",
+    "最后交回：",
+    "忽略会错在：",
+    "来源：",
+]
+
+EXPANDED_STATEMENT_COMPOSED_FIELD = "合成可执行过程："
+EXPANDED_STATEMENT_FIRST_CHANGE = (
+    "第一次变化；数据范围之前：谁因哪个事件改变状态，答案何时确定？"
+)
+EXPANDED_STATEMENT_SECOND_CHANGE = (
+    "第二次变化；数据范围之后：哪份信息重复查询、失效、复用或必须保序？"
+)
+SOURCE_KIND_TERMS = ["事实", "推论", "推测"]
+
 BEGINNER_CAUSAL_COLUMNS = [
     "当前证据",
     "还缺什么",
@@ -139,6 +199,14 @@ RETROSPECTIVE_CHECK_QUESTIONS = [
     "删除这份产物后，下一问是否仍会存在？",
     "方法名最早允许出现在哪里？",
     "哪些句子属于越级？",
+]
+
+DIRECTION_FUNNEL_TERMS = [
+    "算法方向收窄漏斗",
+    "范围只缩圈，不点名",
+    "事实句",
+    "假设句",
+    "确认句",
 ]
 
 SHARED_CONTRACT_DOCUMENTS = [
@@ -201,8 +269,8 @@ CANDIDATE_ZONE_FIELDS = [
 ]
 
 EARLY_SELECTION_PATTERNS = [
-    re.compile(r"(?:所以|因此|于是).{0,10}(?:选择|采用|使用|就用)"),
-    re.compile(r"(?:决定|确定).{0,6}(?:选择|采用|使用)"),
+    re.compile(r"(?:所以|因此|于是)[^。；！？\n]{0,12}(?:选择|采用|使用|就用)"),
+    re.compile(r"(?:决定|确定)[^。；，,:：！？\n]{0,8}(?:选择|采用|使用)"),
     re.compile(r"(?:最终方向|主方向)(?:就)?(?:是|选)"),
 ]
 
@@ -240,6 +308,37 @@ HUMAN_ACCEPTANCE_STATES = [
     "证据不足",
     "越级",
     "事实错误",
+]
+
+NATURAL_REACHABILITY_CHECK_PHRASES = [
+    "只看上一步，能自己问出这一问吗？",
+    "删掉上一步，这一问会消失吗？",
+    "纸面动作能当场做吗？",
+    "新增证据的边界说清了吗？",
+    "方法名最早出现在哪里？",
+    "换掉一个最小条件，最早从哪里失效？",
+]
+
+NATURAL_REACHABILITY_SHARED_TERMS = [
+    "只看上一步",
+    "删掉上一步",
+    "纸面动作",
+    "只能证明什么",
+    "仍不能证明什么",
+    "方法名",
+    "最小条件",
+]
+
+NATURAL_REACHABILITY_EXAMPLES = [
+    "两数之和要求返回原下标",
+    "改成只返回两个值",
+    "交接 3：值、位置和结果归属改变",
+    "每日温度要求第一次“严格更高”",
+    "改成“高于或等于”",
+    "交接 2：动作改变和停止条件改变",
+    "零钱兑换允许每种硬币无限次使用",
+    "改成每种只能用一次",
+    "交接 2：一次选择的后果改变",
 ]
 
 KEYWORD_TRIGGER_TERMS = [
@@ -406,6 +505,45 @@ def validate_first_change_contract(text: str, label: str) -> None:
         )
 
 
+def validate_expanded_statement_contract(text: str, label: str) -> None:
+    required = EXPANDED_STATEMENT_FIELDS + [EXPANDED_STATEMENT_COMPOSED_FIELD]
+    missing = missing_markers(text, required)
+    if missing:
+        raise ValidationError(
+            f"{label} 的阶段 2 扩写缺少字段：" + "、".join(missing)
+        )
+
+    source_values = re.findall(r"(?m)^来源：([^\n]+)$", text)
+    if not source_values:
+        raise ValidationError(f"{label} 的阶段 2 扩写没有来源记录")
+    for value in source_values:
+        if not any(term in value for term in SOURCE_KIND_TERMS):
+            raise ValidationError(
+                f"{label} 的阶段 2 来源只能标为事实、推论或推测：{value.strip()}"
+            )
+
+    missing_changes = missing_markers(
+        text,
+        [
+            EXPANDED_STATEMENT_FIRST_CHANGE,
+            EXPANDED_STATEMENT_SECOND_CHANGE,
+        ],
+    )
+    if missing_changes:
+        raise ValidationError(
+            f"{label} 的阶段 2 缺少固定变化观察位置："
+            + "、".join(missing_changes)
+        )
+
+    first_position = text.index(EXPANDED_STATEMENT_FIRST_CHANGE)
+    second_position = text.index(EXPANDED_STATEMENT_SECOND_CHANGE)
+    if first_position >= second_position:
+        raise ValidationError(
+            f"{label} 的阶段 2 两次变化位置错位："
+            "必须先标第一次变化，再标第二次变化"
+        )
+
+
 def validate_beginner_causal_table(text: str, label: str) -> None:
     heading = "## 小白现场原话：每一步为什么自然产生"
     start = text.find(heading)
@@ -461,13 +599,51 @@ def validate_keyword_trigger_contract(text: str, label: str) -> None:
             raise ValidationError(f"{label} 的关键词表缺少边界：{marker}")
 
 
+def validate_natural_reachability_contract(
+    text: str,
+    label: str,
+    *,
+    require_examples: bool = False,
+) -> None:
+    heading = "### 小白自然可达验收（不新增阶段）"
+    start = text.find(heading)
+    if start < 0:
+        raise ValidationError(f"{label} 缺少小白自然可达验收")
+
+    end = text.find("\n### ", start + len(heading))
+    section = text[start:] if end < 0 else text[start:end]
+
+    missing_checks = missing_markers(
+        section, NATURAL_REACHABILITY_CHECK_PHRASES
+    )
+    if missing_checks:
+        raise ValidationError(
+            f"{label} 的自然可达六项检查缺少："
+            + "、".join(missing_checks)
+        )
+    if "不改变七阶段、九交接" not in section:
+        raise ValidationError(f"{label} 没有说明自然可达检查不新增阶段")
+    if "没有发生转折" not in section:
+        raise ValidationError(f"{label} 没有禁止补造“我一开始以为”")
+
+    if require_examples:
+        missing_examples = missing_markers(
+            section, NATURAL_REACHABILITY_EXAMPLES
+        )
+        if missing_examples:
+            raise ValidationError(
+                f"{label} 的最小条件替换示例缺少："
+                + "、".join(missing_examples)
+            )
+
+
 def validate_human_acceptance_contract(text: str, label: str) -> None:
     heading = "## 人类解题验收标准"
     start = text.find(heading)
     if start < 0:
         raise ValidationError(f"{label} 缺少人类解题验收标准")
 
-    criteria_start = text.find("### 一个交接算通过，必须同时满足", start)
+    criteria_start = text.find("### 一个交接算通过，要先满足下面六项", start)
     if criteria_start < 0:
         raise ValidationError(f"{label} 缺少六项同时满足条件")
 
@@ -520,6 +696,14 @@ def validate_human_acceptance_contract(text: str, label: str) -> None:
         raise ValidationError(
             f"{label} 的验收状态缺少：" + "、".join(missing_states)
         )
+    if "六项交接条件与六项自然可达检查全部满足" not in states:
+        raise ValidationError(
+            f"{label} 的通过状态没有同时要求交接六项和自然可达六项"
+        )
+
+    validate_natural_reachability_contract(
+        text, label, require_examples=True
+    )
 
 
 def validate_demo_acceptance_contract(text: str, label: str) -> None:
@@ -668,6 +852,10 @@ def validate_document(path: Path) -> int:
         for handoff in chain:
             validate_handoff_fields(handoff)
             validate_data_range_zone(handoff)
+            if handoff.index == 2:
+                validate_expanded_statement_contract(
+                    handoff.block, handoff.location
+                )
         validate_candidate_gate(chain)
 
     if path == REPO_SKILL:
@@ -721,12 +909,12 @@ def validate_beginner_question_structure(
     if count != 9:
         raise ValidationError(f"{label} 必须正好有 9 项，实际 {count} 项")
 
-    required_order = ["对象", "最笨", "第一次变化", "数据范围", "重复"]
+    required_order = ["对象", "最笨", "第一次变化", "数据范围", "带着预算"]
     positions = [source.find(word) for word in required_order]
     if any(position < 0 for position in positions) or positions != sorted(positions):
         raise ValidationError(
             f"{label} 必须按“读题 → 扩写 → 对象 → 笨过程 → "
-            "第一次变化 → 数据范围 → 重复取证”展开"
+            "第一次变化 → 数据范围 → 带预算重复取证”展开"
         )
 
     if expected_terms:
@@ -861,6 +1049,25 @@ def validate_site_stage_gate(script: str) -> None:
             raise ValidationError(
                 f"{label}提前渲染了后续字段：" + "、".join(leaked)
             )
+
+    stage_two_markers = [
+        "原句有没有先照抄",
+        "执行者手里有什么",
+        "第一步",
+        "重复动作",
+        "改变或停止",
+        "最后交回",
+        "事实、推论还是推测",
+        "合成以后",
+        "第一次变化",
+        "第二次变化",
+    ]
+    missing_stage_two = missing_markers(stage_two, stage_two_markers)
+    if missing_stage_two:
+        raise ValidationError(
+            "阶段 2 页面没有按先抄原句再扩写的顺序提问："
+            + "、".join(missing_stage_two)
+        )
 
     if "record.constraints" not in stage_four or "record.complexity" not in stage_four:
         raise ValidationError("阶段 4 没有承担数据范围和复杂度句子的渲染")
@@ -1014,7 +1221,7 @@ def validate_site_app(path: Path) -> None:
         "起步动作表",
         [
             "刚打开题",
-            "题干扩写成动作",
+            "直接把题干概括成",
             "对象混在一起",
             "最笨但正确",
             "第一次变化",
@@ -1065,20 +1272,45 @@ def validate_site_app(path: Path) -> None:
     acceptance_tail = script[acceptance_start : acceptance_start + 1800]
     if "HANDOFFS.map" not in acceptance_tail:
         raise ValidationError("验收卡没有从唯一 HANDOFFS 数据生成")
-    if "9 次交接 · 3 条硬规则" not in script:
-        raise ValidationError("验收标题仍不是九次交接")
+    if "9 次交接 · 6 项自然可达 · 3 条硬规则" not in script:
+        raise ValidationError("验收标题没有同时标明九次交接、自然可达和硬规则")
     if "review-causal-path" not in script or "范围预算" not in script:
         raise ValidationError("复习页缺少从题面到算法方向的九次交接路径")
     if "const KEYWORD_TRIGGERS = [" not in script:
         raise ValidationError("复习页缺少题面关键词数据")
     if "const ACCEPTANCE_STATES = [" not in script:
         raise ValidationError("复习页缺少四种验收状态数据")
+    if "const NATURAL_REACHABILITY_CHECKS = [" not in script:
+        raise ValidationError("复习页缺少小白自然可达六项检查数据")
+    if "const NATURAL_CONDITION_SWAPS = [" not in script:
+        raise ValidationError("复习页缺少最小条件替换示例")
     if "review-keyword-main" not in script:
         raise ValidationError("复习页缺少关键词到纸面证据的主现场")
     if script.count("${renderKeywordTriggerTable()}") != 1:
         raise ValidationError("关键词触发表必须且只能在主现场渲染一次")
     if script.count("${renderAcceptanceStates()}") != 1:
         raise ValidationError("四种验收状态必须且只能渲染一次")
+    if script.count("${renderNaturalReachabilityChecks()}") != 1:
+        raise ValidationError("小白自然可达六项必须且只能渲染一次")
+
+    acceptance_section_start = script.find(
+        '<section class="review-chain-section" aria-label="人类解题验收标准">'
+    )
+    acceptance_section_end = script.find(
+        "</section>", acceptance_section_start
+    )
+    if (
+        acceptance_section_start < 0
+        or acceptance_section_end <= acceptance_section_start
+        or not (
+            acceptance_section_start
+            < script.find("${renderNaturalReachabilityChecks()}")
+            < acceptance_section_end
+        )
+    ):
+        raise ValidationError(
+            "小白自然可达检查必须在人类解题验收区内渲染一次"
+        )
 
     acceptance_function = extract_js_function_source(
         script, "renderHumanAcceptanceStandard"
@@ -1093,9 +1325,46 @@ def validate_site_app(path: Path) -> None:
             + "、".join(missing_acceptance_labels)
         )
 
+    natural_function = extract_js_function_source(
+        script, "renderNaturalReachabilityChecks"
+    )
+    missing_natural_data = missing_markers(
+        script,
+        [
+            "只看上一步",
+            "删掉上一步",
+            "纸面动作",
+            "结论边界",
+            "方法名时机",
+            "最小条件替换",
+        ],
+    )
+    if missing_natural_data:
+        raise ValidationError(
+            "自然可达验收数据缺少：" + "、".join(missing_natural_data)
+        )
+    missing_natural_labels = missing_markers(
+        natural_function,
+        [
+            "NATURAL_REACHABILITY_CHECKS.map",
+            "NATURAL_CONDITION_SWAPS.map",
+            "最小条件替换",
+        ],
+    )
+    if missing_natural_labels:
+        raise ValidationError(
+            "自然可达验收卡缺少：" + "、".join(missing_natural_labels)
+        )
+
 
 def validate_maintained_guides() -> None:
     standard = read_text(STANDARD)
+    missing_funnel_terms = missing_markers(standard, DIRECTION_FUNNEL_TERMS)
+    if missing_funnel_terms:
+        raise ValidationError(
+            "单题推导标准卡缺少方向收窄契约："
+            + "、".join(missing_funnel_terms)
+        )
     if "小白现场原话：每一步为什么自然产生" not in standard:
         raise ValidationError("标准卡缺少小白逐步产生下一问的现场因果表")
     validate_beginner_causal_table(standard, "单题推导标准卡")
@@ -1131,6 +1400,40 @@ def validate_maintained_guides() -> None:
         raise ValidationError("标准卡没有区分第一次变化和第二次变化")
     if "支持、缺口、失效条件和代价" not in standard:
         raise ValidationError("标准卡的方向确认没有要求支持、缺口、失效和代价")
+
+    protocol = read_text(PROTOCOL)
+    missing_protocol_funnel_terms = missing_markers(
+        protocol, DIRECTION_FUNNEL_TERMS
+    )
+    if missing_protocol_funnel_terms:
+        raise ValidationError(
+            "题库与题解生产协议缺少方向收窄契约："
+            + "、".join(missing_protocol_funnel_terms)
+        )
+
+    reading_guide = read_text(READING_GUIDE)
+    for marker in (
+        "## 先做交接验收六项，再做自然可达六项",
+        "交接六项",
+        "自然可达六项",
+        "最小条件替换",
+    ):
+        if marker not in reading_guide:
+            raise ValidationError(
+                f"人类读题与算法确认没有区分两层的验收口径：{marker}"
+            )
+
+    for path in (PROTOCOL, TEMPLATE, REPO_SKILL, AGENTS):
+        text = read_text(path)
+        label = str(display_path(path))
+        missing_terms = missing_markers(
+            text, NATURAL_REACHABILITY_SHARED_TERMS
+        )
+        if missing_terms:
+            raise ValidationError(
+                f"{label} 的自然可达标准未同步："
+                + "、".join(missing_terms)
+            )
 
     t0_readme = read_text(T0_README)
     stale_entry = "数据范围提供了什么性能信号"
@@ -1177,6 +1480,7 @@ def validate_maintained_guides() -> None:
         label = str(display_path(path))
         validate_live_generation_contract(text, label)
         validate_nine_field_contract(text, label)
+        validate_expanded_statement_contract(text, label)
         for stale in STALE_CONTRACT_PHRASES:
             if stale in text:
                 raise ValidationError(f"{label} 仍残留旧标准：{stale}")
@@ -1229,6 +1533,14 @@ def fixture_chain(order: list[int]) -> list[Handoff]:
         lines = [f"## 交接 {index}", "```text"]
         for field in HANDOFF_FIELDS:
             lines.append(f"{field}：______")
+        if index == 2:
+            for field in EXPANDED_STATEMENT_FIELDS:
+                suffix = "事实 / 推论 / 推测" if field == "来源：" else "______"
+                lines.append(f"{field}{suffix}")
+            lines.append(f"{EXPANDED_STATEMENT_COMPOSED_FIELD}______")
+            lines.append("")
+            lines.append(EXPANDED_STATEMENT_FIRST_CHANGE)
+            lines.append(EXPANDED_STATEMENT_SECOND_CHANGE)
         lines.append("```")
         if index == 6:
             lines.extend(["", "官方约束 n <= 10^5；最坏操作预算约为 n log n。"])
@@ -1296,6 +1608,58 @@ def run_fixture_checks() -> None:
         lambda: validate_first_change_contract(
             "\n".join(FIRST_CHANGE_FIELDS[:-1]),
             "缺第六项夹具",
+        ),
+    )
+
+    expanded_statement = "\n".join(
+        [
+            "原句（不改写）：从当前位置向右找第一个严格更大的值。",
+            "代词指向：“当前位置”指当前下标 i。",
+            "谁在做事、手里有什么：我拿着 nums[i] 和它右侧的序列。",
+            "第一步：从 i + 1 开始检查。",
+            "重复动作：逐项比较是否严格大于 nums[i]。",
+            "动作改变或停止：第一次满足时停止；越界也停止。",
+            "最后交回：交回距离，不是值。",
+            "忽略会错在：忽略“严格”会把相等误判为满足。",
+            "来源：事实",
+            EXPANDED_STATEMENT_COMPOSED_FIELD + "从 i + 1 向右检查，第一次严格更大时交回距离。",
+            EXPANDED_STATEMENT_FIRST_CHANGE,
+            EXPANDED_STATEMENT_SECOND_CHANGE,
+        ]
+    )
+    validate_expanded_statement_contract(
+        expanded_statement, "正向阶段 2 扩写"
+    )
+    expect_failure(
+        "阶段 2 扩写缺少代词指向",
+        lambda: validate_expanded_statement_contract(
+            expanded_statement.replace("代词指向：“当前位置”指当前下标 i。\n", ""),
+            "缺代词夹具",
+        ),
+    )
+    expect_failure(
+        "阶段 2 扩写缺少合成过程",
+        lambda: validate_expanded_statement_contract(
+            expanded_statement.replace(
+                EXPANDED_STATEMENT_COMPOSED_FIELD + "从 i + 1 向右检查，第一次严格更大时交回距离。\n",
+                "",
+            ),
+            "缺合成夹具",
+        ),
+    )
+    expect_failure(
+        "阶段 2 两次变化位置颠倒",
+        lambda: validate_expanded_statement_contract(
+            expanded_statement.replace(
+                EXPANDED_STATEMENT_FIRST_CHANGE,
+                "__FIRST_PLACEHOLDER__",
+            )
+            .replace(
+                EXPANDED_STATEMENT_SECOND_CHANGE,
+                EXPANDED_STATEMENT_FIRST_CHANGE,
+            )
+            .replace("__FIRST_PLACEHOLDER__", EXPANDED_STATEMENT_SECOND_CHANGE),
+            "变化错位夹具",
         ),
     )
 
@@ -1472,7 +1836,7 @@ def run_fixture_checks() -> None:
         + '  {\n    action: "最笨",\n  },\n'
         + '  {\n    action: "第一次变化",\n  },\n'
         + '  {\n    action: "数据范围",\n  },\n'
-        + '  {\n    action: "重复",\n  },\n'
+        + '  {\n    action: "带着预算重复",\n  },\n'
         + '  {\n    action: "候选",\n  },\n'
         + '  {\n    action: "方向",\n  },\n'
         + '  {\n    action: "状态",\n  },\n'
@@ -1500,7 +1864,7 @@ def main() -> int:
         return 1
 
     print(
-        "OK: 九次交接、九字段、待验证方向六字段、九问结构"
+        "OK: 九次交接、阶段 2 扩写、九字段、待验证方向六字段、九问结构"
         "和页面验收均已通过"
         f"（{total_chains} 条完整现场链）"
     )

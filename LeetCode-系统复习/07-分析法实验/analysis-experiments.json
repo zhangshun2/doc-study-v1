@@ -105,11 +105,11 @@
       "titleCn": "每日温度",
       "sourceUrl": "https://leetcode.cn/problems/daily-temperatures/",
       "selectedMethod": "等待日期的产生、结算与单调栈",
-      "migrationStatus": "post-hoc-pending-migration",
+      "migrationStatus": "complete-human-chain",
       "references": {
         "solutionPath": "学习文库/算法学习/题目/单调结构/739-Daily-Temperatures.md",
-        "reasoningAnchor": "核心观察",
-        "answerAnchor": "正确性与不变量",
+        "reasoningAnchor": "阶段 6｜交接 8：候选比较与方向确认",
+        "answerAnchor": "阶段 7｜交接 9：状态、更新顺序、不变量、代码、反例",
         "codeAnchor": "LeetCode 可直接提交代码",
         "coreModelPath": "学习文库/算法学习/核心模型/单调结构/739-Daily-Temperatures-核心模型.md",
         "coreModelAnchor": "一句话本质"
@@ -208,11 +208,11 @@
       "titleCn": "盛最多水的容器",
       "sourceUrl": "https://leetcode.cn/problems/container-with-most-water/",
       "selectedMethod": "最宽区间到短板支配与安全淘汰",
-      "migrationStatus": "post-hoc-pending-migration",
+      "migrationStatus": "complete-human-chain",
       "references": {
         "solutionPath": "学习文库/算法学习/题目/双指针/11-Container-With-Most-Water.md",
-        "reasoningAnchor": "核心观察",
-        "answerAnchor": "正确性与不变量",
+        "reasoningAnchor": "阶段 6｜交接 8：候选比较与方向确认",
+        "answerAnchor": "阶段 7｜交接 9：状态、更新顺序、不变量、代码、反例",
         "codeAnchor": "LeetCode 可直接提交代码",
         "coreModelPath": "学习文库/算法学习/核心模型/双指针/11-Container-With-Most-Water-核心模型.md",
         "coreModelAnchor": "一句话本质"
@@ -311,11 +311,11 @@
       "titleCn": "零钱兑换",
       "sourceUrl": "https://leetcode.cn/problems/coin-change/",
       "selectedMethod": "子问题复用与按金额递增 DP",
-      "migrationStatus": "post-hoc-pending-migration",
+      "migrationStatus": "complete-human-chain",
       "references": {
         "solutionPath": "学习文库/算法学习/题目/动态规划/322-Coin-Change.md",
-        "reasoningAnchor": "核心观察",
-        "answerAnchor": "正确性与不变量",
+        "reasoningAnchor": "阶段 6｜交接 8：候选比较与方向确认",
+        "answerAnchor": "阶段 7｜交接 9：状态、更新顺序、不变量、代码、反例",
         "codeAnchor": "LeetCode 可直接提交代码",
         "coreModelPath": "学习文库/算法学习/核心模型/动态规划/322-Coin-Change-核心模型.md",
         "coreModelAnchor": "一句话本质"
